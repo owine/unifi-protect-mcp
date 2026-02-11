@@ -4,7 +4,7 @@ An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration 
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - A UniFi Protect system with the Integration API enabled
 - An API key generated from your UniFi Protect console
 
@@ -69,8 +69,8 @@ Alternatively, add to your `~/.claude.json` under the top-level `"mcpServers"` k
 {
   "mcpServers": {
     "unifi-protect": {
-      "command": "node",
-      "args": ["/path/to/unifi-protect-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@owine/unifi-protect-mcp"],
       "env": {
         "UNIFI_PROTECT_HOST": "192.168.1.1",
         "UNIFI_PROTECT_API_KEY": "your-api-key",
