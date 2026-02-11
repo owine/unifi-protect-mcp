@@ -62,3 +62,7 @@ Versioning and npm publishing are automated via [release-please](https://github.
   - `chore:`, `docs:`, `ci:`, `refactor:`, `test:` → no release
 - On push to `main`, release-please opens/updates a "Release PR" that bumps `package.json` version and updates `CHANGELOG.md`
 - Merging the Release PR triggers `npm publish` to `@owine/unifi-protect-mcp` with provenance attestation
+- To override the version number, add `Release-As: x.x.x` in the **commit body** (not the title):
+  ```
+  git commit --allow-empty -m "chore: release 2.0.0" -m "Release-As: 2.0.0"
+  ```

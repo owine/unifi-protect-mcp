@@ -169,6 +169,12 @@ This project uses [conventional commits](https://www.conventionalcommits.org/) a
 
 On push to `main`, release-please opens a Release PR that bumps the version and updates `CHANGELOG.md`. Merging that PR publishes to npm automatically.
 
+To override the version number, add `Release-As: x.x.x` in the commit body:
+
+```bash
+git commit --allow-empty -m "chore: release 2.0.0" -m "Release-As: 2.0.0"
+```
+
 ## License
 
 MIT
