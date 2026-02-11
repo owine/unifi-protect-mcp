@@ -1,8 +1,14 @@
 {
-  "name": "unifi-protect-mcp",
+  "name": "@owine/unifi-protect-mcp",
   "version": "1.0.0",
   "description": "MCP server for UniFi Protect Integration API",
   "main": "dist/index.js",
+  "bin": {
+    "unifi-protect-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
@@ -13,6 +19,22 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/owine/unifi-protect-mcp.git"
+  },
+  "keywords": [
+    "unifi",
+    "protect",
+    "mcp",
+    "model-context-protocol",
+    "ubiquiti"
+  ],
+  "author": "owine",
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "zod": "^4.0.0"

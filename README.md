@@ -10,7 +10,27 @@ An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration 
 
 ## Setup
 
-1. Clone and build:
+### Quick start (npx)
+
+Add to Claude Code with a single command — no clone or build needed:
+
+```bash
+claude mcp add-json unifi-protect '{
+  "command": "npx",
+  "args": ["-y", "@owine/unifi-protect-mcp"],
+  "env": {
+    "UNIFI_PROTECT_HOST": "192.168.1.1",
+    "UNIFI_PROTECT_API_KEY": "your-api-key",
+    "UNIFI_PROTECT_VERIFY_SSL": "false"
+  }
+}' -s user
+```
+
+Use `-s user` for global availability across all projects, or `-s project` for the current project only.
+
+### From source
+
+If you prefer to build locally:
 
 ```bash
 git clone https://github.com/owine/unifi-protect-mcp.git
@@ -19,7 +39,7 @@ npm install
 npm run build
 ```
 
-2. Add to Claude Code using the CLI:
+Then add to Claude Code:
 
 ```bash
 claude mcp add-json unifi-protect '{
@@ -32,8 +52,6 @@ claude mcp add-json unifi-protect '{
   }
 }' -s user
 ```
-
-Use `-s user` for global availability across all projects, or `-s project` for the current project only.
 
 ### Environment Variables
 
@@ -133,9 +151,23 @@ Alternatively, add to your `~/.claude.json` under the top-level `"mcpServers"` k
 ## Development
 
 ```bash
-npm run build    # Compile TypeScript
-npm start        # Run the server
+npm run build        # Compile TypeScript
+npm start            # Run the server
+npm run typecheck    # Type-check without emitting
+npm run lint         # ESLint
+npm test             # Run all tests (vitest)
 ```
+
+### Commit conventions
+
+This project uses [conventional commits](https://www.conventionalcommits.org/) and [release-please](https://github.com/googleapis/release-please) for automated releases:
+
+- `feat: ...` — new feature (minor version bump)
+- `fix: ...` — bug fix (patch version bump)
+- `feat!: ...` or `BREAKING CHANGE:` footer — breaking change (major version bump)
+- `chore:`, `docs:`, `ci:`, etc. — no version bump
+
+On push to `main`, release-please opens a Release PR that bumps the version and updates `CHANGELOG.md`. Merging that PR publishes to npm automatically.
 
 ## License
 
