@@ -1,0 +1,133 @@
+# UniFi Protect MCP Server
+
+An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Provides 33 tools for managing cameras, lights, sensors, chimes, viewers, live views, and NVR status.
+
+## Prerequisites
+
+- Node.js 18+
+- A UniFi Protect system with the Integration API enabled
+- An API key generated from your UniFi Protect console
+
+## Setup
+
+1. Clone and install dependencies:
+
+```bash
+git clone https://github.com/owine/unifi-protect-mcp.git
+cd unifi-protect-mcp
+npm install
+npm run build
+```
+
+2. Create a `.env` file (or set environment variables):
+
+```bash
+cp .env.example .env
+# Edit .env with your values
+```
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `UNIFI_PROTECT_HOST` | Yes | — | IP or hostname of your UniFi Protect console |
+| `UNIFI_PROTECT_API_KEY` | Yes | — | API key from Protect integration settings |
+| `UNIFI_PROTECT_VERIFY_SSL` | No | `true` | Set to `false` to skip TLS certificate verification (needed for self-signed certs) |
+
+## Claude Code Configuration
+
+Add to your Claude Code MCP config (`~/.claude/mcp_servers.json` or project-level):
+
+```json
+{
+  "mcpServers": {
+    "unifi-protect": {
+      "command": "node",
+      "args": ["/path/to/unifi-protect-mcp/dist/index.js"],
+      "env": {
+        "UNIFI_PROTECT_HOST": "192.168.1.1",
+        "UNIFI_PROTECT_API_KEY": "your-api-key",
+        "UNIFI_PROTECT_VERIFY_SSL": "false"
+      }
+    }
+  }
+}
+```
+
+## Tools (33 total)
+
+### System (2)
+| Tool | Description |
+|---|---|
+| `protect_get_info` | Get system information and version details |
+| `protect_list_nvrs` | List all NVR devices |
+
+### Cameras (12)
+| Tool | Description |
+|---|---|
+| `protect_list_cameras` | List all cameras |
+| `protect_get_camera` | Get camera details by ID |
+| `protect_update_camera` | Update camera settings |
+| `protect_get_snapshot` | Get a JPEG snapshot (returns image) |
+| `protect_create_rtsp_stream` | Create an RTSPS stream session |
+| `protect_get_rtsp_streams` | Get active RTSPS stream sessions |
+| `protect_delete_rtsp_stream` | Delete/stop an RTSPS stream |
+| `protect_create_talkback` | Create a talkback (two-way audio) session |
+| `protect_disable_mic` | Permanently disable camera microphone |
+| `protect_start_ptz_patrol` | Start PTZ patrol at a given slot |
+| `protect_stop_ptz_patrol` | Stop PTZ patrol |
+| `protect_goto_ptz_preset` | Move PTZ to a preset position |
+
+### Lights (3)
+| Tool | Description |
+|---|---|
+| `protect_list_lights` | List all lights |
+| `protect_get_light` | Get light details by ID |
+| `protect_update_light` | Update light settings |
+
+### Sensors (3)
+| Tool | Description |
+|---|---|
+| `protect_list_sensors` | List all sensors |
+| `protect_get_sensor` | Get sensor details by ID |
+| `protect_update_sensor` | Update sensor settings |
+
+### Chimes (3)
+| Tool | Description |
+|---|---|
+| `protect_list_chimes` | List all chimes |
+| `protect_get_chime` | Get chime details by ID |
+| `protect_update_chime` | Update chime settings |
+
+### Viewers (3)
+| Tool | Description |
+|---|---|
+| `protect_list_viewers` | List all viewers |
+| `protect_get_viewer` | Get viewer details by ID |
+| `protect_update_viewer` | Update viewer settings |
+
+### Live Views (4)
+| Tool | Description |
+|---|---|
+| `protect_list_liveviews` | List all live views |
+| `protect_get_liveview` | Get live view details by ID |
+| `protect_create_liveview` | Create a new live view |
+| `protect_update_liveview` | Update a live view |
+
+### Alarm & Files (3)
+| Tool | Description |
+|---|---|
+| `protect_trigger_alarm_webhook` | Trigger an alarm webhook by ID |
+| `protect_list_files` | List files by type |
+| `protect_upload_file` | Upload a file (base64-encoded) |
+
+## Development
+
+```bash
+npm run build    # Compile TypeScript
+npm start        # Run the server
+```
+
+## License
+
+MIT
