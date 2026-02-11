@@ -1,10 +1,8 @@
-import https from "node:https";
 import { Config } from "./config.js";
 
 export class ProtectClient {
   private baseUrl: string;
   private headers: Record<string, string>;
-  private agent: https.Agent;
 
   constructor(config: Config) {
     this.baseUrl = `https://${config.host}/proxy/protect/integration/v1`;
@@ -12,9 +10,10 @@ export class ProtectClient {
       "X-API-KEY": config.apiKey,
       "Content-Type": "application/json",
     };
-    this.agent = new https.Agent({
-      rejectUnauthorized: config.verifySsl,
-    });
+
+    if (!config.verifySsl) {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    }
   }
 
   private async request(
@@ -26,8 +25,6 @@ export class ProtectClient {
     const options: RequestInit = {
       method,
       headers: this.headers,
-      // @ts-expect-error Node fetch supports agent via dispatcher
-      dispatcher: this.agent,
     };
 
     if (body !== undefined) {
@@ -69,8 +66,6 @@ export class ProtectClient {
     const response = await fetch(url, {
       method: "GET",
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
-      // @ts-expect-error Node fetch supports agent via dispatcher
-      dispatcher: this.agent,
     });
 
     if (!response.ok) {
@@ -97,8 +92,6 @@ export class ProtectClient {
         "Content-Type": contentType,
       },
       body: new Uint8Array(data),
-      // @ts-expect-error Node fetch supports dispatcher for custom agents
-      dispatcher: this.agent,
     });
 
     if (!response.ok) {

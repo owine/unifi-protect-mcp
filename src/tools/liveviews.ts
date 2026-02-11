@@ -40,7 +40,7 @@ export function registerLiveviewTools(
     "Create a new live view",
     {
       settings: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Liveview configuration (JSON object with name, slots, etc.)"),
     },
     async ({ settings }) => {
@@ -59,7 +59,7 @@ export function registerLiveviewTools(
     {
       id: z.string().describe("Liveview ID"),
       settings: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Partial liveview settings to update (JSON object)"),
     },
     async ({ id, settings }) => {

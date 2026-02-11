@@ -41,7 +41,7 @@ export function registerCameraTools(
     {
       id: z.string().describe("Camera ID"),
       settings: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Partial camera settings to update (JSON object)"),
     },
     async ({ id, settings }) => {

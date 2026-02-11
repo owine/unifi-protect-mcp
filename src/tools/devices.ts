@@ -47,7 +47,7 @@ function registerDeviceCrud(
     {
       id: z.string().describe(`${label} ID`),
       settings: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe(`Partial ${deviceType} settings to update (JSON object)`),
     },
     async ({ id, settings }) => {
