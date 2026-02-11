@@ -10,7 +10,7 @@ An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration 
 
 ## Setup
 
-1. Clone and install dependencies:
+1. Clone and build:
 
 ```bash
 git clone https://github.com/owine/unifi-protect-mcp.git
@@ -19,12 +19,21 @@ npm install
 npm run build
 ```
 
-2. Create a `.env` file (or set environment variables):
+2. Add to Claude Code using the CLI:
 
 ```bash
-cp .env.example .env
-# Edit .env with your values
+claude mcp add-json unifi-protect '{
+  "command": "node",
+  "args": ["/path/to/unifi-protect-mcp/dist/index.js"],
+  "env": {
+    "UNIFI_PROTECT_HOST": "192.168.1.1",
+    "UNIFI_PROTECT_API_KEY": "your-api-key",
+    "UNIFI_PROTECT_VERIFY_SSL": "false"
+  }
+}' -s user
 ```
+
+Use `-s user` for global availability across all projects, or `-s project` for the current project only.
 
 ### Environment Variables
 
@@ -34,9 +43,9 @@ cp .env.example .env
 | `UNIFI_PROTECT_API_KEY` | Yes | — | API key from Protect integration settings |
 | `UNIFI_PROTECT_VERIFY_SSL` | No | `true` | Set to `false` to skip TLS certificate verification (needed for self-signed certs) |
 
-## Claude Code Configuration
+### Manual Configuration
 
-Add to your Claude Code MCP config (`~/.claude/mcp_servers.json` or project-level):
+Alternatively, add to your `~/.claude.json` under the top-level `"mcpServers"` key:
 
 ```json
 {
