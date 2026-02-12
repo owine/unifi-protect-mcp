@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createMockServer, createMockClient, mockFn } from "./_helpers.js";
+import { createMockServer, createMockClient, mockFn, expectSuccess, expectError } from "./_helpers.js";
 import { registerCameraTools } from "../../src/tools/cameras.js";
 
 describe("camera tools", () => {
@@ -11,13 +11,13 @@ describe("camera tools", () => {
     it("returns camera list", async () => {
       mockFn(client, "get").mockResolvedValue([{ id: "cam1" }]);
       const result = await handlers.get("protect_list_cameras")!({});
-      expect(result.content[0].text).toContain("cam1");
+      expectSuccess(result, "cam1");
     });
 
     it("returns error on failure", async () => {
       mockFn(client, "get").mockRejectedValue(new Error("fail"));
       const result = await handlers.get("protect_list_cameras")!({});
-      expect(result.isError).toBe(true);
+      expectError(result);
     });
 
     it("has read-only annotations", () => {
@@ -32,14 +32,14 @@ describe("camera tools", () => {
     it("fetches camera by ID", async () => {
       mockFn(client, "get").mockResolvedValue({ id: "cam1", name: "Front" });
       const result = await handlers.get("protect_get_camera")!({ id: "cam1" });
-      expect(result.content[0].text).toContain("Front");
+      expectSuccess(result, "Front");
       expect(mockFn(client, "get")).toHaveBeenCalledWith("/cameras/cam1");
     });
 
     it("returns error on failure", async () => {
       mockFn(client, "get").mockRejectedValue(new Error("not found"));
       const result = await handlers.get("protect_get_camera")!({ id: "x" });
-      expect(result.isError).toBe(true);
+      expectError(result);
     });
   });
 
@@ -50,7 +50,7 @@ describe("camera tools", () => {
         id: "cam1",
         settings: { name: "Updated" },
       });
-      expect(result.content[0].text).toContain("Updated");
+      expectSuccess(result, "Updated");
       expect(mockFn(client, "patch")).toHaveBeenCalledWith("/cameras/cam1", {
         name: "Updated",
       });
@@ -62,7 +62,7 @@ describe("camera tools", () => {
         id: "cam1",
         settings: {},
       });
-      expect(result.isError).toBe(true);
+      expectError(result);
     });
 
     it("returns dry-run preview without calling client", async () => {
@@ -103,7 +103,7 @@ describe("camera tools", () => {
     it("returns error on failure", async () => {
       mockFn(client, "getBinary").mockRejectedValue(new Error("HTTP 500"));
       const result = await handlers.get("protect_get_snapshot")!({ id: "cam1" });
-      expect(result.isError).toBe(true);
+      expectError(result);
     });
   });
 
@@ -111,14 +111,14 @@ describe("camera tools", () => {
     it("creates stream session", async () => {
       mockFn(client, "post").mockResolvedValue({ streamUrl: "rtsps://..." });
       const result = await handlers.get("protect_create_rtsp_stream")!({ id: "cam1" });
-      expect(result.content[0].text).toContain("rtsps://");
+      expectSuccess(result, "rtsps://");
       expect(mockFn(client, "post")).toHaveBeenCalledWith("/cameras/cam1/rtsps-stream");
     });
 
     it("returns error on failure", async () => {
       mockFn(client, "post").mockRejectedValue(new Error("fail"));
       const result = await handlers.get("protect_create_rtsp_stream")!({ id: "cam1" });
-      expect(result.isError).toBe(true);
+      expectError(result);
     });
 
     it("supports dry-run", async () => {
@@ -138,7 +138,7 @@ describe("camera tools", () => {
     it("returns active streams", async () => {
       mockFn(client, "get").mockResolvedValue([{ id: "s1" }]);
       const result = await handlers.get("protect_get_rtsp_streams")!({ id: "cam1" });
-      expect(result.content[0].text).toContain("s1");
+      expectSuccess(result, "s1");
       expect(mockFn(client, "get")).toHaveBeenCalledWith("/cameras/cam1/rtsps-stream");
     });
   });
@@ -147,7 +147,7 @@ describe("camera tools", () => {
     it("deletes stream session", async () => {
       mockFn(client, "delete").mockResolvedValue({ deleted: true });
       const result = await handlers.get("protect_delete_rtsp_stream")!({ id: "cam1" });
-      expect(result.content[0].text).toContain("deleted");
+      expectSuccess(result, "deleted");
       expect(mockFn(client, "delete")).toHaveBeenCalledWith("/cameras/cam1/rtsps-stream");
     });
 
@@ -175,7 +175,7 @@ describe("camera tools", () => {
     it("creates talkback session", async () => {
       mockFn(client, "post").mockResolvedValue({ sessionId: "tb1" });
       const result = await handlers.get("protect_create_talkback")!({ id: "cam1" });
-      expect(result.content[0].text).toContain("tb1");
+      expectSuccess(result, "tb1");
       expect(mockFn(client, "post")).toHaveBeenCalledWith(
         "/cameras/cam1/talkback-session"
       );
@@ -202,7 +202,7 @@ describe("camera tools", () => {
         id: "cam1",
         confirm: true,
       });
-      expect(result.content[0].text).toContain("micDisabled");
+      expectSuccess(result, "micDisabled");
       expect(mockFn(client, "post")).toHaveBeenCalledWith(
         "/cameras/cam1/disable-mic-permanently"
       );
@@ -229,7 +229,7 @@ describe("camera tools", () => {
         id: "cam1",
         slot: 2,
       });
-      expect(result.content[0].text).toContain("started");
+      expectSuccess(result, "started");
       expect(mockFn(client, "post")).toHaveBeenCalledWith(
         "/cameras/cam1/ptz/patrol/start/2"
       );
@@ -254,7 +254,7 @@ describe("camera tools", () => {
     it("stops patrol", async () => {
       mockFn(client, "post").mockResolvedValue({ stopped: true });
       const result = await handlers.get("protect_stop_ptz_patrol")!({ id: "cam1" });
-      expect(result.content[0].text).toContain("stopped");
+      expectSuccess(result, "stopped");
       expect(mockFn(client, "post")).toHaveBeenCalledWith(
         "/cameras/cam1/ptz/patrol/stop"
       );
@@ -281,7 +281,7 @@ describe("camera tools", () => {
         id: "cam1",
         slot: 3,
       });
-      expect(result.content[0].text).toContain("moved");
+      expectSuccess(result, "moved");
       expect(mockFn(client, "post")).toHaveBeenCalledWith(
         "/cameras/cam1/ptz/goto/3"
       );

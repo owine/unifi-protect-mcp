@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createMockServer, createMockClient, mockFn } from "./_helpers.js";
+import { createMockServer, createMockClient, mockFn, expectSuccess, expectError } from "./_helpers.js";
 import { registerDeviceTools } from "../../src/tools/devices.js";
 
 describe("device tools", () => {
@@ -19,14 +19,14 @@ describe("device tools", () => {
           const items = [{ id: `${deviceType}1` }];
           mockFn(client, "get").mockResolvedValue(items);
           const result = await handlers.get(`protect_list_${plural}`)!({});
-          expect(result.content[0].text).toContain(`${deviceType}1`);
+          expectSuccess(result, `${deviceType}1`);
           expect(mockFn(client, "get")).toHaveBeenCalledWith(`/${plural}`);
         });
 
         it("returns error on failure", async () => {
           mockFn(client, "get").mockRejectedValue(new Error("fail"));
           const result = await handlers.get(`protect_list_${plural}`)!({});
-          expect(result.isError).toBe(true);
+          expectError(result);
         });
 
         it("has read-only annotations", () => {
@@ -46,7 +46,7 @@ describe("device tools", () => {
           const result = await handlers.get(`protect_get_${deviceType}`)!({
             id: `${deviceType}1`,
           });
-          expect(result.content[0].text).toContain(`My ${label}`);
+          expectSuccess(result, `My ${label}`);
           expect(mockFn(client, "get")).toHaveBeenCalledWith(
             `/${plural}/${deviceType}1`
           );
@@ -57,7 +57,7 @@ describe("device tools", () => {
           const result = await handlers.get(`protect_get_${deviceType}`)!({
             id: "x",
           });
-          expect(result.isError).toBe(true);
+          expectError(result);
         });
       });
 
@@ -71,7 +71,7 @@ describe("device tools", () => {
             id: `${deviceType}1`,
             settings: { name: "Renamed" },
           });
-          expect(result.content[0].text).toContain("Renamed");
+          expectSuccess(result, "Renamed");
           expect(mockFn(client, "patch")).toHaveBeenCalledWith(
             `/${plural}/${deviceType}1`,
             { name: "Renamed" }
@@ -84,7 +84,7 @@ describe("device tools", () => {
             id: `${deviceType}1`,
             settings: {},
           });
-          expect(result.isError).toBe(true);
+          expectError(result);
         });
 
         it("returns dry-run preview without calling client", async () => {

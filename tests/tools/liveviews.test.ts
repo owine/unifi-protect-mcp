@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createMockServer, createMockClient, mockFn } from "./_helpers.js";
+import { createMockServer, createMockClient, mockFn, expectSuccess, expectError } from "./_helpers.js";
 import { registerLiveviewTools } from "../../src/tools/liveviews.js";
 
 describe("liveview tools", () => {
@@ -11,14 +11,14 @@ describe("liveview tools", () => {
     it("returns liveview list", async () => {
       mockFn(client, "get").mockResolvedValue([{ id: "lv1", name: "All Cams" }]);
       const result = await handlers.get("protect_list_liveviews")!({});
-      expect(result.content[0].text).toContain("All Cams");
+      expectSuccess(result, "All Cams");
       expect(mockFn(client, "get")).toHaveBeenCalledWith("/liveviews");
     });
 
     it("returns error on failure", async () => {
       mockFn(client, "get").mockRejectedValue(new Error("fail"));
       const result = await handlers.get("protect_list_liveviews")!({});
-      expect(result.isError).toBe(true);
+      expectError(result);
     });
 
     it("has read-only annotations", () => {
@@ -33,14 +33,14 @@ describe("liveview tools", () => {
     it("fetches liveview by ID", async () => {
       mockFn(client, "get").mockResolvedValue({ id: "lv1", name: "All Cams" });
       const result = await handlers.get("protect_get_liveview")!({ id: "lv1" });
-      expect(result.content[0].text).toContain("lv1");
+      expectSuccess(result, "lv1");
       expect(mockFn(client, "get")).toHaveBeenCalledWith("/liveviews/lv1");
     });
 
     it("returns error on failure", async () => {
       mockFn(client, "get").mockRejectedValue(new Error("not found"));
       const result = await handlers.get("protect_get_liveview")!({ id: "x" });
-      expect(result.isError).toBe(true);
+      expectError(result);
     });
   });
 
@@ -50,7 +50,7 @@ describe("liveview tools", () => {
       const result = await handlers.get("protect_create_liveview")!({
         settings: { name: "New View" },
       });
-      expect(result.content[0].text).toContain("New View");
+      expectSuccess(result, "New View");
       expect(mockFn(client, "post")).toHaveBeenCalledWith("/liveviews", {
         name: "New View",
       });
@@ -61,7 +61,7 @@ describe("liveview tools", () => {
       const result = await handlers.get("protect_create_liveview")!({
         settings: {},
       });
-      expect(result.isError).toBe(true);
+      expectError(result);
     });
 
     it("supports dry-run", async () => {
@@ -85,7 +85,7 @@ describe("liveview tools", () => {
         id: "lv1",
         settings: { name: "Renamed" },
       });
-      expect(result.content[0].text).toContain("Renamed");
+      expectSuccess(result, "Renamed");
       expect(mockFn(client, "patch")).toHaveBeenCalledWith("/liveviews/lv1", {
         name: "Renamed",
       });
@@ -97,7 +97,7 @@ describe("liveview tools", () => {
         id: "lv1",
         settings: {},
       });
-      expect(result.isError).toBe(true);
+      expectError(result);
     });
 
     it("returns dry-run preview without calling client", async () => {
