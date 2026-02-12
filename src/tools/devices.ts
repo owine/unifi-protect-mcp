@@ -3,20 +3,26 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 
+const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false } as const;
+const WRITE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false } as const;
+
 type DeviceType = "light" | "sensor" | "chime" | "viewer";
 
 function registerDeviceCrud(
   server: McpServer,
   client: ProtectClient,
-  deviceType: DeviceType
+  deviceType: DeviceType,
+  readOnly: boolean
 ) {
   const plural = `${deviceType}s`;
   const label = deviceType.charAt(0).toUpperCase() + deviceType.slice(1);
 
-  server.tool(
+  server.registerTool(
     `protect_list_${plural}`,
-    `List all ${plural} managed by UniFi Protect`,
-    {},
+    {
+      description: `List all ${plural} managed by UniFi Protect`,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
     async () => {
       try {
         const data = await client.get(`/${plural}`);
@@ -27,10 +33,13 @@ function registerDeviceCrud(
     }
   );
 
-  server.tool(
+  server.registerTool(
     `protect_get_${deviceType}`,
-    `Get details for a specific ${deviceType} by ID`,
-    { id: z.string().describe(`${label} ID`) },
+    {
+      description: `Get details for a specific ${deviceType} by ID`,
+      inputSchema: { id: z.string().describe(`${label} ID`) },
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
     async ({ id }) => {
       try {
         const data = await client.get(`/${plural}/${id}`);
@@ -41,32 +50,45 @@ function registerDeviceCrud(
     }
   );
 
-  server.tool(
-    `protect_update_${deviceType}`,
-    `Update ${deviceType} settings (partial update via PATCH)`,
-    {
-      id: z.string().describe(`${label} ID`),
-      settings: z
-        .record(z.string(), z.unknown())
-        .describe(`Partial ${deviceType} settings to update (JSON object)`),
-    },
-    async ({ id, settings }) => {
-      try {
-        const data = await client.patch(`/${plural}/${id}`, settings);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+  if (!readOnly) {
+    server.registerTool(
+      `protect_update_${deviceType}`,
+      {
+        description: `Update ${deviceType} settings (partial update via PATCH)`,
+        inputSchema: {
+          id: z.string().describe(`${label} ID`),
+          settings: z
+            .record(z.string(), z.unknown())
+            .describe(`Partial ${deviceType} settings to update (JSON object)`),
+          dryRun: z
+            .boolean()
+            .optional()
+            .describe("If true, return what would happen without making changes"),
+        },
+        annotations: WRITE_ANNOTATIONS,
+      },
+      async ({ id, settings, dryRun }) => {
+        try {
+          if (dryRun) {
+            return formatSuccess({ dryRun: true, action: "PATCH", path: `/${plural}/${id}`, body: settings });
+          }
+          const data = await client.patch(`/${plural}/${id}`, settings);
+          return formatSuccess(data);
+        } catch (err) {
+          return formatError(err);
+        }
       }
-    }
-  );
+    );
+  }
 }
 
 export function registerDeviceTools(
   server: McpServer,
-  client: ProtectClient
+  client: ProtectClient,
+  readOnly: boolean
 ) {
   const deviceTypes: DeviceType[] = ["light", "sensor", "chime", "viewer"];
   for (const dt of deviceTypes) {
-    registerDeviceCrud(server, client, dt);
+    registerDeviceCrud(server, client, dt, readOnly);
   }
 }

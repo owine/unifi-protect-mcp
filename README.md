@@ -60,6 +60,7 @@ claude mcp add-json unifi-protect '{
 | `UNIFI_PROTECT_HOST` | Yes | — | IP or hostname of your UniFi Protect console |
 | `UNIFI_PROTECT_API_KEY` | Yes | — | API key from Protect integration settings |
 | `UNIFI_PROTECT_VERIFY_SSL` | No | `true` | Set to `false` to skip TLS certificate verification (needed for self-signed certs) |
+| `UNIFI_PROTECT_READ_ONLY` | No | `false` | Set to `true` to disable all write/mutating tools (monitoring-only mode) |
 
 ### Manual Configuration
 
@@ -81,6 +82,15 @@ Alternatively, add to your `~/.claude.json` under the top-level `"mcpServers"` k
 }
 ```
 
+## Safety Features
+
+This server provides layered safety controls for responsible operation:
+
+- **Tool annotations** — Every tool declares `readOnlyHint` and `destructiveHint` so MCP clients (like Claude Code) can make informed confirmation decisions
+- **Read-only mode** — Set `UNIFI_PROTECT_READ_ONLY=true` to completely hide all write/mutating tools. Only read operations (list, get, snapshot) are registered. Ideal for monitoring-only deployments
+- **Confirmation parameter** — The most dangerous tools (`protect_disable_mic`, `protect_trigger_alarm_webhook`) require an explicit `confirm: true` parameter that must be present for the call to succeed
+- **Dry-run support** — All write tools (except those with `confirm`) accept an optional `dryRun: true` parameter that returns a preview of what would happen without making any changes
+
 ## Tools (33 total)
 
 ### System (2)
@@ -98,9 +108,9 @@ Alternatively, add to your `~/.claude.json` under the top-level `"mcpServers"` k
 | `protect_get_snapshot` | Get a JPEG snapshot (returns image) |
 | `protect_create_rtsp_stream` | Create an RTSPS stream session |
 | `protect_get_rtsp_streams` | Get active RTSPS stream sessions |
-| `protect_delete_rtsp_stream` | Delete/stop an RTSPS stream |
+| `protect_delete_rtsp_stream` | Stop and delete an active RTSPS stream |
 | `protect_create_talkback` | Create a talkback (two-way audio) session |
-| `protect_disable_mic` | Permanently disable camera microphone |
+| `protect_disable_mic` | **IRREVERSIBLE:** Permanently disable camera microphone |
 | `protect_start_ptz_patrol` | Start PTZ patrol at a given slot |
 | `protect_stop_ptz_patrol` | Stop PTZ patrol |
 | `protect_goto_ptz_preset` | Move PTZ to a preset position |
@@ -144,7 +154,7 @@ Alternatively, add to your `~/.claude.json` under the top-level `"mcpServers"` k
 ### Alarm & Files (3)
 | Tool | Description |
 |---|---|
-| `protect_trigger_alarm_webhook` | Trigger an alarm webhook by ID |
+| `protect_trigger_alarm_webhook` | Trigger an alarm webhook (fires external alarm action) |
 | `protect_list_files` | List files by type |
 | `protect_upload_file` | Upload a file (base64-encoded) |
 

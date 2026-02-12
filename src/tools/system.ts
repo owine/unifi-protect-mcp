@@ -2,14 +2,18 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 
+const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false } as const;
+
 export function registerSystemTools(
   server: McpServer,
   client: ProtectClient
 ) {
-  server.tool(
+  server.registerTool(
     "protect_get_info",
-    "Get UniFi Protect system information and version details",
-    {},
+    {
+      description: "Get UniFi Protect system information and version details",
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
     async () => {
       try {
         const data = await client.get("/meta/info");
@@ -20,10 +24,12 @@ export function registerSystemTools(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "protect_list_nvrs",
-    "List all NVR (Network Video Recorder) devices",
-    {},
+    {
+      description: "List all NVR (Network Video Recorder) devices",
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
     async () => {
       try {
         const data = await client.get("/nvrs");

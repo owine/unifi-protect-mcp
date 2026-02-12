@@ -20,6 +20,7 @@ describe("loadConfig", () => {
       host: "192.168.1.1",
       apiKey: "test-api-key",
       verifySsl: true,
+      readOnly: false,
     });
   });
 
@@ -45,6 +46,30 @@ describe("loadConfig", () => {
     process.env.UNIFI_PROTECT_VERIFY_SSL = "true";
     const config = loadConfig();
     expect(config.verifySsl).toBe(true);
+  });
+
+  it("parses readOnly=true when env var is 'true'", () => {
+    process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    process.env.UNIFI_PROTECT_READ_ONLY = "true";
+    const config = loadConfig();
+    expect(config.readOnly).toBe(true);
+  });
+
+  it("defaults readOnly to false when env var is absent", () => {
+    process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    delete process.env.UNIFI_PROTECT_READ_ONLY;
+    const config = loadConfig();
+    expect(config.readOnly).toBe(false);
+  });
+
+  it("defaults readOnly to false for non-'true' values", () => {
+    process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    process.env.UNIFI_PROTECT_READ_ONLY = "false";
+    const config = loadConfig();
+    expect(config.readOnly).toBe(false);
   });
 
   it("calls process.exit(1) when UNIFI_PROTECT_HOST is missing", () => {

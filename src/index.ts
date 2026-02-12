@@ -14,7 +14,7 @@ async function main() {
     version: "1.0.0",
   });
 
-  registerAllTools(server, client);
+  registerAllTools(server, client, config.readOnly);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

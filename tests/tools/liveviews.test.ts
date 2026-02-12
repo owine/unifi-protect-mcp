@@ -3,9 +3,9 @@ import { createMockServer, createMockClient, mockFn } from "./_helpers.js";
 import { registerLiveviewTools } from "../../src/tools/liveviews.js";
 
 describe("liveview tools", () => {
-  const { server, handlers } = createMockServer();
+  const { server, handlers, configs } = createMockServer();
   const client = createMockClient();
-  registerLiveviewTools(server, client);
+  registerLiveviewTools(server, client, false);
 
   describe("protect_list_liveviews", () => {
     it("returns liveview list", async () => {
@@ -19,6 +19,13 @@ describe("liveview tools", () => {
       mockFn(client, "get").mockRejectedValue(new Error("fail"));
       const result = await handlers.get("protect_list_liveviews")!({});
       expect(result.isError).toBe(true);
+    });
+
+    it("has read-only annotations", () => {
+      expect(configs.get("protect_list_liveviews")!.annotations).toEqual({
+        readOnlyHint: true,
+        destructiveHint: false,
+      });
     });
   });
 
@@ -56,6 +63,19 @@ describe("liveview tools", () => {
       });
       expect(result.isError).toBe(true);
     });
+
+    it("supports dry-run", async () => {
+      mockFn(client, "post").mockClear();
+      const result = await handlers.get("protect_create_liveview")!({
+        settings: { name: "Test" },
+        dryRun: true,
+      });
+      const data = JSON.parse(result.content[0].text);
+      expect(data.dryRun).toBe(true);
+      expect(data.action).toBe("POST");
+      expect(data.path).toBe("/liveviews");
+      expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
   });
 
   describe("protect_update_liveview", () => {
@@ -79,5 +99,35 @@ describe("liveview tools", () => {
       });
       expect(result.isError).toBe(true);
     });
+
+    it("returns dry-run preview without calling client", async () => {
+      mockFn(client, "patch").mockClear();
+      const result = await handlers.get("protect_update_liveview")!({
+        id: "lv1",
+        settings: { name: "Test" },
+        dryRun: true,
+      });
+      const data = JSON.parse(result.content[0].text);
+      expect(data.dryRun).toBe(true);
+      expect(data.action).toBe("PATCH");
+      expect(data.path).toBe("/liveviews/lv1");
+      expect(mockFn(client, "patch")).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("liveview tools - read-only mode", () => {
+  const { server, handlers } = createMockServer();
+  const client = createMockClient();
+  registerLiveviewTools(server, client, true);
+
+  it("registers read-only tools", () => {
+    expect(handlers.has("protect_list_liveviews")).toBe(true);
+    expect(handlers.has("protect_get_liveview")).toBe(true);
+  });
+
+  it("does not register write tools", () => {
+    expect(handlers.has("protect_create_liveview")).toBe(false);
+    expect(handlers.has("protect_update_liveview")).toBe(false);
   });
 });

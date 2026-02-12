@@ -35,14 +35,24 @@ src/
 
 ### Adding a new tool
 
-1. Add a function `registerXTools(server, client)` in `src/tools/<domain>.ts`
-2. Use `server.tool(name, description, zodSchema, handler)` — follow the existing try/catch + `formatSuccess`/`formatError` pattern
-3. Wire it into `src/tools/index.ts` via `registerAllTools()`
-4. Add tests in `tests/tools/<domain>.test.ts` using `createMockServer()` and `createMockClient()` from `tests/tools/_helpers.ts`
+1. Add a function `registerXTools(server, client, readOnly)` in `src/tools/<domain>.ts`
+2. Use `server.registerTool(name, { description, inputSchema, annotations }, handler)` — follow the existing try/catch + `formatSuccess`/`formatError` pattern
+3. Set appropriate annotations: `readOnlyHint` and `destructiveHint`
+4. For write tools: gate behind `if (!readOnly)`, add optional `dryRun` parameter
+5. For dangerous tools: require `confirm: z.literal(true)` parameter
+6. Wire it into `src/tools/index.ts` via `registerAllTools()`
+7. Add tests in `tests/tools/<domain>.test.ts` using `createMockServer()` and `createMockClient()` from `tests/tools/_helpers.ts`
+
+### Tool safety
+
+- All tools declare `readOnlyHint` and `destructiveHint` annotations
+- `UNIFI_PROTECT_READ_ONLY=true` prevents write tool registration entirely
+- `protect_disable_mic` and `protect_trigger_alarm_webhook` require `confirm: true` (validated by `z.literal(true)`)
+- Write tools support `dryRun: true` to preview actions without executing
 
 ### Testing patterns
 
-Tests mock `ProtectClient` methods and capture tool handlers via `createMockServer()`. Use `mockFn(client, "get")` for type-safe access to mock functions. Each tool gets a success and error test at minimum.
+Tests mock `ProtectClient` methods and capture tool handlers via `createMockServer()`, which returns `handlers` (name → handler) and `configs` (name → config with annotations). Use `mockFn(client, "get")` for type-safe access to mock functions. Each tool gets a success and error test at minimum, plus annotation checks, read-only mode tests, and dry-run/confirm tests where applicable.
 
 ## Code style
 

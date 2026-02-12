@@ -3,7 +3,7 @@ import { createMockServer, createMockClient, mockFn } from "./_helpers.js";
 import { registerSystemTools } from "../../src/tools/system.js";
 
 describe("system tools", () => {
-  const { server, handlers } = createMockServer();
+  const { server, handlers, configs } = createMockServer();
   const client = createMockClient();
   registerSystemTools(server, client);
 
@@ -22,6 +22,13 @@ describe("system tools", () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("connection refused");
     });
+
+    it("has read-only annotations", () => {
+      expect(configs.get("protect_get_info")!.annotations).toEqual({
+        readOnlyHint: true,
+        destructiveHint: false,
+      });
+    });
   });
 
   describe("protect_list_nvrs", () => {
@@ -38,6 +45,13 @@ describe("system tools", () => {
       const result = await handlers.get("protect_list_nvrs")!({});
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("timeout");
+    });
+
+    it("has read-only annotations", () => {
+      expect(configs.get("protect_list_nvrs")!.annotations).toEqual({
+        readOnlyHint: true,
+        destructiveHint: false,
+      });
     });
   });
 });

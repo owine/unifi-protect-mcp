@@ -2,21 +2,30 @@ import { vi } from "vitest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../../src/client.js";
 
+interface ToolConfig {
+  description?: string;
+  inputSchema?: Record<string, unknown>;
+  annotations?: Record<string, unknown>;
+}
+
 /**
- * Captures tool handlers registered via server.tool().
- * Returns a map from tool name → handler function.
+ * Captures tool handlers registered via server.registerTool().
+ * Returns maps from tool name → handler function and tool name → config.
  */
 export function createMockServer() {
   const handlers = new Map<string, (...args: any[]) => any>();
+  const configs = new Map<string, ToolConfig>();
   const server = {
-    tool: vi.fn((...args: any[]) => {
-      // server.tool(name, description, schema, handler)
+    registerTool: vi.fn((...args: any[]) => {
+      // server.registerTool(name, config, handler)
       const name = args[0] as string;
-      const handler = args[args.length - 1] as (...a: any[]) => any;
+      const config = args[1] as ToolConfig;
+      const handler = args[2] as (...a: any[]) => any;
+      configs.set(name, config);
       handlers.set(name, handler);
     }),
   } as unknown as McpServer;
-  return { server, handlers };
+  return { server, handlers, configs };
 }
 
 /**

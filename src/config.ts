@@ -4,6 +4,7 @@ const ConfigSchema = z.object({
   host: z.string().min(1, "UNIFI_PROTECT_HOST is required"),
   apiKey: z.string().min(1, "UNIFI_PROTECT_API_KEY is required"),
   verifySsl: z.boolean(),
+  readOnly: z.boolean(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -13,6 +14,7 @@ export function loadConfig(): Config {
     host: process.env.UNIFI_PROTECT_HOST,
     apiKey: process.env.UNIFI_PROTECT_API_KEY,
     verifySsl: process.env.UNIFI_PROTECT_VERIFY_SSL !== "false",
+    readOnly: process.env.UNIFI_PROTECT_READ_ONLY === "true",
   });
 
   if (!result.success) {
