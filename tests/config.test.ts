@@ -20,7 +20,7 @@ describe("loadConfig", () => {
       host: "192.168.1.1",
       apiKey: "test-api-key",
       verifySsl: true,
-      readOnly: false,
+      readOnly: true,
     });
   });
 
@@ -56,15 +56,15 @@ describe("loadConfig", () => {
     expect(config.readOnly).toBe(true);
   });
 
-  it("defaults readOnly to false when env var is absent", () => {
+  it("defaults readOnly to true when env var is absent", () => {
     process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
     process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
     delete process.env.UNIFI_PROTECT_READ_ONLY;
     const config = loadConfig();
-    expect(config.readOnly).toBe(false);
+    expect(config.readOnly).toBe(true);
   });
 
-  it("defaults readOnly to false for non-'true' values", () => {
+  it("parses readOnly=false when env var is 'false'", () => {
     process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
     process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
     process.env.UNIFI_PROTECT_READ_ONLY = "false";

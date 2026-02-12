@@ -14,7 +14,7 @@ export function loadConfig(): Config {
     host: process.env.UNIFI_PROTECT_HOST,
     apiKey: process.env.UNIFI_PROTECT_API_KEY,
     verifySsl: process.env.UNIFI_PROTECT_VERIFY_SSL !== "false",
-    readOnly: process.env.UNIFI_PROTECT_READ_ONLY === "true",
+    readOnly: process.env.UNIFI_PROTECT_READ_ONLY !== "false",
   });
 
   if (!result.success) {

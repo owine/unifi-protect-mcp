@@ -44,7 +44,7 @@ claude mcp add-json unifi-protect '{"command":"node","args":["/path/to/unifi-pro
 | `UNIFI_PROTECT_HOST` | Yes | — | IP or hostname of your UniFi Protect console |
 | `UNIFI_PROTECT_API_KEY` | Yes | — | API key from Protect integration settings |
 | `UNIFI_PROTECT_VERIFY_SSL` | No | `true` | Set to `false` to skip TLS certificate verification (needed for self-signed certs) |
-| `UNIFI_PROTECT_READ_ONLY` | No | `false` | Set to `true` to disable all write/mutating tools (monitoring-only mode) |
+| `UNIFI_PROTECT_READ_ONLY` | No | `true` | Set to `false` to enable write/mutating tools (default is monitoring-only mode) |
 
 ### Manual Configuration
 
@@ -71,7 +71,7 @@ Alternatively, add to your `~/.claude.json` under the top-level `"mcpServers"` k
 This server provides layered safety controls for responsible operation:
 
 - **Tool annotations** — Every tool declares `readOnlyHint` and `destructiveHint` so MCP clients (like Claude Code) can make informed confirmation decisions
-- **Read-only mode** — Set `UNIFI_PROTECT_READ_ONLY=true` to completely hide all write/mutating tools. Only read operations (list, get, snapshot) are registered. Ideal for monitoring-only deployments
+- **Read-only mode** — Enabled by default. Only read operations (list, get, snapshot) are registered. Set `UNIFI_PROTECT_READ_ONLY=false` to enable write/mutating tools
 - **Confirmation parameter** — The most dangerous tools (`protect_disable_mic`, `protect_trigger_alarm_webhook`) require an explicit `confirm: true` parameter that must be present for the call to succeed
 - **Dry-run support** — All write tools (except those with `confirm`) accept an optional `dryRun: true` parameter that returns a preview of what would happen without making any changes
 
