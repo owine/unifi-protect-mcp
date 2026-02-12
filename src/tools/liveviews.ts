@@ -53,7 +53,7 @@ export function registerLiveviewTools(
       inputSchema: {
         settings: z
           .record(z.string(), z.unknown())
-          .describe("Liveview configuration (JSON object with name, slots, etc.)"),
+          .describe("Liveview configuration. Required fields: name (string), layout (number of slots), slots (array of {cameras: string[], cycleMode: string, cycleInterval: number}), isDefault (boolean), isGlobal (boolean)"),
         dryRun: z
           .boolean()
           .optional()
@@ -82,7 +82,7 @@ export function registerLiveviewTools(
         id: z.string().describe("Liveview ID"),
         settings: z
           .record(z.string(), z.unknown())
-          .describe("Partial liveview settings to update (JSON object)"),
+          .describe("Partial liveview settings to update. Known fields: name (string), layout (number), slots (array of {cameras: string[], cycleMode: string, cycleInterval: number}), isDefault (boolean), isGlobal (boolean)"),
         dryRun: z
           .boolean()
           .optional()

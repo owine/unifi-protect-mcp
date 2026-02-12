@@ -103,7 +103,7 @@ export function registerCameraTools(
         id: z.string().describe("Camera ID"),
         settings: z
           .record(z.string(), z.unknown())
-          .describe("Partial camera settings to update (JSON object)"),
+          .describe("Partial camera settings to update. Known fields: name (string), osdSettings (object), ledSettings (object), lcdMessage (object), videoMode (string), hdrType (string), smartDetectSettings (object)"),
         dryRun: z
           .boolean()
           .optional()
@@ -206,7 +206,7 @@ export function registerCameraTools(
     "protect_disable_mic",
     {
       description:
-        "IRREVERSIBLE: Permanently disable the microphone on a camera. Cannot be re-enabled.",
+        "IRREVERSIBLE: Permanently disable the microphone on a camera. Can only be re-enabled by factory resetting the camera.",
       inputSchema: {
         id: z.string().describe("Camera ID"),
         confirm: z

@@ -8,6 +8,13 @@ const WRITE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false } as con
 
 type DeviceType = "light" | "sensor" | "chime" | "viewer";
 
+const settingsHints: Record<DeviceType, string> = {
+  light: "Known fields: name (string), isLightForceEnabled (boolean), lightModeSettings (object with mode, enableAt), lightDeviceSettings (object with isIndicatorEnabled, pirDuration, pirSensitivity, ledLevel)",
+  sensor: "Known fields: name (string), mountType (string), motionSettings (object), humiditySettings (object), temperatureSettings (object), lightSettings (object), alarmSettings (object)",
+  chime: "Known fields: name (string), volume (number), ringSettings (array of ring tone configurations)",
+  viewer: "Known fields: name (string), liveview (string, liveview ID to display)",
+};
+
 function registerDeviceCrud(
   server: McpServer,
   client: ProtectClient,
@@ -59,7 +66,7 @@ function registerDeviceCrud(
           id: z.string().describe(`${label} ID`),
           settings: z
             .record(z.string(), z.unknown())
-            .describe(`Partial ${deviceType} settings to update (JSON object)`),
+            .describe(`Partial ${deviceType} settings to update. ${settingsHints[deviceType]}`),
           dryRun: z
             .boolean()
             .optional()

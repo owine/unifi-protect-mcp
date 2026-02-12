@@ -50,8 +50,8 @@ export function registerFileTools(
     },
     async ({ id }) => {
       try {
-        const data = await client.post(`/alarm-manager/webhook/${id}`);
-        return formatSuccess(data);
+        await client.post(`/alarm-manager/webhook/${id}`);
+        return formatSuccess({ triggered: true, webhookId: id });
       } catch (err) {
         return formatError(err);
       }
