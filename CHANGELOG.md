@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/owine/unifi-protect-mcp/compare/v1.0.0...v1.1.0) (2026-02-12)
+
+
+### Features
+
+* add tool safety with annotations, read-only mode, confirm and dry-run ([88649a0](https://github.com/owine/unifi-protect-mcp/commit/88649a028eebd823a085bee088cb4e82e00107b7))
+
 ## [1.0.0](https://github.com/owine/unifi-protect-mcp/compare/v1.0.0...v1.0.0) (2026-02-11)
 
 
