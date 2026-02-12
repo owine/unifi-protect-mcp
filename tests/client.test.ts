@@ -200,4 +200,38 @@ describe("ProtectClient", () => {
       expect(process.env.NODE_TLS_REJECT_UNAUTHORIZED).toBe("0");
     });
   });
+
+  describe("network failures", () => {
+    it("propagates fetch TypeError on network failure", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+      await expect(client.get("/nvrs")).rejects.toThrow("fetch failed");
+    });
+
+    it("propagates fetch TypeError for getBinary", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+      await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow("fetch failed");
+    });
+
+    it("propagates fetch TypeError for postBinary", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+      await expect(
+        client.postBinary("/files/video", Buffer.from("data"), "video/mp4")
+      ).rejects.toThrow("fetch failed");
+    });
+  });
+
+  describe("edge cases", () => {
+    it("handles empty response body as text", async () => {
+      vi.stubGlobal("fetch", mockFetch("", { contentType: "text/plain" }));
+      const result = await client.get("/status");
+      expect(result).toBe("");
+    });
+
+    it("does not set body key when post body is undefined", async () => {
+      vi.stubGlobal("fetch", mockFetch({ ok: true }));
+      await client.post("/cameras/1/rtsps-stream");
+      const callArgs = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(callArgs[1]).not.toHaveProperty("body");
+    });
+  });
 });
