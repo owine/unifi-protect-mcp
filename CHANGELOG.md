@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/owine/unifi-protect-mcp/compare/v1.1.0...v2.0.0) (2026-02-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* UNIFI_PROTECT_READ_ONLY now defaults to true (was false). Users who need write tools must explicitly set UNIFI_PROTECT_READ_ONLY=false. This follows the principle of least privilege — an MCP server that can control cameras should require opt-in for writes, not opt-out.
+
+### Features
+
+* default read-only mode to true for safety ([1835991](https://github.com/owine/unifi-protect-mcp/commit/18359911c9b3ae24a67943de5a012de35a2f4e89))
+
+
+### Bug Fixes
+
+* align write endpoints with official API documentation ([7bd62a2](https://github.com/owine/unifi-protect-mcp/commit/7bd62a288d2985ae79cd0bd24bcac048f523ea99))
+
 ## [1.1.0](https://github.com/owine/unifi-protect-mcp/compare/v1.0.0...v1.1.0) (2026-02-12)
 
 
