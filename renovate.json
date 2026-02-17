@@ -3,6 +3,9 @@
   "extends": ["config:best-practices", ":semanticCommits"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
+  "lockFileMaintenance": {
+    "schedule": ["on sunday"]
+  },
   "packageRules": [
     {
       "groupName": "eslint",
