@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ProtectClient } from "../src/client.js";
 import type { Config } from "../src/config.js";
 
@@ -26,9 +26,21 @@ const baseConfig: Config = {
 
 describe("ProtectClient", () => {
   let client: ProtectClient;
+  let savedTlsEnv: string | undefined;
 
   beforeEach(() => {
+    savedTlsEnv = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
     client = new ProtectClient(baseConfig);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    if (savedTlsEnv === undefined) {
+      delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    } else {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = savedTlsEnv;
+    }
   });
 
   describe("get", () => {
