@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/owine/unifi-protect-mcp/compare/v2.0.0...v2.0.1) (2026-02-17)
+
+
+### Bug Fixes
+
+* tighten engines.node to match ESLint v10 requirements ([37b84cf](https://github.com/owine/unifi-protect-mcp/commit/37b84cf0622f3ef837a3e221599918cca41fb817))
+
 ## [2.0.0](https://github.com/owine/unifi-protect-mcp/compare/v1.1.0...v2.0.0) (2026-02-12)
 
 
