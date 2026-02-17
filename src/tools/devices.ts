@@ -2,9 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-
-const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false } as const;
-const WRITE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false } as const;
+import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 
 type DeviceType = "light" | "sensor" | "chime" | "viewer";
 
@@ -28,7 +26,7 @@ function registerDeviceCrud(
     `protect_list_${plural}`,
     {
       description: `List all ${plural} managed by UniFi Protect`,
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async () => {
       try {
@@ -45,7 +43,7 @@ function registerDeviceCrud(
     {
       description: `Get details for a specific ${deviceType} by ID`,
       inputSchema: { id: z.string().describe(`${label} ID`) },
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async ({ id }) => {
       try {
@@ -72,12 +70,12 @@ function registerDeviceCrud(
             .optional()
             .describe("If true, return what would happen without making changes"),
         },
-        annotations: WRITE_ANNOTATIONS,
+        annotations: WRITE,
       },
       async ({ id, settings, dryRun }) => {
         try {
           if (dryRun) {
-            return formatSuccess({ dryRun: true, action: "PATCH", path: `/${plural}/${id}`, body: settings });
+            return formatDryRun("PATCH", `/${plural}/${id}`, settings);
           }
           const data = await client.patch(`/${plural}/${id}`, settings);
           return formatSuccess(data);

@@ -1,8 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-
-const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false } as const;
+import { READ_ONLY } from "../utils/safety.js";
 
 export function registerSystemTools(
   server: McpServer,
@@ -12,7 +11,7 @@ export function registerSystemTools(
     "protect_get_info",
     {
       description: "Get UniFi Protect system information and version details",
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async () => {
       try {
@@ -28,7 +27,7 @@ export function registerSystemTools(
     "protect_list_nvrs",
     {
       description: "List all NVR (Network Video Recorder) devices",
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async () => {
       try {

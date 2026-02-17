@@ -2,9 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-
-const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false } as const;
-const WRITE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false } as const;
+import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 
 export function registerLiveviewTools(
   server: McpServer,
@@ -15,7 +13,7 @@ export function registerLiveviewTools(
     "protect_list_liveviews",
     {
       description: "List all live views configured in UniFi Protect",
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async () => {
       try {
@@ -32,7 +30,7 @@ export function registerLiveviewTools(
     {
       description: "Get details for a specific live view by ID",
       inputSchema: { id: z.string().describe("Liveview ID") },
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async ({ id }) => {
       try {
@@ -59,12 +57,12 @@ export function registerLiveviewTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
-      annotations: WRITE_ANNOTATIONS,
+      annotations: WRITE,
     },
     async ({ settings, dryRun }) => {
       try {
         if (dryRun) {
-          return formatSuccess({ dryRun: true, action: "POST", path: "/liveviews", body: settings });
+          return formatDryRun("POST", "/liveviews", settings);
         }
         const data = await client.post("/liveviews", settings);
         return formatSuccess(data);
@@ -88,12 +86,12 @@ export function registerLiveviewTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
-      annotations: WRITE_ANNOTATIONS,
+      annotations: WRITE,
     },
     async ({ id, settings, dryRun }) => {
       try {
         if (dryRun) {
-          return formatSuccess({ dryRun: true, action: "PATCH", path: `/liveviews/${id}`, body: settings });
+          return formatDryRun("PATCH", `/liveviews/${id}`, settings);
         }
         const data = await client.patch(`/liveviews/${id}`, settings);
         return formatSuccess(data);

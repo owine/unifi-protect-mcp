@@ -111,6 +111,8 @@ describe("file tools", () => {
       expect(data.dryRun).toBe(true);
       expect(data.action).toBe("POST");
       expect(data.path).toBe("/files/video");
+      expect(data.body.contentType).toBe("video/mp4");
+      expect(data.body.dataLength).toBe(base64.length);
       expect(mockFn(client, "postBinary")).not.toHaveBeenCalled();
     });
   });

@@ -2,10 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-
-const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false } as const;
-const WRITE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false } as const;
-const DESTRUCTIVE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: true } as const;
+import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
 
 export function registerFileTools(
   server: McpServer,
@@ -21,7 +18,7 @@ export function registerFileTools(
           .string()
           .describe("File type to list (e.g. 'video', 'timelapse')"),
       },
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async ({ fileType }) => {
       try {
@@ -46,9 +43,11 @@ export function registerFileTools(
           .literal(true)
           .describe("Must be true to confirm triggering the alarm webhook"),
       },
-      annotations: DESTRUCTIVE_ANNOTATIONS,
+      annotations: DESTRUCTIVE,
     },
-    async ({ id }) => {
+    async ({ id, confirm }) => {
+      const denied = requireConfirmation(confirm, "trigger the alarm webhook");
+      if (denied) return denied;
       try {
         await client.post(`/alarm-manager/webhook/${id}`);
         return formatSuccess({ triggered: true, webhookId: id });
@@ -74,15 +73,12 @@ export function registerFileTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
-      annotations: WRITE_ANNOTATIONS,
+      annotations: WRITE,
     },
     async ({ fileType, base64Data, contentType, dryRun }) => {
       try {
         if (dryRun) {
-          return formatSuccess({
-            dryRun: true,
-            action: "POST",
-            path: `/files/${fileType}`,
+          return formatDryRun("POST", `/files/${fileType}`, {
             contentType,
             dataLength: base64Data.length,
           });

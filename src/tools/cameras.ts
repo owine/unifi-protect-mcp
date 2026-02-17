@@ -2,10 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-
-const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false } as const;
-const WRITE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false } as const;
-const DESTRUCTIVE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: true } as const;
+import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
 
 export function registerCameraTools(
   server: McpServer,
@@ -18,7 +15,7 @@ export function registerCameraTools(
     "protect_list_cameras",
     {
       description: "List all cameras managed by UniFi Protect",
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async () => {
       try {
@@ -35,7 +32,7 @@ export function registerCameraTools(
     {
       description: "Get details for a specific camera by ID",
       inputSchema: { id: z.string().describe("Camera ID") },
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async ({ id }) => {
       try {
@@ -52,7 +49,7 @@ export function registerCameraTools(
     {
       description: "Get a JPEG snapshot from a camera (returns image)",
       inputSchema: { id: z.string().describe("Camera ID") },
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async ({ id }) => {
       try {
@@ -79,7 +76,7 @@ export function registerCameraTools(
     {
       description: "Get active RTSPS stream sessions for a camera",
       inputSchema: { id: z.string().describe("Camera ID") },
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: READ_ONLY,
     },
     async ({ id }) => {
       try {
@@ -109,12 +106,12 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
-      annotations: WRITE_ANNOTATIONS,
+      annotations: WRITE,
     },
     async ({ id, settings, dryRun }) => {
       try {
         if (dryRun) {
-          return formatSuccess({ dryRun: true, action: "PATCH", path: `/cameras/${id}`, body: settings });
+          return formatDryRun("PATCH", `/cameras/${id}`, settings);
         }
         const data = await client.patch(`/cameras/${id}`, settings);
         return formatSuccess(data);
@@ -135,12 +132,12 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
-      annotations: WRITE_ANNOTATIONS,
+      annotations: WRITE,
     },
     async ({ id, dryRun }) => {
       try {
         if (dryRun) {
-          return formatSuccess({ dryRun: true, action: "POST", path: `/cameras/${id}/rtsps-stream` });
+          return formatDryRun("POST", `/cameras/${id}/rtsps-stream`);
         }
         const data = await client.post(`/cameras/${id}/rtsps-stream`);
         return formatSuccess(data);
@@ -161,12 +158,12 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
-      annotations: DESTRUCTIVE_ANNOTATIONS,
+      annotations: DESTRUCTIVE,
     },
     async ({ id, dryRun }) => {
       try {
         if (dryRun) {
-          return formatSuccess({ dryRun: true, action: "DELETE", path: `/cameras/${id}/rtsps-stream` });
+          return formatDryRun("DELETE", `/cameras/${id}/rtsps-stream`);
         }
         const data = await client.delete(`/cameras/${id}/rtsps-stream`);
         return formatSuccess(data);
@@ -187,12 +184,12 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
-      annotations: WRITE_ANNOTATIONS,
+      annotations: WRITE,
     },
     async ({ id, dryRun }) => {
       try {
         if (dryRun) {
-          return formatSuccess({ dryRun: true, action: "POST", path: `/cameras/${id}/talkback-session` });
+          return formatDryRun("POST", `/cameras/${id}/talkback-session`);
         }
         const data = await client.post(`/cameras/${id}/talkback-session`);
         return formatSuccess(data);
@@ -213,9 +210,11 @@ export function registerCameraTools(
           .literal(true)
           .describe("Must be true to confirm this irreversible action"),
       },
-      annotations: DESTRUCTIVE_ANNOTATIONS,
+      annotations: DESTRUCTIVE,
     },
-    async ({ id }) => {
+    async ({ id, confirm }) => {
+      const denied = requireConfirmation(confirm, "permanently disable the microphone");
+      if (denied) return denied;
       try {
         const data = await client.post(
           `/cameras/${id}/disable-mic-permanently`
@@ -239,12 +238,12 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
-      annotations: WRITE_ANNOTATIONS,
+      annotations: WRITE,
     },
     async ({ id, slot, dryRun }) => {
       try {
         if (dryRun) {
-          return formatSuccess({ dryRun: true, action: "POST", path: `/cameras/${id}/ptz/patrol/start/${slot}` });
+          return formatDryRun("POST", `/cameras/${id}/ptz/patrol/start/${slot}`);
         }
         const data = await client.post(
           `/cameras/${id}/ptz/patrol/start/${slot}`
@@ -267,12 +266,12 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
-      annotations: WRITE_ANNOTATIONS,
+      annotations: WRITE,
     },
     async ({ id, dryRun }) => {
       try {
         if (dryRun) {
-          return formatSuccess({ dryRun: true, action: "POST", path: `/cameras/${id}/ptz/patrol/stop` });
+          return formatDryRun("POST", `/cameras/${id}/ptz/patrol/stop`);
         }
         const data = await client.post(`/cameras/${id}/ptz/patrol/stop`);
         return formatSuccess(data);
@@ -294,12 +293,12 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
-      annotations: WRITE_ANNOTATIONS,
+      annotations: WRITE,
     },
     async ({ id, slot, dryRun }) => {
       try {
         if (dryRun) {
-          return formatSuccess({ dryRun: true, action: "POST", path: `/cameras/${id}/ptz/goto/${slot}` });
+          return formatDryRun("POST", `/cameras/${id}/ptz/goto/${slot}`);
         }
         const data = await client.post(`/cameras/${id}/ptz/goto/${slot}`);
         return formatSuccess(data);
