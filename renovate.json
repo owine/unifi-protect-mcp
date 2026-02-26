@@ -1,31 +1,48 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices", ":semanticCommits"],
+  "extends": [
+    "config:best-practices",
+    ":semanticCommits"
+  ],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
   "lockFileMaintenance": {
-    "schedule": ["on sunday"],
+    "schedule": [
+      "on sunday"
+    ],
     "automerge": true
   },
   "packageRules": [
     {
       "groupName": "eslint",
-      "matchPackageNames": ["eslint", "@eslint/js", "typescript-eslint"]
+      "matchPackageNames": [
+        "eslint",
+        "@eslint/js",
+        "typescript-eslint"
+      ]
     },
     {
       "description": "Automerge dev tooling (non-compiler)",
-      "matchDepTypes": ["devDependencies"],
-      "excludePackageNames": ["typescript"],
-      "automerge": true
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "automerge": true,
+      "matchPackageNames": [
+        "!typescript"
+      ]
     },
     {
       "description": "MCP SDK — always review",
-      "matchPackageNames": ["@modelcontextprotocol/sdk"],
+      "matchPackageNames": [
+        "@modelcontextprotocol/sdk"
+      ],
       "automerge": false
     },
     {
       "description": "Never automerge major bumps",
-      "matchUpdateTypes": ["major"],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "automerge": false
     }
   ]
