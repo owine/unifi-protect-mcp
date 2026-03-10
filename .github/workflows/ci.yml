@@ -19,7 +19,30 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
       - run: npm ci
+      # Run once per CI invocation (lowest LTS); lockfile is the same across Node versions
+      - run: npm audit --omit=dev --audit-level=high
+        if: startsWith(matrix.node-version, '20.')
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build
       - run: npm test
+
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .trivy-cache
+          key: trivy-db-v0.35.0-${{ runner.os }}
+          restore-keys: trivy-db-
+      - uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          cache-dir: .trivy-cache
