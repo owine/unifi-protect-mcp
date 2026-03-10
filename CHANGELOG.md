@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://github.com/owine/unifi-protect-mcp/compare/v2.0.2...v2.1.0) (2026-03-10)
+
+
+### Features
+
+* add Trivy security scanning and npm audit to CI ([#46](https://github.com/owine/unifi-protect-mcp/issues/46)) ([5e10fc5](https://github.com/owine/unifi-protect-mcp/commit/5e10fc588bfc5b6dfc6c577fe76c8a29addd0178))
+
+
+### Bug Fixes
+
+* encode user-supplied path segments to prevent path traversal ([#44](https://github.com/owine/unifi-protect-mcp/issues/44)) ([744f404](https://github.com/owine/unifi-protect-mcp/commit/744f4046b405311285266f40cd03cff992dd22d3))
+
 ## [2.0.2](https://github.com/owine/unifi-protect-mcp/compare/v2.0.1...v2.0.2) (2026-03-10)
 
 
