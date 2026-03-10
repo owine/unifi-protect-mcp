@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
+import { safePath } from "../utils/url.js";
 
 export function registerFileTools(
   server: McpServer,
@@ -22,7 +23,7 @@ export function registerFileTools(
     },
     async ({ fileType }) => {
       try {
-        const data = await client.get(`/files/${fileType}`);
+        const data = await client.get(safePath`/files/${fileType}`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -49,7 +50,7 @@ export function registerFileTools(
       const denied = requireConfirmation(confirm, "trigger the alarm webhook");
       if (denied) return denied;
       try {
-        await client.post(`/alarm-manager/webhook/${id}`);
+        await client.post(safePath`/alarm-manager/webhook/${id}`);
         return formatSuccess({ triggered: true, webhookId: id });
       } catch (err) {
         return formatError(err);
@@ -78,14 +79,14 @@ export function registerFileTools(
     async ({ fileType, base64Data, contentType, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("POST", `/files/${fileType}`, {
+          return formatDryRun("POST", safePath`/files/${fileType}`, {
             contentType,
             dataLength: base64Data.length,
           });
         }
         const buffer = Buffer.from(base64Data, "base64");
         const data = await client.postBinary(
-          `/files/${fileType}`,
+          safePath`/files/${fileType}`,
           buffer,
           contentType
         );

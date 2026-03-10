@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
+import { safePath } from "../utils/url.js";
 
 export function registerCameraTools(
   server: McpServer,
@@ -36,7 +37,7 @@ export function registerCameraTools(
     },
     async ({ id }) => {
       try {
-        const data = await client.get(`/cameras/${id}`);
+        const data = await client.get(safePath`/cameras/${id}`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -54,7 +55,7 @@ export function registerCameraTools(
     async ({ id }) => {
       try {
         const { data, mimeType } = await client.getBinary(
-          `/cameras/${id}/snapshot`
+          safePath`/cameras/${id}/snapshot`
         );
         return {
           content: [
@@ -80,7 +81,7 @@ export function registerCameraTools(
     },
     async ({ id }) => {
       try {
-        const data = await client.get(`/cameras/${id}/rtsps-stream`);
+        const data = await client.get(safePath`/cameras/${id}/rtsps-stream`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -111,9 +112,9 @@ export function registerCameraTools(
     async ({ id, settings, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("PATCH", `/cameras/${id}`, settings);
+          return formatDryRun("PATCH", safePath`/cameras/${id}`, settings);
         }
-        const data = await client.patch(`/cameras/${id}`, settings);
+        const data = await client.patch(safePath`/cameras/${id}`, settings);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -137,9 +138,9 @@ export function registerCameraTools(
     async ({ id, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("POST", `/cameras/${id}/rtsps-stream`);
+          return formatDryRun("POST", safePath`/cameras/${id}/rtsps-stream`);
         }
-        const data = await client.post(`/cameras/${id}/rtsps-stream`);
+        const data = await client.post(safePath`/cameras/${id}/rtsps-stream`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -163,9 +164,9 @@ export function registerCameraTools(
     async ({ id, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("DELETE", `/cameras/${id}/rtsps-stream`);
+          return formatDryRun("DELETE", safePath`/cameras/${id}/rtsps-stream`);
         }
-        const data = await client.delete(`/cameras/${id}/rtsps-stream`);
+        const data = await client.delete(safePath`/cameras/${id}/rtsps-stream`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -189,9 +190,9 @@ export function registerCameraTools(
     async ({ id, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("POST", `/cameras/${id}/talkback-session`);
+          return formatDryRun("POST", safePath`/cameras/${id}/talkback-session`);
         }
-        const data = await client.post(`/cameras/${id}/talkback-session`);
+        const data = await client.post(safePath`/cameras/${id}/talkback-session`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -217,7 +218,7 @@ export function registerCameraTools(
       if (denied) return denied;
       try {
         const data = await client.post(
-          `/cameras/${id}/disable-mic-permanently`
+          safePath`/cameras/${id}/disable-mic-permanently`
         );
         return formatSuccess(data);
       } catch (err) {
@@ -243,10 +244,10 @@ export function registerCameraTools(
     async ({ id, slot, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("POST", `/cameras/${id}/ptz/patrol/start/${slot}`);
+          return formatDryRun("POST", safePath`/cameras/${id}/ptz/patrol/start/${slot}`);
         }
         const data = await client.post(
-          `/cameras/${id}/ptz/patrol/start/${slot}`
+          safePath`/cameras/${id}/ptz/patrol/start/${slot}`
         );
         return formatSuccess(data);
       } catch (err) {
@@ -271,9 +272,9 @@ export function registerCameraTools(
     async ({ id, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("POST", `/cameras/${id}/ptz/patrol/stop`);
+          return formatDryRun("POST", safePath`/cameras/${id}/ptz/patrol/stop`);
         }
-        const data = await client.post(`/cameras/${id}/ptz/patrol/stop`);
+        const data = await client.post(safePath`/cameras/${id}/ptz/patrol/stop`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -298,9 +299,9 @@ export function registerCameraTools(
     async ({ id, slot, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("POST", `/cameras/${id}/ptz/goto/${slot}`);
+          return formatDryRun("POST", safePath`/cameras/${id}/ptz/goto/${slot}`);
         }
-        const data = await client.post(`/cameras/${id}/ptz/goto/${slot}`);
+        const data = await client.post(safePath`/cameras/${id}/ptz/goto/${slot}`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);

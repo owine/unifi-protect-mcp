@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
+import { safePath } from "../utils/url.js";
 
 export function registerLiveviewTools(
   server: McpServer,
@@ -34,7 +35,7 @@ export function registerLiveviewTools(
     },
     async ({ id }) => {
       try {
-        const data = await client.get(`/liveviews/${id}`);
+        const data = await client.get(safePath`/liveviews/${id}`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -91,9 +92,9 @@ export function registerLiveviewTools(
     async ({ id, settings, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("PATCH", `/liveviews/${id}`, settings);
+          return formatDryRun("PATCH", safePath`/liveviews/${id}`, settings);
         }
-        const data = await client.patch(`/liveviews/${id}`, settings);
+        const data = await client.patch(safePath`/liveviews/${id}`, settings);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
