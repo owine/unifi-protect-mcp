@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/owine/unifi-protect-mcp/compare/v2.0.1...v2.0.2) (2026-03-10)
+
+
+### Miscellaneous Chores
+
+* release 2.0.2 ([93706f2](https://github.com/owine/unifi-protect-mcp/commit/93706f2ae65dd144be3b62a35769a70f7a7c7ff6))
+
 ## [2.0.1](https://github.com/owine/unifi-protect-mcp/compare/v2.0.0...v2.0.1) (2026-02-17)
 
 
