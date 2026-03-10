@@ -1,5 +1,21 @@
 import { formatSuccess } from "./responses.js";
 
+/**
+ * Tagged template that encodes interpolated values for safe URL path construction.
+ * Prevents path traversal, query injection, and fragment injection.
+ */
+export function safePath(
+  strings: TemplateStringsArray,
+  ...values: (string | number)[]
+): string {
+  return strings.reduce((result, str, i) =>
+    i < values.length
+      ? result + str + encodeURIComponent(String(values[i]))
+      : result + str,
+    "",
+  );
+}
+
 /** Annotation constants for tool safety classification */
 
 export const READ_ONLY = { readOnlyHint: true, destructiveHint: false } as const;

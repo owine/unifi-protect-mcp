@@ -2,7 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
+import { READ_ONLY, WRITE, formatDryRun, safePath } from "../utils/safety.js";
 
 type DeviceType = "light" | "sensor" | "chime" | "viewer";
 
@@ -47,7 +47,7 @@ function registerDeviceCrud(
     },
     async ({ id }) => {
       try {
-        const data = await client.get(`/${plural}/${id}`);
+        const data = await client.get(safePath`/${plural}/${id}`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -75,9 +75,9 @@ function registerDeviceCrud(
       async ({ id, settings, dryRun }) => {
         try {
           if (dryRun) {
-            return formatDryRun("PATCH", `/${plural}/${id}`, settings);
+            return formatDryRun("PATCH", safePath`/${plural}/${id}`, settings);
           }
-          const data = await client.patch(`/${plural}/${id}`, settings);
+          const data = await client.patch(safePath`/${plural}/${id}`, settings);
           return formatSuccess(data);
         } catch (err) {
           return formatError(err);
