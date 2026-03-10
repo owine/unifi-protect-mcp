@@ -2,7 +2,8 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-import { READ_ONLY, WRITE, formatDryRun, safePath } from "../utils/safety.js";
+import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
+import { safePath } from "../utils/url.js";
 
 export function registerLiveviewTools(
   server: McpServer,

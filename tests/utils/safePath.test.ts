@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { safePath } from "../../src/utils/safety.js";
+import { safePath } from "../../src/utils/url.js";
 
 describe("safePath", () => {
   it("leaves normal segments unchanged", () => {

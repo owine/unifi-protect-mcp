@@ -44,9 +44,14 @@ function assertPathContains(
 ) {
   const fn = mockFn(client, method as keyof import("../../src/client.js").ProtectClient);
   expect(fn).toHaveBeenCalled();
-  const path = fn.mock.calls[0][0] as string;
-  expect(path).toContain(encodedSegment);
-  expect(path).not.toContain(MALICIOUS_ID);
+
+  const paths = (fn.mock.calls as [string, ...unknown[]][]).map((call) => call[0]);
+
+  for (const path of paths) {
+    expect(path).not.toContain(MALICIOUS_ID);
+  }
+
+  expect(paths.some((path) => path.includes(encodedSegment))).toBe(true);
 }
 
 describe("path encoding in camera tools", () => {
