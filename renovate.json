@@ -59,6 +59,26 @@
         "major"
       ],
       "automerge": false
+    },
+    {
+      "description": "Pin and group Node.js versions in CI",
+      "groupName": "node versions",
+      "matchManagers": [
+        "nodenv",
+        "nvm"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Pin and group GitHub Actions runner images",
+      "groupName": "github runners",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchDepTypes": [
+        "github-runner"
+      ],
+      "automerge": true
     }
   ]
 }
