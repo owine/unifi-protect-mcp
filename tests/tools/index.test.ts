@@ -3,11 +3,11 @@ import { createMockServer, createMockClient } from "./_helpers.js";
 import { registerAllTools } from "../../src/tools/index.js";
 
 describe("registerAllTools", () => {
-  it("registers all 33 tools", () => {
+  it("registers all 35 tools", () => {
     const { server, handlers } = createMockServer();
     const client = createMockClient();
     registerAllTools(server, client, false);
-    expect(handlers.size).toBe(33);
+    expect(handlers.size).toBe(35);
   });
 
   it("registers expected tool names", () => {
@@ -19,6 +19,9 @@ describe("registerAllTools", () => {
       // System (2)
       "protect_get_info",
       "protect_list_nvrs",
+      // Subscriptions (2)
+      "protect_subscribe_devices",
+      "protect_subscribe_events",
       // Cameras (12)
       "protect_list_cameras",
       "protect_get_camera",
@@ -59,16 +62,16 @@ describe("registerAllTools", () => {
     for (const name of expectedTools) {
       expect(handlers.has(name), `Missing tool: ${name}`).toBe(true);
     }
-    expect(expectedTools.length).toBe(33);
+    expect(expectedTools.length).toBe(35);
   });
 });
 
 describe("registerAllTools - read-only mode", () => {
-  it("registers only 17 read-only tools", () => {
+  it("registers only 19 read-only tools", () => {
     const { server, handlers } = createMockServer();
     const client = createMockClient();
     registerAllTools(server, client, true);
-    expect(handlers.size).toBe(17);
+    expect(handlers.size).toBe(19);
   });
 
   it("includes all read-only tools", () => {
@@ -79,6 +82,8 @@ describe("registerAllTools - read-only mode", () => {
     const readOnlyTools = [
       "protect_get_info",
       "protect_list_nvrs",
+      "protect_subscribe_devices",
+      "protect_subscribe_events",
       "protect_list_cameras",
       "protect_get_camera",
       "protect_get_snapshot",
@@ -99,7 +104,7 @@ describe("registerAllTools - read-only mode", () => {
     for (const name of readOnlyTools) {
       expect(handlers.has(name), `Missing read-only tool: ${name}`).toBe(true);
     }
-    expect(readOnlyTools.length).toBe(17);
+    expect(readOnlyTools.length).toBe(19);
   });
 
   it("excludes all write tools", () => {

@@ -5,6 +5,7 @@ import { registerCameraTools } from "./cameras.js";
 import { registerDeviceTools } from "./devices.js";
 import { registerLiveviewTools } from "./liveviews.js";
 import { registerFileTools } from "./files.js";
+import { registerSubscriptionTools } from "./subscriptions.js";
 
 export function registerAllTools(
   server: McpServer,
@@ -12,6 +13,7 @@ export function registerAllTools(
   readOnly: boolean
 ) {
   registerSystemTools(server, client);
+  registerSubscriptionTools(server, client);
   registerCameraTools(server, client, readOnly);
   registerDeviceTools(server, client, readOnly);
   registerLiveviewTools(server, client, readOnly);
