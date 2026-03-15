@@ -49,14 +49,21 @@ export function registerCameraTools(
     "protect_get_snapshot",
     {
       description: "Get a JPEG snapshot from a camera (returns image)",
-      inputSchema: { id: z.string().describe("Camera ID") },
+      inputSchema: {
+        id: z.string().describe("Camera ID"),
+        highQuality: z
+          .boolean()
+          .optional()
+          .describe("If true, request a high-quality snapshot"),
+      },
       annotations: READ_ONLY,
     },
-    async ({ id }) => {
+    async ({ id, highQuality }) => {
       try {
-        const { data, mimeType } = await client.getBinary(
-          safePath`/cameras/${id}/snapshot`
-        );
+        const url = highQuality
+          ? safePath`/cameras/${id}/snapshot?highQuality=true`
+          : safePath`/cameras/${id}/snapshot`;
+        const { data, mimeType } = await client.getBinary(url);
         return {
           content: [
             {
@@ -101,7 +108,7 @@ export function registerCameraTools(
         id: z.string().describe("Camera ID"),
         settings: z
           .record(z.string(), z.unknown())
-          .describe("Partial camera settings to update. Known fields: name (string), osdSettings (object), ledSettings (object), lcdMessage (object), videoMode (string), hdrType (string), smartDetectSettings (object)"),
+          .describe("Partial camera settings to update. Known fields: name (string), osdSettings (object), ledSettings (object), lcdMessage (object), videoMode (string: \"default\" | \"highFps\" | \"slo-mo\"), hdrType (string: \"off\" | \"normal\" | \"always\"), micVolume (number 0-100), smartDetectSettings (object)"),
         dryRun: z
           .boolean()
           .optional()
@@ -128,6 +135,9 @@ export function registerCameraTools(
       description: "Create an RTSPS stream session for a camera",
       inputSchema: {
         id: z.string().describe("Camera ID"),
+        qualities: z
+          .array(z.enum(["high", "medium", "low", "package"]))
+          .describe("Quality levels to include in the RTSPS stream"),
         dryRun: z
           .boolean()
           .optional()
@@ -135,12 +145,18 @@ export function registerCameraTools(
       },
       annotations: WRITE,
     },
-    async ({ id, dryRun }) => {
+    async ({ id, qualities, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("POST", safePath`/cameras/${id}/rtsps-stream`);
+          return formatDryRun(
+            "POST",
+            safePath`/cameras/${id}/rtsps-stream`,
+            { qualities }
+          );
         }
-        const data = await client.post(safePath`/cameras/${id}/rtsps-stream`);
+        const data = await client.post(safePath`/cameras/${id}/rtsps-stream`, {
+          qualities,
+        });
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -154,6 +170,9 @@ export function registerCameraTools(
       description: "Stop and delete an active RTSPS stream session for a camera",
       inputSchema: {
         id: z.string().describe("Camera ID"),
+        qualities: z
+          .array(z.enum(["high", "medium", "low", "package"]))
+          .describe("Quality levels to remove from the RTSPS stream"),
         dryRun: z
           .boolean()
           .optional()
@@ -161,12 +180,17 @@ export function registerCameraTools(
       },
       annotations: DESTRUCTIVE,
     },
-    async ({ id, dryRun }) => {
+    async ({ id, qualities, dryRun }) => {
       try {
         if (dryRun) {
-          return formatDryRun("DELETE", safePath`/cameras/${id}/rtsps-stream`);
+          return formatDryRun(
+            "DELETE",
+            safePath`/cameras/${id}/rtsps-stream?qualities=${qualities.join(",")}`
+          );
         }
-        const data = await client.delete(safePath`/cameras/${id}/rtsps-stream`);
+        const data = await client.delete(
+          safePath`/cameras/${id}/rtsps-stream?qualities=${qualities.join(",")}`
+        );
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -233,7 +257,7 @@ export function registerCameraTools(
       description: "Start PTZ patrol on a camera at a given slot",
       inputSchema: {
         id: z.string().describe("Camera ID"),
-        slot: z.number().int().describe("Patrol slot number"),
+        slot: z.number().int().min(0).max(4).describe("Patrol slot number (0-4)"),
         dryRun: z
           .boolean()
           .optional()
@@ -288,7 +312,7 @@ export function registerCameraTools(
       description: "Move camera PTZ to a preset position",
       inputSchema: {
         id: z.string().describe("Camera ID"),
-        slot: z.number().int().describe("PTZ preset slot number"),
+        slot: z.number().int().min(-1).max(4).describe("PTZ preset slot number (0-4, or -1 for home position)"),
         dryRun: z
           .boolean()
           .optional()

@@ -105,19 +105,44 @@ describe("camera tools", () => {
       const result = await handlers.get("protect_get_snapshot")!({ id: "cam1" });
       expectError(result);
     });
+
+    it("appends highQuality parameter when true", async () => {
+      const imageBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+      mockFn(client, "getBinary").mockResolvedValue({
+        data: imageBuffer,
+        mimeType: "image/jpeg",
+      });
+      const result = await handlers.get("protect_get_snapshot")!({
+        id: "cam1",
+        highQuality: true,
+      });
+      expect(result.content[0].type).toBe("image");
+      expect(mockFn(client, "getBinary")).toHaveBeenCalledWith(
+        "/cameras/cam1/snapshot?highQuality=true"
+      );
+    });
   });
 
   describe("protect_create_rtsp_stream", () => {
     it("creates stream session", async () => {
       mockFn(client, "post").mockResolvedValue({ streamUrl: "rtsps://..." });
-      const result = await handlers.get("protect_create_rtsp_stream")!({ id: "cam1" });
+      const result = await handlers.get("protect_create_rtsp_stream")!({
+        id: "cam1",
+        qualities: ["high"],
+      });
       expectSuccess(result, "rtsps://");
-      expect(mockFn(client, "post")).toHaveBeenCalledWith("/cameras/cam1/rtsps-stream");
+      expect(mockFn(client, "post")).toHaveBeenCalledWith(
+        "/cameras/cam1/rtsps-stream",
+        { qualities: ["high"] }
+      );
     });
 
     it("returns error on failure", async () => {
       mockFn(client, "post").mockRejectedValue(new Error("fail"));
-      const result = await handlers.get("protect_create_rtsp_stream")!({ id: "cam1" });
+      const result = await handlers.get("protect_create_rtsp_stream")!({
+        id: "cam1",
+        qualities: ["high"],
+      });
       expectError(result);
     });
 
@@ -125,6 +150,7 @@ describe("camera tools", () => {
       mockFn(client, "post").mockClear();
       const result = await handlers.get("protect_create_rtsp_stream")!({
         id: "cam1",
+        qualities: ["high"],
         dryRun: true,
       });
       const data = JSON.parse(result.content[0].text);
@@ -146,9 +172,14 @@ describe("camera tools", () => {
   describe("protect_delete_rtsp_stream", () => {
     it("deletes stream session", async () => {
       mockFn(client, "delete").mockResolvedValue({ deleted: true });
-      const result = await handlers.get("protect_delete_rtsp_stream")!({ id: "cam1" });
+      const result = await handlers.get("protect_delete_rtsp_stream")!({
+        id: "cam1",
+        qualities: ["high"],
+      });
       expectSuccess(result, "deleted");
-      expect(mockFn(client, "delete")).toHaveBeenCalledWith("/cameras/cam1/rtsps-stream");
+      expect(mockFn(client, "delete")).toHaveBeenCalledWith(
+        "/cameras/cam1/rtsps-stream?qualities=high"
+      );
     });
 
     it("has destructive annotations", () => {
@@ -162,6 +193,7 @@ describe("camera tools", () => {
       mockFn(client, "delete").mockClear();
       const result = await handlers.get("protect_delete_rtsp_stream")!({
         id: "cam1",
+        qualities: ["high"],
         dryRun: true,
       });
       const data = JSON.parse(result.content[0].text);

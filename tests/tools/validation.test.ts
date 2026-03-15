@@ -228,6 +228,12 @@ function buildMinimalInput(toolName: string): Record<string, unknown> {
   ) {
     return { id: "cam1", slot: 1 };
   }
+  if (
+    toolName === "protect_create_rtsp_stream" ||
+    toolName === "protect_delete_rtsp_stream"
+  ) {
+    return { id: "cam1", qualities: ["high"] };
+  }
   if (toolName.startsWith("protect_update_")) {
     return { id: "test-id", settings: { name: "test" } };
   }
