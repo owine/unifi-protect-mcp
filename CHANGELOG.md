@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.2.0](https://github.com/owine/unifi-protect-mcp/compare/v2.1.0...v2.2.0) (2026-03-15)
+
+
+### Features
+
+* add connectWebSocket method to ProtectClient ([cacc005](https://github.com/owine/unifi-protect-mcp/commit/cacc005f515fdce7bcb0aff6a351e63895e77f59))
+* add WebSocket subscription tools for devices and events ([79cd7e1](https://github.com/owine/unifi-protect-mcp/commit/79cd7e1cb7a6a102dbf6052d3e6293124ff1ccd9))
+* wire subscription tools into registerAllTools ([dee7b50](https://github.com/owine/unifi-protect-mcp/commit/dee7b5076dc6746df72f182da3549dd178629adf))
+
+
+### Bug Fixes
+
+* align camera tools with Protect API 7.0.88 ([58079bd](https://github.com/owine/unifi-protect-mcp/commit/58079bde7e3c34392861e50c0a3be46b1024c09e))
+* correct tool descriptions to match Protect API ([091a9f4](https://github.com/owine/unifi-protect-mcp/commit/091a9f4ab31207b55d8cc1ecc8eb465bf11665e4))
+
 ## [2.1.0](https://github.com/owine/unifi-protect-mcp/compare/v2.0.2...v2.1.0) (2026-03-10)
 
 
