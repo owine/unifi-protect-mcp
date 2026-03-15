@@ -61,6 +61,10 @@ Tests mock `ProtectClient` methods and capture tool handlers via `createMockServ
 - Use `z.string().describe()` for tool parameter descriptions
 - `no-explicit-any` and `no-non-null-assertion` are relaxed in test files only
 
+## API version bumps
+
+For updating tools to match a new UniFi Protect API version, follow the skill at `~/.claude/skills/unifi-api-update/SKILL.md`.
+
 ## Releases
 
 Versioning and npm publishing are automated via [release-please](https://github.com/googleapis/release-please).
