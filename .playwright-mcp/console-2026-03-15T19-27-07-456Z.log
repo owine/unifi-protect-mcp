@@ -1,2 +1,0 @@
-[     641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ https://ogads-pa.clients6.google.com/$rpc/google.internal.onegoogle.asyncdata.v1.AsyncDataService/GetAsyncData:0
-[    4320ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://privatebin.zenjabba.com/:0
