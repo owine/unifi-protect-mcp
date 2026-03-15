@@ -1,3 +1,4 @@
+import WebSocket from "ws";
 import { Config } from "./config.js";
 
 export class ProtectClient {
@@ -104,5 +105,14 @@ export class ProtectClient {
       return response.json();
     }
     return response.text();
+  }
+
+  connectWebSocket(path: string): WebSocket {
+    const url = `wss://${this.baseUrl.replace(/^https?:\/\//, "")}${path}`;
+    return new WebSocket(url, {
+      headers: { "X-API-KEY": this.headers["X-API-KEY"] },
+      rejectUnauthorized:
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0",
+    });
   }
 }

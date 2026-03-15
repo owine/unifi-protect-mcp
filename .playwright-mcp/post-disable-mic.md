@@ -1,0 +1,363 @@
+- generic [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img [ref=e6]
+      - heading "Developer" [level=1] [ref=e8]
+      - button "Toggle theme menu" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+    - navigation [ref=e14]:
+      - generic [ref=e16]:
+        - img [ref=e18]
+        - textbox "Search Protect v6.1.78" [ref=e20]
+      - generic [ref=e21]:
+        - button "Applications" [ref=e22] [cursor=pointer]:
+          - text: Applications
+          - img [ref=e24]
+        - generic [ref=e27]:
+          - generic [ref=e28] [cursor=pointer]:
+            - radio "Site Manager" [ref=e30]
+            - generic [ref=e31]:
+              - img [ref=e33]
+              - text: Site Manager
+          - generic [ref=e35] [cursor=pointer]:
+            - radio "Network" [ref=e37]
+            - generic [ref=e38]:
+              - img [ref=e40]
+              - text: Network
+          - generic [ref=e43] [cursor=pointer]:
+            - radio "Protect" [checked] [ref=e45]
+            - generic [ref=e46]:
+              - img [ref=e48]
+              - text: Protect
+      - button "trigger" [ref=e52] [cursor=pointer]:
+        - generic [ref=e53]: v6.1.78
+        - img [ref=e54]
+      - generic [ref=e56]:
+        - button "General" [ref=e57] [cursor=pointer]:
+          - text: General
+          - img [ref=e59]
+        - generic [ref=e61]:
+          - link "Getting Started" [ref=e62] [cursor=pointer]:
+            - /url: /protect/v6.1.78/gettingstarted
+            - generic [ref=e63]: Getting Started
+          - button "Cloud Connector" [ref=e65] [cursor=pointer]:
+            - text: Cloud Connector
+            - img [ref=e67]
+      - generic [ref=e69]:
+        - button "Connection Type" [ref=e70] [cursor=pointer]:
+          - text: Connection Type
+          - img [ref=e72]
+        - generic [ref=e75]:
+          - generic [ref=e76] [cursor=pointer]:
+            - radio "Remote" [checked] [ref=e78]
+            - generic [ref=e79]: Remote
+          - generic [ref=e80] [cursor=pointer]:
+            - radio "Local" [ref=e82]
+            - generic [ref=e83]: Local
+      - generic [ref=e84]:
+        - button "API Endpoints" [ref=e85] [cursor=pointer]:
+          - text: API Endpoints
+          - img [ref=e87]
+        - generic [ref=e89]:
+          - button "Information about application" [ref=e91] [cursor=pointer]:
+            - text: Information about application
+            - img [ref=e93]
+          - button "Viewer information & management" [ref=e96] [cursor=pointer]:
+            - text: Viewer information & management
+            - img [ref=e98]
+          - button "Live view management" [ref=e101] [cursor=pointer]:
+            - text: Live view management
+            - img [ref=e103]
+          - button "WebSocket updates" [ref=e106] [cursor=pointer]:
+            - text: WebSocket updates
+            - img [ref=e108]
+          - button "Camera PTZ control & management" [ref=e111] [cursor=pointer]:
+            - text: Camera PTZ control & management
+            - img [ref=e113]
+          - button "Alarm manager integration" [ref=e116] [cursor=pointer]:
+            - text: Alarm manager integration
+            - img [ref=e118]
+          - button "Light information & management" [ref=e121] [cursor=pointer]:
+            - text: Light information & management
+            - img [ref=e123]
+          - generic [ref=e125]:
+            - button "Camera information & management" [ref=e126] [cursor=pointer]:
+              - text: Camera information & management
+              - img [ref=e128]
+            - generic [ref=e321]:
+              - link "Get camera details" [ref=e322] [cursor=pointer]:
+                - /url: /protect/v6.1.78/get-v1camerasid
+                - generic [ref=e323]: Get camera details
+              - link "Patch camera settings" [ref=e324] [cursor=pointer]:
+                - /url: /protect/v6.1.78/patch-v1camerasid
+                - generic [ref=e325]: Patch camera settings
+              - link "Get all cameras" [ref=e326] [cursor=pointer]:
+                - /url: /protect/v6.1.78/get-v1cameras
+                - generic [ref=e327]: Get all cameras
+              - link "Create RTSPS streams for camera" [ref=e328] [cursor=pointer]:
+                - /url: /protect/v6.1.78/post-v1camerasidrtsps-stream
+                - generic [ref=e329]: Create RTSPS streams for camera
+              - link "Delete camera RTSPS stream" [ref=e330] [cursor=pointer]:
+                - /url: /protect/v6.1.78/delete-v1camerasidrtsps-stream
+                - generic [ref=e331]: Delete camera RTSPS stream
+              - link "Get RTSPS streams for camera" [ref=e332] [cursor=pointer]:
+                - /url: /protect/v6.1.78/get-v1camerasidrtsps-stream
+                - generic [ref=e333]: Get RTSPS streams for camera
+              - link "Get camera snapshot" [ref=e334] [cursor=pointer]:
+                - /url: /protect/v6.1.78/get-v1camerasidsnapshot
+                - generic [ref=e335]: Get camera snapshot
+              - link "Permanently disable camera microphone" [ref=e336] [cursor=pointer]:
+                - /url: /protect/v6.1.78/post-v1camerasiddisable-mic-permanently
+                - generic [ref=e337]: Permanently disable camera microphone
+              - link "Create talkback session for camera" [ref=e338] [cursor=pointer]:
+                - /url: /protect/v6.1.78/post-v1camerasidtalkback-session
+                - generic [ref=e339]: Create talkback session for camera
+          - button "Sensor information & management" [ref=e131] [cursor=pointer]:
+            - text: Sensor information & management
+            - img [ref=e133]
+          - button "NVR information & management" [ref=e136] [cursor=pointer]:
+            - text: NVR information & management
+            - img [ref=e138]
+          - button "Device asset file management" [ref=e141] [cursor=pointer]:
+            - text: Device asset file management
+            - img [ref=e143]
+          - button "Chime information & management" [ref=e146] [cursor=pointer]:
+            - text: Chime information & management
+            - img [ref=e148]
+      - generic [ref=e150]:
+        - button "Ansible Modules" [ref=e151] [cursor=pointer]:
+          - img [ref=e152]
+          - text: Ansible Modules
+          - img [ref=e156]
+        - link "Quick Start" [ref=e159] [cursor=pointer]:
+          - /url: /protect/v6.1.78/quick_start
+          - generic [ref=e160]: Quick Start
+    - main [ref=e161]:
+      - generic [ref=e162]:
+        - generic [ref=e163]:
+          - generic [ref=e164]: UniFi API
+          - button [ref=e165] [cursor=pointer]:
+            - img [ref=e166]
+        - generic [ref=e168]:
+          - paragraph [ref=e169]: Endpoints combined into Ansible Modules for customized workflows.
+          - img [ref=e171]
+      - generic [ref=e262]:
+        - generic [ref=e263]:
+          - heading "Permanently disable camera microphone" [level=1] [ref=e264]
+          - generic [ref=e265]:
+            - generic [ref=e266]: POST
+            - code [ref=e267]: "/v1/cameras/{id}/disable-mic-permanently"
+          - paragraph [ref=e270]: Disable the microphone for a specific camera. This action cannot be undone unless the camera is reset.
+          - generic [ref=e272]:
+            - generic [ref=e273]: path Parameters
+            - generic [ref=e342]:
+              - generic [ref=e343]:
+                - generic [ref=e345]: id
+                - generic [ref=e346]: required
+              - generic [ref=e347]:
+                - generic [ref=e348]: string
+                - generic [ref=e349]: The primary key of camera
+          - generic [ref=e289]:
+            - heading "Responses" [level=2] [ref=e290]
+            - button "200" [active] [ref=e293] [cursor=pointer]
+            - paragraph [ref=e294]: "Response Schema: application/json"
+            - generic [ref=e351]:
+              - generic [ref=e352]:
+                - generic [ref=e353]:
+                  - generic [ref=e355]: id
+                  - generic [ref=e356]: required
+                - generic [ref=e357]:
+                  - generic [ref=e358]: string
+                  - generic [ref=e359]: The primary key of camera
+              - generic [ref=e360]:
+                - generic [ref=e361]:
+                  - generic [ref=e363]: modelKey
+                  - generic [ref=e364]: required
+                - generic [ref=e365]:
+                  - generic [ref=e366]: string
+                  - generic [ref=e367]: The model key of the camera
+              - generic [ref=e368]:
+                - generic [ref=e369]:
+                  - generic [ref=e371]: state
+                  - generic [ref=e372]: required
+                - generic [ref=e373]:
+                  - generic [ref=e374]: string
+                  - generic [ref=e375]: Connection state of the device.
+              - generic [ref=e376]:
+                - generic [ref=e377]:
+                  - generic [ref=e378]:
+                    - generic [ref=e379]: name
+                    - button "Expand" [ref=e380] [cursor=pointer]
+                  - generic [ref=e381]: required
+                - generic [ref=e383]: object
+              - generic [ref=e384]:
+                - generic [ref=e385]:
+                  - generic [ref=e387]: isMicEnabled
+                  - generic [ref=e388]: required
+                - generic [ref=e389]:
+                  - generic [ref=e390]: boolean
+                  - generic [ref=e391]: Whether or not the microphone on camera is enabled
+              - generic [ref=e392]:
+                - generic [ref=e393]:
+                  - generic [ref=e394]:
+                    - generic [ref=e395]: osdSettings
+                    - button "Expand" [ref=e396] [cursor=pointer]
+                  - generic [ref=e397]: required
+                - generic [ref=e398]:
+                  - generic [ref=e399]: object
+                  - generic [ref=e400]: On Screen Display settings.
+              - generic [ref=e401]:
+                - generic [ref=e402]:
+                  - generic [ref=e403]:
+                    - generic [ref=e404]: ledSettings
+                    - button "Expand" [ref=e405] [cursor=pointer]
+                  - generic [ref=e406]: required
+                - generic [ref=e407]:
+                  - generic [ref=e408]: object
+                  - generic [ref=e409]: LED settings.
+              - generic [ref=e410]:
+                - generic [ref=e411]:
+                  - generic [ref=e412]:
+                    - generic [ref=e413]: lcdMessage
+                    - button "Expand" [ref=e414] [cursor=pointer]
+                  - generic [ref=e415]: required
+                - generic [ref=e417]: object
+              - generic [ref=e418]:
+                - generic [ref=e419]:
+                  - generic [ref=e421]: micVolume
+                  - generic [ref=e422]: required
+                - generic [ref=e423]:
+                  - generic [ref=e424]: number
+                  - generic [ref=e425]: "Mic volume: a number from 0-100."
+              - generic [ref=e426]:
+                - generic [ref=e427]:
+                  - generic [ref=e428]:
+                    - generic [ref=e429]: activePatrolSlot
+                    - button "Expand" [ref=e430] [cursor=pointer]
+                  - generic [ref=e431]: required
+                - generic [ref=e433]: object
+              - generic [ref=e434]:
+                - generic [ref=e435]:
+                  - generic [ref=e437]: videoMode
+                  - generic [ref=e438]: required
+                - generic [ref=e439]:
+                  - generic [ref=e440]: string
+                  - generic [ref=e441]: Current video mode of the camera
+              - generic [ref=e442]:
+                - generic [ref=e443]:
+                  - generic [ref=e445]: hdrType
+                  - generic [ref=e446]: required
+                - generic [ref=e447]:
+                  - generic [ref=e448]: string
+                  - generic [ref=e449]: High Dynamic Range (HDR) mode setting.
+              - generic [ref=e450]:
+                - generic [ref=e451]:
+                  - generic [ref=e452]:
+                    - generic [ref=e453]: featureFlags
+                    - button "Expand" [ref=e454] [cursor=pointer]
+                  - generic [ref=e455]: required
+                - generic [ref=e457]: object
+              - generic [ref=e458]:
+                - generic [ref=e459]:
+                  - generic [ref=e460]:
+                    - generic [ref=e461]: smartDetectSettings
+                    - button "Expand" [ref=e462] [cursor=pointer]
+                  - generic [ref=e463]: required
+                - generic [ref=e464]:
+                  - generic [ref=e465]: object
+                  - generic [ref=e466]: Smart detection settings for the camera.
+        - complementary [ref=e467]:
+          - generic [ref=e468]:
+            - generic [ref=e469]:
+              - generic [ref=e470]: Example - Call
+              - button [ref=e471] [cursor=pointer]:
+                - img [ref=e472]
+            - generic [ref=e476]:
+              - generic [ref=e477]:
+                - tab "Switch to cURL" [selected] [ref=e478] [cursor=pointer]:
+                  - img [ref=e479]
+                  - generic [ref=e482]: cURL
+                - tab "Switch to Go" [ref=e483] [cursor=pointer]:
+                  - img [ref=e484]
+                  - generic [ref=e488]: Go
+                - tab "Switch to Node.js" [ref=e489] [cursor=pointer]:
+                  - img [ref=e490]
+                  - generic [ref=e493]: Node.js
+                - tab "Switch to Python" [ref=e494] [cursor=pointer]:
+                  - img [ref=e495]
+                  - generic [ref=e498]: Python
+                - tab "Switch to Ansible" [ref=e499] [cursor=pointer]:
+                  - img [ref=e500]
+                  - generic [ref=e503]: Ansible
+              - generic [ref=e504]:
+                - img [ref=e505]
+                - generic [ref=e507]:
+                  - text: Example call uses
+                  - link "UniFi Connector" [ref=e508] [cursor=pointer]:
+                    - /url: /protect/v6.1.78/connectorpost
+                  - text: which requires FW version >= 5.0.3
+              - code [ref=e511]:
+                - generic [ref=e512]: "curl -L -g -X POST \"https://api.ui.com/v1/connector/consoles/{consoleId}/proxy/protect/integration/v1/cameras/{id}/disable-mic-permanently\" \\"
+                - generic [ref=e513]: "-H \"Accept: application/json\" \\"
+                - generic [ref=e514]: "-H \"X-API-Key: <X-API-Key>\""
+          - generic [ref=e515]:
+            - generic [ref=e516]:
+              - generic [ref=e517]: Response Sample
+              - button [ref=e518] [cursor=pointer]:
+                - img [ref=e519]
+            - generic [ref=e523]:
+              - button "200" [ref=e526] [cursor=pointer]
+              - code [ref=e530]:
+                - generic [ref=e531]: "{"
+                - generic [ref=e532]: "\"id\": \"string\","
+                - generic [ref=e533]: "\"modelKey\": \"string\","
+                - generic [ref=e534]: "\"state\": \"CONNECTED\","
+                - generic [ref=e535]: "\"name\": \"string\","
+                - generic [ref=e536]: "\"isMicEnabled\": true,"
+                - generic [ref=e537]: "\"osdSettings\": {"
+                - generic [ref=e538]: "\"isNameEnabled\": true,"
+                - generic [ref=e539]: "\"isDateEnabled\": true,"
+                - generic [ref=e540]: "\"isLogoEnabled\": true,"
+                - generic [ref=e541]: "\"isDebugEnabled\": true,"
+                - generic [ref=e542]: "\"overlayLocation\": \"topLeft\""
+                - generic [ref=e543]: "},"
+                - generic [ref=e544]: "\"ledSettings\": {"
+                - generic [ref=e545]: "\"isEnabled\": true"
+                - generic [ref=e546]: "},"
+                - generic [ref=e547]: "\"lcdMessage\": {"
+                - generic [ref=e548]: "\"type\": \"LEAVE_PACKAGE_AT_DOOR\","
+                - generic [ref=e549]: "\"resetAt\": null,"
+                - generic [ref=e550]: "\"text\": \"string\""
+                - generic [ref=e551]: "},"
+                - generic [ref=e552]: "\"micVolume\": 0,"
+                - generic [ref=e553]: "\"activePatrolSlot\": 0,"
+                - generic [ref=e554]: "\"videoMode\": \"default\","
+                - generic [ref=e555]: "\"hdrType\": \"auto\","
+                - generic [ref=e556]: "\"featureFlags\": {"
+                - generic [ref=e557]: "\"supportFullHdSnapshot\": true,"
+                - generic [ref=e558]: "\"hasHdr\": true,"
+                - generic [ref=e559]: "\"smartDetectTypes\": ["
+                - generic [ref=e560]: "\"person\""
+                - generic [ref=e561]: "],"
+                - generic [ref=e562]: "\"smartDetectAudioTypes\": ["
+                - generic [ref=e563]: "\"alrmSmoke\""
+                - generic [ref=e564]: "],"
+                - generic [ref=e565]: "\"videoModes\": ["
+                - generic [ref=e566]: "\"default\""
+                - generic [ref=e567]: "],"
+                - generic [ref=e568]: "\"hasMic\": true,"
+                - generic [ref=e569]: "\"hasLedStatus\": true,"
+                - generic [ref=e570]: "\"hasSpeaker\": true"
+                - generic [ref=e571]: "},"
+                - generic [ref=e572]: "\"smartDetectSettings\": {"
+                - generic [ref=e573]: "\"objectTypes\": ["
+                - generic [ref=e574]: "\"person\""
+                - generic [ref=e575]: "],"
+                - generic [ref=e576]: "\"audioTypes\": ["
+                - generic [ref=e577]: "\"alrmSmoke\""
+                - generic [ref=e578]: "]"
+                - generic [ref=e579]: "}"
+                - generic [ref=e580]: "}"

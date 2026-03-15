@@ -1,0 +1,443 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img [ref=e6]
+      - heading "Developer" [level=1] [ref=e8]
+      - button "Toggle theme menu" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+    - navigation [ref=e14]:
+      - generic [ref=e16]:
+        - img [ref=e18]
+        - textbox "Search Protect v6.1.78" [ref=e20]
+      - generic [ref=e21]:
+        - button "Applications" [ref=e22] [cursor=pointer]:
+          - text: Applications
+          - img [ref=e24]
+        - generic [ref=e27]:
+          - generic [ref=e28] [cursor=pointer]:
+            - radio "Site Manager" [ref=e30]
+            - generic [ref=e31]:
+              - img [ref=e33]
+              - text: Site Manager
+          - generic [ref=e35] [cursor=pointer]:
+            - radio "Network" [ref=e37]
+            - generic [ref=e38]:
+              - img [ref=e40]
+              - text: Network
+          - generic [ref=e43] [cursor=pointer]:
+            - radio "Protect" [checked] [ref=e45]
+            - generic [ref=e46]:
+              - img [ref=e48]
+              - text: Protect
+      - button "trigger" [ref=e52] [cursor=pointer]:
+        - generic [ref=e53]: v6.1.78
+        - img [ref=e54]
+      - generic [ref=e56]:
+        - button "General" [ref=e57] [cursor=pointer]:
+          - text: General
+          - img [ref=e59]
+        - generic [ref=e61]:
+          - link "Getting Started" [ref=e62] [cursor=pointer]:
+            - /url: /protect/v6.1.78/gettingstarted
+            - generic [ref=e63]: Getting Started
+          - button "Cloud Connector" [ref=e65] [cursor=pointer]:
+            - text: Cloud Connector
+            - img [ref=e67]
+      - generic [ref=e69]:
+        - button "Connection Type" [ref=e70] [cursor=pointer]:
+          - text: Connection Type
+          - img [ref=e72]
+        - generic [ref=e75]:
+          - generic [ref=e76] [cursor=pointer]:
+            - radio "Remote" [checked] [ref=e78]
+            - generic [ref=e79]: Remote
+          - generic [ref=e80] [cursor=pointer]:
+            - radio "Local" [ref=e82]
+            - generic [ref=e83]: Local
+      - generic [ref=e84]:
+        - button "API Endpoints" [ref=e85] [cursor=pointer]:
+          - text: API Endpoints
+          - img [ref=e87]
+        - generic [ref=e89]:
+          - button "Information about application" [ref=e91] [cursor=pointer]:
+            - text: Information about application
+            - img [ref=e93]
+          - button "Viewer information & management" [ref=e96] [cursor=pointer]:
+            - text: Viewer information & management
+            - img [ref=e98]
+          - button "Live view management" [ref=e101] [cursor=pointer]:
+            - text: Live view management
+            - img [ref=e103]
+          - button "WebSocket updates" [ref=e106] [cursor=pointer]:
+            - text: WebSocket updates
+            - img [ref=e108]
+          - button "Camera PTZ control & management" [ref=e111] [cursor=pointer]:
+            - text: Camera PTZ control & management
+            - img [ref=e113]
+          - button "Alarm manager integration" [ref=e116] [cursor=pointer]:
+            - text: Alarm manager integration
+            - img [ref=e118]
+          - button "Light information & management" [ref=e121] [cursor=pointer]:
+            - text: Light information & management
+            - img [ref=e123]
+          - generic [ref=e125]:
+            - button "Camera information & management" [ref=e126] [cursor=pointer]:
+              - text: Camera information & management
+              - img [ref=e128]
+            - generic [ref=e338]:
+              - link "Get camera details" [ref=e339] [cursor=pointer]:
+                - /url: /protect/v6.1.78/get-v1camerasid
+                - generic [ref=e340]: Get camera details
+              - link "Patch camera settings" [ref=e341] [cursor=pointer]:
+                - /url: /protect/v6.1.78/patch-v1camerasid
+                - generic [ref=e342]: Patch camera settings
+              - link "Get all cameras" [ref=e343] [cursor=pointer]:
+                - /url: /protect/v6.1.78/get-v1cameras
+                - generic [ref=e344]: Get all cameras
+              - link "Create RTSPS streams for camera" [ref=e345] [cursor=pointer]:
+                - /url: /protect/v6.1.78/post-v1camerasidrtsps-stream
+                - generic [ref=e346]: Create RTSPS streams for camera
+              - link "Delete camera RTSPS stream" [ref=e347] [cursor=pointer]:
+                - /url: /protect/v6.1.78/delete-v1camerasidrtsps-stream
+                - generic [ref=e348]: Delete camera RTSPS stream
+              - link "Get RTSPS streams for camera" [ref=e349] [cursor=pointer]:
+                - /url: /protect/v6.1.78/get-v1camerasidrtsps-stream
+                - generic [ref=e350]: Get RTSPS streams for camera
+              - link "Get camera snapshot" [ref=e351] [cursor=pointer]:
+                - /url: /protect/v6.1.78/get-v1camerasidsnapshot
+                - generic [ref=e352]: Get camera snapshot
+              - link "Permanently disable camera microphone" [ref=e353] [cursor=pointer]:
+                - /url: /protect/v6.1.78/post-v1camerasiddisable-mic-permanently
+                - generic [ref=e354]: Permanently disable camera microphone
+              - link "Create talkback session for camera" [ref=e355] [cursor=pointer]:
+                - /url: /protect/v6.1.78/post-v1camerasidtalkback-session
+                - generic [ref=e356]: Create talkback session for camera
+          - button "Sensor information & management" [ref=e131] [cursor=pointer]:
+            - text: Sensor information & management
+            - img [ref=e133]
+          - button "NVR information & management" [ref=e136] [cursor=pointer]:
+            - text: NVR information & management
+            - img [ref=e138]
+          - button "Device asset file management" [ref=e141] [cursor=pointer]:
+            - text: Device asset file management
+            - img [ref=e143]
+          - button "Chime information & management" [ref=e146] [cursor=pointer]:
+            - text: Chime information & management
+            - img [ref=e148]
+      - generic [ref=e150]:
+        - button "Ansible Modules" [ref=e151] [cursor=pointer]:
+          - img [ref=e152]
+          - text: Ansible Modules
+          - img [ref=e156]
+        - link "Quick Start" [ref=e159] [cursor=pointer]:
+          - /url: /protect/v6.1.78/quick_start
+          - generic [ref=e160]: Quick Start
+    - main [ref=e161]:
+      - generic [ref=e162]:
+        - generic [ref=e163]:
+          - generic [ref=e164]: UniFi API
+          - button [ref=e165] [cursor=pointer]:
+            - img [ref=e166]
+        - generic [ref=e168]:
+          - paragraph [ref=e169]: Endpoints combined into Ansible Modules for customized workflows.
+          - img [ref=e171]
+      - generic [ref=e262]:
+        - generic [ref=e263]:
+          - heading "Patch camera settings" [level=1] [ref=e264]
+          - generic [ref=e265]:
+            - generic [ref=e266]: PATCH
+            - code [ref=e267]: "/v1/cameras/{id}"
+          - paragraph [ref=e270]: Patch the settings for a specific camera
+          - generic [ref=e271]:
+            - generic [ref=e272]:
+              - generic [ref=e273]: path Parameters
+              - generic [ref=e359]:
+                - generic [ref=e360]:
+                  - generic [ref=e362]: id
+                  - generic [ref=e363]: required
+                - generic [ref=e364]:
+                  - generic [ref=e365]: string
+                  - generic [ref=e366]: The primary key of camera
+            - generic [ref=e289]:
+              - generic [ref=e290]: request Body
+              - generic [ref=e368]:
+                - generic [ref=e369]:
+                  - generic [ref=e372]: name
+                  - generic [ref=e373]:
+                    - generic [ref=e374]: string
+                    - generic [ref=e375]: The name of the camera
+                - generic [ref=e376]:
+                  - generic [ref=e378]:
+                    - generic [ref=e379]: osdSettings
+                    - button "Expand" [ref=e380] [cursor=pointer]
+                  - generic [ref=e381]:
+                    - generic [ref=e382]: object
+                    - generic [ref=e383]: On Screen Display settings.
+                - generic [ref=e384]:
+                  - generic [ref=e386]:
+                    - generic [ref=e387]: ledSettings
+                    - button "Expand" [ref=e388] [cursor=pointer]
+                  - generic [ref=e389]:
+                    - generic [ref=e390]: object
+                    - generic [ref=e391]: LED settings.
+                - generic [ref=e392]:
+                  - generic [ref=e394]:
+                    - generic [ref=e395]: lcdMessage
+                    - button "Expand" [ref=e396] [cursor=pointer]
+                  - generic [ref=e397]:
+                    - generic [ref=e398]: object (lcdMessage)
+                    - generic [ref=e399]: "Message that's set on the LCD screen (for doorbells and/or other devices with LCD screens). To upload image assets for the LCD screen, use the `/files/{fileType}` endpoint."
+                - generic [ref=e400]:
+                  - generic [ref=e402]:
+                    - generic [ref=e403]: micVolume
+                    - button "Expand" [ref=e404] [cursor=pointer]
+                  - generic [ref=e406]: object
+                - generic [ref=e407]:
+                  - generic [ref=e410]: videoMode
+                  - generic [ref=e411]:
+                    - generic [ref=e412]: string
+                    - generic [ref=e413]: Current video mode of the camera
+                - generic [ref=e414]:
+                  - generic [ref=e416]:
+                    - generic [ref=e417]: hdrType
+                    - button "Expand" [ref=e418] [cursor=pointer]
+                  - generic [ref=e419]:
+                    - generic [ref=e420]: object
+                    - generic [ref=e421]: High Dynamic Range (HDR) mode setting.
+                - generic [ref=e422]:
+                  - generic [ref=e424]:
+                    - generic [ref=e425]: smartDetectSettings
+                    - button "Expand" [ref=e426] [cursor=pointer]
+                  - generic [ref=e427]:
+                    - generic [ref=e428]: object
+                    - generic [ref=e429]: Smart detection settings for the camera.
+          - generic [ref=e306]:
+            - heading "Responses" [level=2] [ref=e307]
+            - button "200" [ref=e310] [cursor=pointer]
+            - paragraph [ref=e311]: "Response Schema: application/json"
+            - generic [ref=e431]:
+              - generic [ref=e432]:
+                - generic [ref=e433]:
+                  - generic [ref=e435]: id
+                  - generic [ref=e436]: required
+                - generic [ref=e437]:
+                  - generic [ref=e438]: string
+                  - generic [ref=e439]: The primary key of camera
+              - generic [ref=e440]:
+                - generic [ref=e441]:
+                  - generic [ref=e443]: modelKey
+                  - generic [ref=e444]: required
+                - generic [ref=e445]:
+                  - generic [ref=e446]: string
+                  - generic [ref=e447]: The model key of the camera
+              - generic [ref=e448]:
+                - generic [ref=e449]:
+                  - generic [ref=e451]: state
+                  - generic [ref=e452]: required
+                - generic [ref=e453]:
+                  - generic [ref=e454]: string
+                  - generic [ref=e455]: Connection state of the device.
+              - generic [ref=e456]:
+                - generic [ref=e457]:
+                  - generic [ref=e458]:
+                    - generic [ref=e459]: name
+                    - button "Expand" [ref=e460] [cursor=pointer]
+                  - generic [ref=e461]: required
+                - generic [ref=e463]: object
+              - generic [ref=e464]:
+                - generic [ref=e465]:
+                  - generic [ref=e467]: isMicEnabled
+                  - generic [ref=e468]: required
+                - generic [ref=e469]:
+                  - generic [ref=e470]: boolean
+                  - generic [ref=e471]: Whether or not the microphone on camera is enabled
+              - generic [ref=e472]:
+                - generic [ref=e473]:
+                  - generic [ref=e474]:
+                    - generic [ref=e475]: osdSettings
+                    - button "Expand" [ref=e476] [cursor=pointer]
+                  - generic [ref=e477]: required
+                - generic [ref=e478]:
+                  - generic [ref=e479]: object
+                  - generic [ref=e480]: On Screen Display settings.
+              - generic [ref=e481]:
+                - generic [ref=e482]:
+                  - generic [ref=e483]:
+                    - generic [ref=e484]: ledSettings
+                    - button "Expand" [ref=e485] [cursor=pointer]
+                  - generic [ref=e486]: required
+                - generic [ref=e487]:
+                  - generic [ref=e488]: object
+                  - generic [ref=e489]: LED settings.
+              - generic [ref=e490]:
+                - generic [ref=e491]:
+                  - generic [ref=e492]:
+                    - generic [ref=e493]: lcdMessage
+                    - button "Expand" [ref=e494] [cursor=pointer]
+                  - generic [ref=e495]: required
+                - generic [ref=e497]: object
+              - generic [ref=e498]:
+                - generic [ref=e499]:
+                  - generic [ref=e501]: micVolume
+                  - generic [ref=e502]: required
+                - generic [ref=e503]:
+                  - generic [ref=e504]: number
+                  - generic [ref=e505]: "Mic volume: a number from 0-100."
+              - generic [ref=e506]:
+                - generic [ref=e507]:
+                  - generic [ref=e508]:
+                    - generic [ref=e509]: activePatrolSlot
+                    - button "Expand" [ref=e510] [cursor=pointer]
+                  - generic [ref=e511]: required
+                - generic [ref=e513]: object
+              - generic [ref=e514]:
+                - generic [ref=e515]:
+                  - generic [ref=e517]: videoMode
+                  - generic [ref=e518]: required
+                - generic [ref=e519]:
+                  - generic [ref=e520]: string
+                  - generic [ref=e521]: Current video mode of the camera
+              - generic [ref=e522]:
+                - generic [ref=e523]:
+                  - generic [ref=e525]: hdrType
+                  - generic [ref=e526]: required
+                - generic [ref=e527]:
+                  - generic [ref=e528]: string
+                  - generic [ref=e529]: High Dynamic Range (HDR) mode setting.
+              - generic [ref=e530]:
+                - generic [ref=e531]:
+                  - generic [ref=e532]:
+                    - generic [ref=e533]: featureFlags
+                    - button "Expand" [ref=e534] [cursor=pointer]
+                  - generic [ref=e535]: required
+                - generic [ref=e537]: object
+              - generic [ref=e538]:
+                - generic [ref=e539]:
+                  - generic [ref=e540]:
+                    - generic [ref=e541]: smartDetectSettings
+                    - button "Expand" [ref=e542] [cursor=pointer]
+                  - generic [ref=e543]: required
+                - generic [ref=e544]:
+                  - generic [ref=e545]: object
+                  - generic [ref=e546]: Smart detection settings for the camera.
+        - complementary [ref=e547]:
+          - generic [ref=e548]:
+            - generic [ref=e549]:
+              - generic [ref=e550]: Example - Call
+              - button [ref=e551] [cursor=pointer]:
+                - img [ref=e552]
+            - generic [ref=e556]:
+              - generic [ref=e557]:
+                - tab "Switch to cURL" [selected] [ref=e558] [cursor=pointer]:
+                  - img [ref=e559]
+                  - generic [ref=e562]: cURL
+                - tab "Switch to Go" [ref=e563] [cursor=pointer]:
+                  - img [ref=e564]
+                  - generic [ref=e568]: Go
+                - tab "Switch to Node.js" [ref=e569] [cursor=pointer]:
+                  - img [ref=e570]
+                  - generic [ref=e573]: Node.js
+                - tab "Switch to Python" [ref=e574] [cursor=pointer]:
+                  - img [ref=e575]
+                  - generic [ref=e578]: Python
+                - tab "Switch to Ansible" [ref=e579] [cursor=pointer]:
+                  - img [ref=e580]
+                  - generic [ref=e583]: Ansible
+              - generic [ref=e584]:
+                - img [ref=e585]
+                - generic [ref=e587]:
+                  - text: Example call uses
+                  - link "UniFi Connector" [ref=e588] [cursor=pointer]:
+                    - /url: /protect/v6.1.78/connectorpost
+                  - text: which requires FW version >= 5.0.3
+              - code [ref=e591]:
+                - generic [ref=e592]: "curl -L -g -X PATCH \"https://api.ui.com/v1/connector/consoles/{consoleId}/proxy/protect/integration/v1/cameras/{id}\" \\"
+                - generic [ref=e593]: "-H \"Accept: application/json\" \\"
+                - generic [ref=e594]: "-H \"X-API-Key: <X-API-Key>\" \\"
+                - generic [ref=e595]: "-H \"Content-Type: application/json\" \\"
+                - generic [ref=e596]: "-d \"{"
+                - generic [ref=e597]: "\\\"name\\\": \\\"string\\\","
+                - generic [ref=e598]: "\\\"osdSettings\\\": {"
+                - generic [ref=e599]: "\\\"isNameEnabled\\\": true,"
+                - generic [ref=e600]: "\\\"isDateEnabled\\\": true,"
+                - generic [ref=e601]: "\\\"isLogoEnabled\\\": true,"
+                - generic [ref=e602]: "\\\"isDebugEnabled\\\": true,"
+                - generic [ref=e603]: "\\\"overlayLocation\\\": \\\"topLeft\\\""
+                - generic [ref=e604]: "},"
+                - generic [ref=e605]: "\\\"ledSettings\\\": {"
+                - generic [ref=e606]: "\\\"isEnabled\\\": true"
+                - generic [ref=e607]: "},"
+                - generic [ref=e608]: "\\\"lcdMessage\\\": {"
+                - generic [ref=e609]: "\\\"type\\\": \\\"string\\\""
+                - generic [ref=e610]: "},"
+                - generic [ref=e611]: "\\\"videoMode\\\": \\\"default\\\","
+                - generic [ref=e612]: "\\\"smartDetectSettings\\\": {"
+                - generic [ref=e613]: "\\\"objectTypes\\\": ["
+                - generic [ref=e614]: \"person\"
+                - generic [ref=e615]: "],"
+                - generic [ref=e616]: "\\\"audioTypes\\\": ["
+                - generic [ref=e617]: \"alrmSmoke\"
+                - generic [ref=e618]: "]"
+                - generic [ref=e619]: "}"
+                - generic [ref=e620]: "}\""
+          - generic [ref=e621]:
+            - generic [ref=e622]:
+              - generic [ref=e623]: Response Sample
+              - button [ref=e624] [cursor=pointer]:
+                - img [ref=e625]
+            - generic [ref=e629]:
+              - button "200" [ref=e632] [cursor=pointer]
+              - code [ref=e636]:
+                - generic [ref=e637]: "{"
+                - generic [ref=e638]: "\"id\": \"string\","
+                - generic [ref=e639]: "\"modelKey\": \"string\","
+                - generic [ref=e640]: "\"state\": \"CONNECTED\","
+                - generic [ref=e641]: "\"name\": \"string\","
+                - generic [ref=e642]: "\"isMicEnabled\": true,"
+                - generic [ref=e643]: "\"osdSettings\": {"
+                - generic [ref=e644]: "\"isNameEnabled\": true,"
+                - generic [ref=e645]: "\"isDateEnabled\": true,"
+                - generic [ref=e646]: "\"isLogoEnabled\": true,"
+                - generic [ref=e647]: "\"isDebugEnabled\": true,"
+                - generic [ref=e648]: "\"overlayLocation\": \"topLeft\""
+                - generic [ref=e649]: "},"
+                - generic [ref=e650]: "\"ledSettings\": {"
+                - generic [ref=e651]: "\"isEnabled\": true"
+                - generic [ref=e652]: "},"
+                - generic [ref=e653]: "\"lcdMessage\": {"
+                - generic [ref=e654]: "\"type\": \"LEAVE_PACKAGE_AT_DOOR\","
+                - generic [ref=e655]: "\"resetAt\": null,"
+                - generic [ref=e656]: "\"text\": \"string\""
+                - generic [ref=e657]: "},"
+                - generic [ref=e658]: "\"micVolume\": 0,"
+                - generic [ref=e659]: "\"activePatrolSlot\": 0,"
+                - generic [ref=e660]: "\"videoMode\": \"default\","
+                - generic [ref=e661]: "\"hdrType\": \"auto\","
+                - generic [ref=e662]: "\"featureFlags\": {"
+                - generic [ref=e663]: "\"supportFullHdSnapshot\": true,"
+                - generic [ref=e664]: "\"hasHdr\": true,"
+                - generic [ref=e665]: "\"smartDetectTypes\": ["
+                - generic [ref=e666]: "\"person\""
+                - generic [ref=e667]: "],"
+                - generic [ref=e668]: "\"smartDetectAudioTypes\": ["
+                - generic [ref=e669]: "\"alrmSmoke\""
+                - generic [ref=e670]: "],"
+                - generic [ref=e671]: "\"videoModes\": ["
+                - generic [ref=e672]: "\"default\""
+                - generic [ref=e673]: "],"
+                - generic [ref=e674]: "\"hasMic\": true,"
+                - generic [ref=e675]: "\"hasLedStatus\": true,"
+                - generic [ref=e676]: "\"hasSpeaker\": true"
+                - generic [ref=e677]: "},"
+                - generic [ref=e678]: "\"smartDetectSettings\": {"
+                - generic [ref=e679]: "\"objectTypes\": ["
+                - generic [ref=e680]: "\"person\""
+                - generic [ref=e681]: "],"
+                - generic [ref=e682]: "\"audioTypes\": ["
+                - generic [ref=e683]: "\"alrmSmoke\""
+                - generic [ref=e684]: "]"
+                - generic [ref=e685]: "}"
+                - generic [ref=e686]: "}"

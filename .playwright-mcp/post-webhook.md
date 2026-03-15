@@ -1,0 +1,210 @@
+- generic [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img [ref=e6]
+      - heading "Developer" [level=1] [ref=e8]
+      - button "Toggle theme menu" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+    - navigation [ref=e14]:
+      - generic [ref=e16]:
+        - img [ref=e18]
+        - textbox "Search Protect v6.1.78" [ref=e20]
+      - generic [ref=e21]:
+        - button "Applications" [ref=e22] [cursor=pointer]:
+          - text: Applications
+          - img [ref=e24]
+        - generic [ref=e27]:
+          - generic [ref=e28] [cursor=pointer]:
+            - radio "Site Manager" [ref=e30]
+            - generic [ref=e31]:
+              - img [ref=e33]
+              - text: Site Manager
+          - generic [ref=e35] [cursor=pointer]:
+            - radio "Network" [ref=e37]
+            - generic [ref=e38]:
+              - img [ref=e40]
+              - text: Network
+          - generic [ref=e43] [cursor=pointer]:
+            - radio "Protect" [checked] [ref=e45]
+            - generic [ref=e46]:
+              - img [ref=e48]
+              - text: Protect
+      - button "trigger" [ref=e52] [cursor=pointer]:
+        - generic [ref=e53]: v6.1.78
+        - img [ref=e54]
+      - generic [ref=e56]:
+        - button "General" [ref=e57] [cursor=pointer]:
+          - text: General
+          - img [ref=e59]
+        - generic [ref=e61]:
+          - link "Getting Started" [ref=e62] [cursor=pointer]:
+            - /url: /protect/v6.1.78/gettingstarted
+            - generic [ref=e63]: Getting Started
+          - button "Cloud Connector" [ref=e65] [cursor=pointer]:
+            - text: Cloud Connector
+            - img [ref=e67]
+      - generic [ref=e69]:
+        - button "Connection Type" [ref=e70] [cursor=pointer]:
+          - text: Connection Type
+          - img [ref=e72]
+        - generic [ref=e75]:
+          - generic [ref=e76] [cursor=pointer]:
+            - radio "Remote" [checked] [ref=e78]
+            - generic [ref=e79]: Remote
+          - generic [ref=e80] [cursor=pointer]:
+            - radio "Local" [ref=e82]
+            - generic [ref=e83]: Local
+      - generic [ref=e84]:
+        - button "API Endpoints" [ref=e85] [cursor=pointer]:
+          - text: API Endpoints
+          - img [ref=e87]
+        - generic [ref=e89]:
+          - button "Information about application" [ref=e91] [cursor=pointer]:
+            - text: Information about application
+            - img [ref=e93]
+          - button "Viewer information & management" [ref=e96] [cursor=pointer]:
+            - text: Viewer information & management
+            - img [ref=e98]
+          - button "Live view management" [ref=e101] [cursor=pointer]:
+            - text: Live view management
+            - img [ref=e103]
+          - button "WebSocket updates" [ref=e106] [cursor=pointer]:
+            - text: WebSocket updates
+            - img [ref=e108]
+          - button "Camera PTZ control & management" [ref=e111] [cursor=pointer]:
+            - text: Camera PTZ control & management
+            - img [ref=e113]
+          - generic [ref=e115]:
+            - button "Alarm manager integration" [ref=e116] [cursor=pointer]:
+              - text: Alarm manager integration
+              - img [ref=e118]
+            - link "Send a webhook to the alarm manager" [ref=e307] [cursor=pointer]:
+              - /url: /protect/v6.1.78/post-v1alarm-managerwebhookid
+              - generic [ref=e308]: Send a webhook to the alarm manager
+          - button "Light information & management" [ref=e121] [cursor=pointer]:
+            - text: Light information & management
+            - img [ref=e123]
+          - button "Camera information & management" [ref=e126] [cursor=pointer]:
+            - text: Camera information & management
+            - img [ref=e128]
+          - button "Sensor information & management" [ref=e131] [cursor=pointer]:
+            - text: Sensor information & management
+            - img [ref=e133]
+          - button "NVR information & management" [ref=e136] [cursor=pointer]:
+            - text: NVR information & management
+            - img [ref=e138]
+          - button "Device asset file management" [ref=e141] [cursor=pointer]:
+            - text: Device asset file management
+            - img [ref=e143]
+          - button "Chime information & management" [ref=e146] [cursor=pointer]:
+            - text: Chime information & management
+            - img [ref=e148]
+      - generic [ref=e150]:
+        - button "Ansible Modules" [ref=e151] [cursor=pointer]:
+          - img [ref=e152]
+          - text: Ansible Modules
+          - img [ref=e156]
+        - link "Quick Start" [ref=e159] [cursor=pointer]:
+          - /url: /protect/v6.1.78/quick_start
+          - generic [ref=e160]: Quick Start
+    - main [ref=e161]:
+      - generic [ref=e162]:
+        - generic [ref=e163]:
+          - generic [ref=e164]: UniFi API
+          - button [ref=e165] [cursor=pointer]:
+            - img [ref=e166]
+        - generic [ref=e168]:
+          - paragraph [ref=e169]: Endpoints combined into Ansible Modules for customized workflows.
+          - img [ref=e171]
+      - generic [ref=e262]:
+        - generic [ref=e263]:
+          - heading "Send a webhook to the alarm manager" [level=1] [ref=e264]
+          - generic [ref=e265]:
+            - generic [ref=e266]: POST
+            - code [ref=e267]: "/v1/alarm-manager/webhook/{id}"
+          - paragraph [ref=e270]: Send a webhook to the alarm manager to trigger configured alarms
+          - generic [ref=e272]:
+            - generic [ref=e273]: path Parameters
+            - generic [ref=e311]:
+              - generic [ref=e312]:
+                - generic [ref=e314]: id
+                - generic [ref=e315]: required
+              - generic [ref=e316]:
+                - generic [ref=e317]: string
+                - generic [ref=e318]: User defined string used to trigger only specific alarms. Alarm should be configured with the same ID to be triggered.
+          - generic [ref=e289]:
+            - heading "Responses" [level=2] [ref=e290]
+            - generic [ref=e292]:
+              - button "204" [ref=e293] [cursor=pointer]
+              - button "400" [active] [ref=e294] [cursor=pointer]
+            - paragraph [ref=e295]: "Response Schema: application/json"
+            - generic [ref=e321]:
+              - generic [ref=e322]:
+                - generic [ref=e323]:
+                  - generic [ref=e325]: error
+                  - generic [ref=e326]: required
+                - generic [ref=e327]:
+                  - generic [ref=e328]: string
+                  - generic [ref=e329]: Error message
+              - generic [ref=e330]:
+                - generic [ref=e331]:
+                  - generic [ref=e333]: name
+                  - generic [ref=e334]: required
+                - generic [ref=e335]:
+                  - generic [ref=e336]: string
+                  - generic [ref=e337]: Name of the error
+              - generic [ref=e338]:
+                - generic [ref=e341]: cause
+                - generic [ref=e342]:
+                  - generic [ref=e343]: object
+                  - generic [ref=e344]: An optional nested cause for the parent error
+        - complementary [ref=e345]:
+          - generic [ref=e346]:
+            - generic [ref=e347]:
+              - generic [ref=e348]: Example - Call
+              - button [ref=e349] [cursor=pointer]:
+                - img [ref=e350]
+            - generic [ref=e354]:
+              - generic [ref=e355]:
+                - tab "Switch to cURL" [selected] [ref=e356] [cursor=pointer]:
+                  - img [ref=e357]
+                  - generic [ref=e360]: cURL
+                - tab "Switch to Go" [ref=e361] [cursor=pointer]:
+                  - img [ref=e362]
+                  - generic [ref=e366]: Go
+                - tab "Switch to Node.js" [ref=e367] [cursor=pointer]:
+                  - img [ref=e368]
+                  - generic [ref=e371]: Node.js
+                - tab "Switch to Python" [ref=e372] [cursor=pointer]:
+                  - img [ref=e373]
+                  - generic [ref=e376]: Python
+                - tab "Switch to Ansible" [ref=e377] [cursor=pointer]:
+                  - img [ref=e378]
+                  - generic [ref=e381]: Ansible
+              - generic [ref=e382]:
+                - img [ref=e383]
+                - generic [ref=e385]:
+                  - text: Example call uses
+                  - link "UniFi Connector" [ref=e386] [cursor=pointer]:
+                    - /url: /protect/v6.1.78/connectorpost
+                  - text: which requires FW version >= 5.0.3
+              - code [ref=e389]:
+                - generic [ref=e390]: "curl -L -g -X POST \"https://api.ui.com/v1/connector/consoles/{consoleId}/proxy/protect/integration/v1/alarm-manager/webhook/{id}\" \\"
+                - generic [ref=e391]: "-H \"Accept: application/json\" \\"
+                - generic [ref=e392]: "-H \"X-API-Key: <X-API-Key>\""
+          - generic [ref=e393]:
+            - generic [ref=e394]:
+              - generic [ref=e395]: Response Sample
+              - button [ref=e396] [cursor=pointer]:
+                - img [ref=e397]
+            - generic [ref=e401]:
+              - button "400" [ref=e404] [cursor=pointer]
+              - code [ref=e408]:
+                - generic [ref=e409]: "{"
+                - generic [ref=e410]: "\"error\": \"string\","
+                - generic [ref=e411]: "\"name\": \"string\","
+                - generic [ref=e412]: "\"cause\": {}"
+                - generic [ref=e413]: "}"

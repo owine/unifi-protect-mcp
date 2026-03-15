@@ -246,4 +246,10 @@ describe("ProtectClient", () => {
       expect(callArgs[1]).not.toHaveProperty("body");
     });
   });
+
+  describe("connectWebSocket", () => {
+    it("has connectWebSocket method", () => {
+      expect(typeof client.connectWebSocket).toBe("function");
+    });
+  });
 });

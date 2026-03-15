@@ -1,0 +1,341 @@
+- generic [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img [ref=e6]
+      - heading "Developer" [level=1] [ref=e8]
+      - button "Toggle theme menu" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+    - navigation [ref=e14]:
+      - generic [ref=e16]:
+        - img [ref=e18]
+        - textbox "Search Protect v6.1.78" [ref=e20]
+      - generic [ref=e21]:
+        - button "Applications" [ref=e22] [cursor=pointer]:
+          - text: Applications
+          - img [ref=e24]
+        - generic [ref=e27]:
+          - generic [ref=e28] [cursor=pointer]:
+            - radio "Site Manager" [ref=e30]
+            - generic [ref=e31]:
+              - img [ref=e33]
+              - text: Site Manager
+          - generic [ref=e35] [cursor=pointer]:
+            - radio "Network" [ref=e37]
+            - generic [ref=e38]:
+              - img [ref=e40]
+              - text: Network
+          - generic [ref=e43] [cursor=pointer]:
+            - radio "Protect" [checked] [ref=e45]
+            - generic [ref=e46]:
+              - img [ref=e48]
+              - text: Protect
+      - button "trigger" [ref=e52] [cursor=pointer]:
+        - generic [ref=e53]: v6.1.78
+        - img [ref=e54]
+      - generic [ref=e56]:
+        - button "General" [ref=e57] [cursor=pointer]:
+          - text: General
+          - img [ref=e59]
+        - generic [ref=e61]:
+          - link "Getting Started" [ref=e62] [cursor=pointer]:
+            - /url: /protect/v6.1.78/gettingstarted
+            - generic [ref=e63]: Getting Started
+          - button "Cloud Connector" [ref=e65] [cursor=pointer]:
+            - text: Cloud Connector
+            - img [ref=e67]
+      - generic [ref=e69]:
+        - button "Connection Type" [ref=e70] [cursor=pointer]:
+          - text: Connection Type
+          - img [ref=e72]
+        - generic [ref=e75]:
+          - generic [ref=e76] [cursor=pointer]:
+            - radio "Remote" [checked] [ref=e78]
+            - generic [ref=e79]: Remote
+          - generic [ref=e80] [cursor=pointer]:
+            - radio "Local" [ref=e82]
+            - generic [ref=e83]: Local
+      - generic [ref=e84]:
+        - button "API Endpoints" [ref=e85] [cursor=pointer]:
+          - text: API Endpoints
+          - img [ref=e87]
+        - generic [ref=e89]:
+          - button "Information about application" [ref=e91] [cursor=pointer]:
+            - text: Information about application
+            - img [ref=e93]
+          - button "Viewer information & management" [ref=e96] [cursor=pointer]:
+            - text: Viewer information & management
+            - img [ref=e98]
+          - generic [ref=e100]:
+            - button "Live view management" [ref=e101] [cursor=pointer]:
+              - text: Live view management
+              - img [ref=e103]
+            - generic [ref=e321]:
+              - link "Get live view details" [ref=e322] [cursor=pointer]:
+                - /url: /protect/v6.1.78/get-v1liveviewsid
+                - generic [ref=e323]: Get live view details
+              - link "Patch live view configuration" [ref=e324] [cursor=pointer]:
+                - /url: /protect/v6.1.78/patch-v1liveviewsid
+                - generic [ref=e325]: Patch live view configuration
+              - link "Get all live views" [ref=e326] [cursor=pointer]:
+                - /url: /protect/v6.1.78/get-v1liveviews
+                - generic [ref=e327]: Get all live views
+              - link "Create live view" [ref=e328] [cursor=pointer]:
+                - /url: /protect/v6.1.78/post-v1liveviews
+                - generic [ref=e329]: Create live view
+          - button "WebSocket updates" [ref=e106] [cursor=pointer]:
+            - text: WebSocket updates
+            - img [ref=e108]
+          - button "Camera PTZ control & management" [ref=e111] [cursor=pointer]:
+            - text: Camera PTZ control & management
+            - img [ref=e113]
+          - button "Alarm manager integration" [ref=e116] [cursor=pointer]:
+            - text: Alarm manager integration
+            - img [ref=e118]
+          - button "Light information & management" [ref=e121] [cursor=pointer]:
+            - text: Light information & management
+            - img [ref=e123]
+          - button "Camera information & management" [ref=e126] [cursor=pointer]:
+            - text: Camera information & management
+            - img [ref=e128]
+          - button "Sensor information & management" [ref=e131] [cursor=pointer]:
+            - text: Sensor information & management
+            - img [ref=e133]
+          - button "NVR information & management" [ref=e136] [cursor=pointer]:
+            - text: NVR information & management
+            - img [ref=e138]
+          - button "Device asset file management" [ref=e141] [cursor=pointer]:
+            - text: Device asset file management
+            - img [ref=e143]
+          - button "Chime information & management" [ref=e146] [cursor=pointer]:
+            - text: Chime information & management
+            - img [ref=e148]
+      - generic [ref=e150]:
+        - button "Ansible Modules" [ref=e151] [cursor=pointer]:
+          - img [ref=e152]
+          - text: Ansible Modules
+          - img [ref=e156]
+        - link "Quick Start" [ref=e159] [cursor=pointer]:
+          - /url: /protect/v6.1.78/quick_start
+          - generic [ref=e160]: Quick Start
+    - main [ref=e161]:
+      - generic [ref=e162]:
+        - generic [ref=e163]:
+          - generic [ref=e164]: UniFi API
+          - button [ref=e165] [cursor=pointer]:
+            - img [ref=e166]
+        - generic [ref=e168]:
+          - paragraph [ref=e169]: Endpoints combined into Ansible Modules for customized workflows.
+          - img [ref=e171]
+      - generic [ref=e262]:
+        - generic [ref=e263]:
+          - heading "Create live view" [level=1] [ref=e264]
+          - generic [ref=e265]:
+            - generic [ref=e266]: POST
+            - code [ref=e267]: /v1/liveviews
+          - paragraph [ref=e270]: Create a new live view
+          - generic [ref=e272]:
+            - generic [ref=e273]: request Body
+            - generic [ref=e331]:
+              - generic [ref=e332]:
+                - generic [ref=e333]:
+                  - generic [ref=e335]: id
+                  - generic [ref=e336]: required
+                - generic [ref=e337]:
+                  - generic [ref=e338]: string
+                  - generic [ref=e339]: The primary key of liveview
+              - generic [ref=e340]:
+                - generic [ref=e341]:
+                  - generic [ref=e343]: modelKey
+                  - generic [ref=e344]: required
+                - generic [ref=e345]:
+                  - generic [ref=e346]: string
+                  - generic [ref=e347]: The model key of the liveview
+              - generic [ref=e348]:
+                - generic [ref=e349]:
+                  - generic [ref=e351]: name
+                  - generic [ref=e352]: required
+                - generic [ref=e353]:
+                  - generic [ref=e354]: string
+                  - generic [ref=e355]: The name of this live view.
+              - generic [ref=e356]:
+                - generic [ref=e357]:
+                  - generic [ref=e359]: isDefault
+                  - generic [ref=e360]: required
+                - generic [ref=e361]:
+                  - generic [ref=e362]: boolean
+                  - generic [ref=e363]: Whether this live view is the default one for all viewers.
+              - generic [ref=e364]:
+                - generic [ref=e365]:
+                  - generic [ref=e367]: isGlobal
+                  - generic [ref=e368]: required
+                - generic [ref=e369]:
+                  - generic [ref=e370]: boolean
+                  - generic [ref=e371]: Whether this live view is global and available system-wide to all users
+              - generic [ref=e372]:
+                - generic [ref=e373]:
+                  - generic [ref=e375]: owner
+                  - generic [ref=e376]: required
+                - generic [ref=e377]:
+                  - generic [ref=e378]: string
+                  - generic [ref=e379]: The primary key of user
+              - generic [ref=e380]:
+                - generic [ref=e381]:
+                  - generic [ref=e383]: layout
+                  - generic [ref=e384]: required
+                - generic [ref=e385]:
+                  - generic [ref=e386]: number
+                  - generic [ref=e387]: The number of slots this live view contains. Which as a consequence also affects the layout of the live view.
+              - generic [ref=e388]:
+                - generic [ref=e389]:
+                  - generic [ref=e390]:
+                    - generic [ref=e391]: slots
+                    - button "Expand" [ref=e392] [cursor=pointer]
+                  - generic [ref=e393]: required
+                - generic [ref=e394]:
+                  - generic [ref=e395]: Array of object
+                  - generic [ref=e396]: List of cameras visible in each given slot. And cycling settings for each slot if it has multiple cameras listed.
+          - generic [ref=e289]:
+            - heading "Responses" [level=2] [ref=e290]
+            - button "200" [ref=e293] [cursor=pointer]
+            - paragraph [ref=e294]: "Response Schema: application/json"
+            - generic [ref=e398]:
+              - generic [ref=e399]:
+                - generic [ref=e400]:
+                  - generic [ref=e402]: id
+                  - generic [ref=e403]: required
+                - generic [ref=e404]:
+                  - generic [ref=e405]: string
+                  - generic [ref=e406]: The primary key of liveview
+              - generic [ref=e407]:
+                - generic [ref=e408]:
+                  - generic [ref=e410]: modelKey
+                  - generic [ref=e411]: required
+                - generic [ref=e412]:
+                  - generic [ref=e413]: string
+                  - generic [ref=e414]: The model key of the liveview
+              - generic [ref=e415]:
+                - generic [ref=e416]:
+                  - generic [ref=e418]: name
+                  - generic [ref=e419]: required
+                - generic [ref=e420]:
+                  - generic [ref=e421]: string
+                  - generic [ref=e422]: The name of this live view.
+              - generic [ref=e423]:
+                - generic [ref=e424]:
+                  - generic [ref=e426]: isDefault
+                  - generic [ref=e427]: required
+                - generic [ref=e428]:
+                  - generic [ref=e429]: boolean
+                  - generic [ref=e430]: Whether this live view is the default one for all viewers.
+              - generic [ref=e431]:
+                - generic [ref=e432]:
+                  - generic [ref=e434]: isGlobal
+                  - generic [ref=e435]: required
+                - generic [ref=e436]:
+                  - generic [ref=e437]: boolean
+                  - generic [ref=e438]: Whether this live view is global and available system-wide to all users
+              - generic [ref=e439]:
+                - generic [ref=e440]:
+                  - generic [ref=e442]: owner
+                  - generic [ref=e443]: required
+                - generic [ref=e444]:
+                  - generic [ref=e445]: string
+                  - generic [ref=e446]: The primary key of user
+              - generic [ref=e447]:
+                - generic [ref=e448]:
+                  - generic [ref=e450]: layout
+                  - generic [ref=e451]: required
+                - generic [ref=e452]:
+                  - generic [ref=e453]: number
+                  - generic [ref=e454]: The number of slots this live view contains. Which as a consequence also affects the layout of the live view.
+              - generic [ref=e455]:
+                - generic [ref=e456]:
+                  - generic [ref=e457]:
+                    - generic [ref=e458]: slots
+                    - button "Expand" [ref=e459] [cursor=pointer]
+                  - generic [ref=e460]: required
+                - generic [ref=e461]:
+                  - generic [ref=e462]: Array of object
+                  - generic [ref=e463]: List of cameras visible in each given slot. And cycling settings for each slot if it has multiple cameras listed.
+        - complementary [ref=e464]:
+          - generic [ref=e465]:
+            - generic [ref=e466]:
+              - generic [ref=e467]: Example - Call
+              - button [ref=e468] [cursor=pointer]:
+                - img [ref=e469]
+            - generic [ref=e473]:
+              - generic [ref=e474]:
+                - tab "Switch to cURL" [selected] [ref=e475] [cursor=pointer]:
+                  - img [ref=e476]
+                  - generic [ref=e479]: cURL
+                - tab "Switch to Go" [ref=e480] [cursor=pointer]:
+                  - img [ref=e481]
+                  - generic [ref=e485]: Go
+                - tab "Switch to Node.js" [ref=e486] [cursor=pointer]:
+                  - img [ref=e487]
+                  - generic [ref=e490]: Node.js
+                - tab "Switch to Python" [ref=e491] [cursor=pointer]:
+                  - img [ref=e492]
+                  - generic [ref=e495]: Python
+                - tab "Switch to Ansible" [ref=e496] [cursor=pointer]:
+                  - img [ref=e497]
+                  - generic [ref=e500]: Ansible
+              - generic [ref=e501]:
+                - img [ref=e502]
+                - generic [ref=e504]:
+                  - text: Example call uses
+                  - link "UniFi Connector" [ref=e505] [cursor=pointer]:
+                    - /url: /protect/v6.1.78/connectorpost
+                  - text: which requires FW version >= 5.0.3
+              - code [ref=e508]:
+                - generic [ref=e509]: "curl -L -g \"https://api.ui.com/v1/connector/consoles/{consoleId}/proxy/protect/integration/v1/liveviews\" \\"
+                - generic [ref=e510]: "-H \"Accept: application/json\" \\"
+                - generic [ref=e511]: "-H \"X-API-Key: <X-API-Key>\" \\"
+                - generic [ref=e512]: "-H \"Content-Type: application/json\" \\"
+                - generic [ref=e513]: "-d \"{"
+                - generic [ref=e514]: "\\\"id\\\": \\\"string\\\","
+                - generic [ref=e515]: "\\\"modelKey\\\": \\\"string\\\","
+                - generic [ref=e516]: "\\\"name\\\": \\\"string\\\","
+                - generic [ref=e517]: "\\\"isDefault\\\": true,"
+                - generic [ref=e518]: "\\\"isGlobal\\\": true,"
+                - generic [ref=e519]: "\\\"owner\\\": \\\"string\\\","
+                - generic [ref=e520]: "\\\"layout\\\": 0,"
+                - generic [ref=e521]: "\\\"slots\\\": ["
+                - generic [ref=e522]: "{"
+                - generic [ref=e523]: "\\\"cameras\\\": ["
+                - generic [ref=e524]: \"string\"
+                - generic [ref=e525]: "],"
+                - generic [ref=e526]: "\\\"cycleMode\\\": \\\"motion\\\","
+                - generic [ref=e527]: "\\\"cycleInterval\\\": 0"
+                - generic [ref=e528]: "}"
+                - generic [ref=e529]: "]"
+                - generic [ref=e530]: "}\""
+          - generic [ref=e531]:
+            - generic [ref=e532]:
+              - generic [ref=e533]: Response Sample
+              - button [ref=e534] [cursor=pointer]:
+                - img [ref=e535]
+            - generic [ref=e539]:
+              - button "200" [active] [ref=e542] [cursor=pointer]
+              - code [ref=e546]:
+                - generic [ref=e547]: "{"
+                - generic [ref=e548]: "\"id\": \"string\","
+                - generic [ref=e549]: "\"modelKey\": \"string\","
+                - generic [ref=e550]: "\"name\": \"string\","
+                - generic [ref=e551]: "\"isDefault\": true,"
+                - generic [ref=e552]: "\"isGlobal\": true,"
+                - generic [ref=e553]: "\"owner\": \"string\","
+                - generic [ref=e554]: "\"layout\": 0,"
+                - generic [ref=e555]: "\"slots\": ["
+                - generic [ref=e556]: "{"
+                - generic [ref=e557]: "\"cameras\": ["
+                - generic [ref=e558]: "\"string\""
+                - generic [ref=e559]: "],"
+                - generic [ref=e560]: "\"cycleMode\": \"motion\","
+                - generic [ref=e561]: "\"cycleInterval\": 0"
+                - generic [ref=e562]: "}"
+                - generic [ref=e563]: "]"
+                - generic [ref=e564]: "}"
