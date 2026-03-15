@@ -81,7 +81,7 @@ export function registerSubscriptionTools(
     "protect_subscribe_events",
     {
       description:
-        "Connect to the Protect event WebSocket and collect messages for a specified duration. Returns events like motion detection, doorbell rings, and smart detections.",
+        "Connect to the Protect event WebSocket and collect messages for a specified duration. Returns events including motion, ring (doorbell), and smartDetect (person/vehicle/animal/package).",
       inputSchema: { duration: durationSchema },
       annotations: READ_ONLY,
     },

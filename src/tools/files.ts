@@ -13,11 +13,11 @@ export function registerFileTools(
   server.registerTool(
     "protect_list_files",
     {
-      description: "List files of a given type (e.g. 'video', 'timelapse')",
+      description: "List files of a given type (only 'animations' is supported)",
       inputSchema: {
         fileType: z
           .string()
-          .describe("File type to list (e.g. 'video', 'timelapse')"),
+          .describe("File type to list (only 'animations' is currently supported)"),
       },
       annotations: READ_ONLY,
     },
@@ -39,7 +39,7 @@ export function registerFileTools(
       description:
         "Trigger an alarm manager webhook by ID. This fires an external alarm action.",
       inputSchema: {
-        id: z.string().describe("Webhook ID"),
+        id: z.string().describe("User-defined webhook ID matching an alarm manager configuration"),
         confirm: z
           .literal(true)
           .describe("Must be true to confirm triggering the alarm webhook"),
@@ -67,8 +67,8 @@ export function registerFileTools(
         base64Data: z.string().describe("Base64-encoded file content"),
         contentType: z
           .string()
-          .default("application/octet-stream")
-          .describe("MIME type of the file"),
+          .default("image/gif")
+          .describe("MIME type of the file (accepted: image/gif, image/png, image/jpeg)"),
         dryRun: z
           .boolean()
           .optional()

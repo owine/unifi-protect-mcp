@@ -52,7 +52,7 @@ export function registerLiveviewTools(
       inputSchema: {
         settings: z
           .record(z.string(), z.unknown())
-          .describe("Liveview configuration. Required fields: name (string), layout (number of slots), slots (array of {cameras: string[], cycleMode: string, cycleInterval: number}), isDefault (boolean), isGlobal (boolean)"),
+          .describe("Liveview configuration. Required fields: id (string), modelKey (string, must be 'liveview'), owner (string, user ID), name (string), layout (number of slots), slots (array of {cameras: string[], cycleMode: string, cycleInterval: number}), isDefault (boolean), isGlobal (boolean)"),
         dryRun: z
           .boolean()
           .optional()
@@ -76,12 +76,12 @@ export function registerLiveviewTools(
   server.registerTool(
     "protect_update_liveview",
     {
-      description: "Update an existing live view (partial update via PATCH)",
+      description: "Update an existing live view (full replacement via PUT-style PATCH — include all fields)",
       inputSchema: {
         id: z.string().describe("Liveview ID"),
         settings: z
           .record(z.string(), z.unknown())
-          .describe("Partial liveview settings to update. Known fields: name (string), layout (number), slots (array of {cameras: string[], cycleMode: string, cycleInterval: number}), isDefault (boolean), isGlobal (boolean)"),
+          .describe("Full liveview object for update (all fields required). Known fields: id (string), modelKey (string, must be 'liveview'), owner (string, user ID), name (string), layout (number), slots (array of {cameras: string[], cycleMode: string, cycleInterval: number}), isDefault (boolean), isGlobal (boolean)"),
         dryRun: z
           .boolean()
           .optional()

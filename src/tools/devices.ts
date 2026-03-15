@@ -9,8 +9,8 @@ type DeviceType = "light" | "sensor" | "chime" | "viewer";
 
 const settingsHints: Record<DeviceType, string> = {
   light: "Known fields: name (string), isLightForceEnabled (boolean), lightModeSettings (object with mode, enableAt), lightDeviceSettings (object with isIndicatorEnabled, pirDuration, pirSensitivity, ledLevel)",
-  sensor: "Known fields: name (string), mountType (string), motionSettings (object), humiditySettings (object), temperatureSettings (object), lightSettings (object), alarmSettings (object)",
-  chime: "Known fields: name (string), volume (number), ringSettings (array of ring tone configurations)",
+  sensor: "Known fields: name (string), motionSettings (object), humiditySettings (object), temperatureSettings (object), lightSettings (object), alarmSettings (object)",
+  chime: "Known fields: name (string), cameraIds (array of camera IDs linked to the chime), ringSettings (array of ring tone configurations)",
   viewer: "Known fields: name (string), liveview (string, liveview ID to display)",
 };
 
