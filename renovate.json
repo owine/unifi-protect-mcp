@@ -75,6 +75,36 @@
         "github-runners"
       ],
       "automerge": true
+    },
+    {
+      "description": "Group GitHub Actions digest/version updates",
+      "groupName": "github actions",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Group non-MCP production deps (patch/minor)",
+      "groupName": "production dependencies",
+      "matchDepTypes": [
+        "dependencies"
+      ],
+      "matchPackageNames": [
+        "!@modelcontextprotocol/sdk"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ]
+    },
+    {
+      "description": "Group TypeScript with its type definitions",
+      "groupName": "typescript toolchain",
+      "matchPackageNames": [
+        "typescript",
+        "@types/node"
+      ]
     }
   ]
 }
