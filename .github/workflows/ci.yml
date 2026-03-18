@@ -7,7 +7,22 @@ on:
     branches: [main]
 
 jobs:
-  build-and-test:
+  lint-and-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: "24.14.0"
+          cache: npm
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+
+  test:
+    needs: lint-and-build
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -19,15 +34,11 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
       - run: npm ci
-      # Run once per CI invocation (lowest LTS); lockfile is the same across Node versions
-      - run: npm audit --omit=dev --audit-level=high
-        if: startsWith(matrix.node-version, '20.')
-      - run: npm run typecheck
-      - run: npm run lint
       - run: npm run build
       - run: npm test
 
   security:
+    if: github.actor != 'renovate[bot]' || github.event_name == 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
