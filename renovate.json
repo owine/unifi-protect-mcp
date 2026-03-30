@@ -2,9 +2,10 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:best-practices",
-    ":semanticCommits",
-    ":semanticPrefixFixDepsChoreOthers"
+    ":semanticCommits"
   ],
+  "semanticCommitType": "deps",
+  "semanticCommitScope": null,
   "timezone": "America/Chicago",
   "schedule": [
     "on monday"

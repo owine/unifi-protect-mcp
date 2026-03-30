@@ -72,8 +72,10 @@ Versioning and npm publishing are automated via [release-please](https://github.
 - Use **conventional commits** — release-please reads these to determine semver bumps and generate changelogs
   - `feat: ...` → minor bump
   - `fix: ...` → patch bump
+  - `deps: ...` → patch bump (production dependency updates)
   - `feat!: ...` or `BREAKING CHANGE:` footer → major bump
   - `chore:`, `docs:`, `ci:`, `refactor:`, `test:` → no release
+- **Dependency commits**: Only `feat`, `fix`, and `deps` are "releasable units" in release-please. Renovate is configured to use `deps:` for all dependency updates (triggers a patch release)
 - On push to `main`, release-please opens/updates a "Release PR" that bumps `package.json` version and updates `CHANGELOG.md`
 - Merging the Release PR triggers `npm publish` to `@owine/unifi-protect-mcp` with provenance attestation
 - To override the version number, add `Release-As: x.x.x` in the **commit body** (not the title):
