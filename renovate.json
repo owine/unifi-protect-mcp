@@ -13,9 +13,23 @@
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
   "lockFileMaintenance": {
-    "automerge": true
+    "automerge": true,
+    "schedule": [
+      "on monday"
+    ]
   },
   "packageRules": [
+    {
+      "description": "Batch non-major dev dependency bumps into one PR",
+      "groupName": "dev dependencies",
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ]
+    },
     {
       "groupName": "eslint",
       "matchPackageNames": [
