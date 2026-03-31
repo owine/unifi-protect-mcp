@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/owine/unifi-protect-mcp/compare/v2.2.0...v2.2.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* **renovate:** use deps: commit type for release-please compatibility ([aaf1199](https://github.com/owine/unifi-protect-mcp/commit/aaf1199354b2471995b48866b9b4ff23c8cea895))
+
 ## [2.2.0](https://github.com/owine/unifi-protect-mcp/compare/v2.1.0...v2.2.0) (2026-03-15)
 
 
