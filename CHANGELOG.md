@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/owine/unifi-protect-mcp/compare/v2.2.1...v2.3.0) (2026-04-01)
+
+
+### Features
+
+* upgrade to TypeScript 6 ([f12a22d](https://github.com/owine/unifi-protect-mcp/commit/f12a22d1271f129f644b1f46f36b1b0f0c1501fb))
+
 ## [2.2.1](https://github.com/owine/unifi-protect-mcp/compare/v2.2.0...v2.2.1) (2026-03-31)
 
 
