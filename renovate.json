@@ -13,10 +13,7 @@
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
   "lockFileMaintenance": {
-    "automerge": true,
-    "schedule": [
-      "on monday"
-    ]
+    "automerge": true
   },
   "packageRules": [
     {
