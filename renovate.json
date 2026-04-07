@@ -10,6 +10,9 @@
   "schedule": [
     "on monday"
   ],
+  "automergeSchedule": [
+    "at any time"
+  ],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
   "lockFileMaintenance": {
@@ -17,46 +20,18 @@
   },
   "packageRules": [
     {
-      "description": "Batch non-major dev dependency bumps into one PR",
-      "groupName": "dev dependencies",
-      "matchDepTypes": [
-        "devDependencies"
-      ],
+      "description": "Group all non-major updates into a single PR",
       "matchUpdateTypes": [
         "patch",
-        "minor"
-      ]
-    },
-    {
-      "groupName": "eslint",
-      "matchPackageNames": [
-        "eslint",
-        "@eslint/js",
-        "typescript-eslint"
-      ]
-    },
-    {
-      "groupName": "vitest",
-      "matchPackageNames": [
-        "vitest",
-        "@vitest/*"
-      ]
-    },
-    {
-      "groupName": "type definitions",
-      "matchPackageNames": [
-        "@types/*"
-      ]
-    },
-    {
-      "description": "Automerge dev tooling (non-compiler)",
-      "matchDepTypes": [
-        "devDependencies"
+        "minor",
+        "pin",
+        "digest"
       ],
-      "automerge": true,
       "matchPackageNames": [
-        "!typescript"
-      ]
+        "!@modelcontextprotocol/sdk"
+      ],
+      "groupName": "all non-major dependencies",
+      "automerge": true
     },
     {
       "description": "MCP SDK — always review",
@@ -71,52 +46,6 @@
         "major"
       ],
       "automerge": false
-    },
-    {
-      "description": "Pin and group Node.js versions in CI",
-      "groupName": "node versions",
-      "matchDatasources": [
-        "node-version"
-      ],
-      "automerge": true
-    },
-    {
-      "description": "Pin and group GitHub Actions runner images",
-      "groupName": "github runners",
-      "matchDatasources": [
-        "github-runners"
-      ],
-      "automerge": true
-    },
-    {
-      "description": "Group GitHub Actions digest/version updates",
-      "groupName": "github actions",
-      "matchManagers": [
-        "github-actions"
-      ],
-      "automerge": true
-    },
-    {
-      "description": "Group non-MCP production deps (patch/minor)",
-      "groupName": "production dependencies",
-      "matchDepTypes": [
-        "dependencies"
-      ],
-      "matchPackageNames": [
-        "!@modelcontextprotocol/sdk"
-      ],
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ]
-    },
-    {
-      "description": "Group TypeScript with its type definitions",
-      "groupName": "typescript toolchain",
-      "matchPackageNames": [
-        "typescript",
-        "@types/node"
-      ]
     }
   ]
 }
