@@ -34,10 +34,11 @@
       "automerge": true
     },
     {
-      "description": "MCP SDK — always review",
+      "description": "MCP SDK — feat prefix for minor bump, always review",
       "matchPackageNames": [
         "@modelcontextprotocol/sdk"
       ],
+      "semanticCommitType": "feat",
       "automerge": false
     },
     {
