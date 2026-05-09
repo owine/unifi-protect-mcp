@@ -69,6 +69,13 @@ const FILE_TOOLS = [
   "protect_upload_file",
 ];
 
+const USER_TOOLS = [
+  "protect_list_users",
+  "protect_get_user",
+  "protect_list_ulp_users",
+  "protect_get_ulp_user",
+];
+
 const ARM_PROFILE_TOOLS = [
   "protect_list_arm_profiles",
   "protect_create_arm_profile",
@@ -95,6 +102,7 @@ const READ_ONLY_TOOLS = [
   "protect_list_files",
   // arm profiles read-only
   "protect_list_arm_profiles",
+  ...USER_TOOLS,
 ];
 
 const ALL_TOOLS_RW = [
@@ -106,6 +114,7 @@ const ALL_TOOLS_RW = [
   ...LIVEVIEW_TOOLS,
   ...FILE_TOOLS,
   ...ARM_PROFILE_TOOLS,
+  ...USER_TOOLS,
 ];
 
 const WRITE_TOOLS = ALL_TOOLS_RW.filter((t) => !READ_ONLY_TOOLS.includes(t));
