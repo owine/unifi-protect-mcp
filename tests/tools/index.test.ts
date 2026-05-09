@@ -69,6 +69,16 @@ const FILE_TOOLS = [
   "protect_upload_file",
 ];
 
+const ARM_PROFILE_TOOLS = [
+  "protect_list_arm_profiles",
+  "protect_create_arm_profile",
+  "protect_set_current_arm_profile",
+  "protect_update_arm_profile",
+  "protect_delete_arm_profile",
+  "protect_enable_arm_alarm",
+  "protect_disable_arm_alarm",
+];
+
 const READ_ONLY_TOOLS = [
   ...SYSTEM_TOOLS,
   ...SUBSCRIPTION_TOOLS,
@@ -83,6 +93,8 @@ const READ_ONLY_TOOLS = [
   "protect_get_liveview",
   // files read-only
   "protect_list_files",
+  // arm profiles read-only
+  "protect_list_arm_profiles",
 ];
 
 const ALL_TOOLS_RW = [
@@ -93,6 +105,7 @@ const ALL_TOOLS_RW = [
   ...DEVICE_ACTION_TOOLS,
   ...LIVEVIEW_TOOLS,
   ...FILE_TOOLS,
+  ...ARM_PROFILE_TOOLS,
 ];
 
 const WRITE_TOOLS = ALL_TOOLS_RW.filter((t) => !READ_ONLY_TOOLS.includes(t));

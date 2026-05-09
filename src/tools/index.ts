@@ -7,6 +7,7 @@ import { registerDeviceActionTools } from "./device-actions.js";
 import { registerLiveviewTools } from "./liveviews.js";
 import { registerFileTools } from "./files.js";
 import { registerSubscriptionTools } from "./subscriptions.js";
+import { registerArmProfileTools } from "./arm-profiles.js";
 
 export function registerAllTools(
   server: McpServer,
@@ -20,4 +21,5 @@ export function registerAllTools(
   registerDeviceActionTools(server, client, readOnly);
   registerLiveviewTools(server, client, readOnly);
   registerFileTools(server, client, readOnly);
+  registerArmProfileTools(server, client, readOnly);
 }
