@@ -5,33 +5,109 @@ import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 
-type DeviceType = "light" | "sensor" | "chime" | "viewer";
+interface DeviceConfig {
+  urlPath: string;   // URL segment (may contain hyphens, e.g. "link-stations")
+  singular: string;  // Tool-name singular (snake_case, e.g. "link_station")
+  plural: string;    // Tool-name plural (snake_case, e.g. "link_stations")
+  label: string;     // Human-readable label, e.g. "Link station"
+  hint: string;      // Description of patchable fields
+}
 
-const settingsHints: Record<DeviceType, string> = {
-  light: "Known fields: name (string), isLightForceEnabled (boolean), lightModeSettings (object with mode, enableAt), lightDeviceSettings (object with isIndicatorEnabled, pirDuration, pirSensitivity, ledLevel)",
-  sensor: "Known fields: name (string), motionSettings (object), humiditySettings (object), temperatureSettings (object), lightSettings (object), alarmSettings (object)",
-  chime: "Known fields: name (string), cameraIds (array of camera IDs linked to the chime), ringSettings (array of ring tone configurations)",
-  viewer: "Known fields: name (string), liveview (string, liveview ID to display)",
-};
+const DEVICES: DeviceConfig[] = [
+  {
+    urlPath: "lights",
+    singular: "light",
+    plural: "lights",
+    label: "Light",
+    hint: "Known fields: name (string), isLightForceEnabled (boolean), lightModeSettings (object with mode, enableAt), lightDeviceSettings (object with isIndicatorEnabled, pirDuration, pirSensitivity, ledLevel)",
+  },
+  {
+    urlPath: "sensors",
+    singular: "sensor",
+    plural: "sensors",
+    label: "Sensor",
+    hint: "Known fields: name (string), motionSettings (object), humiditySettings (object), temperatureSettings (object), lightSettings (object), alarmSettings (object)",
+  },
+  {
+    urlPath: "chimes",
+    singular: "chime",
+    plural: "chimes",
+    label: "Chime",
+    hint: "Known fields: name (string), cameraIds (array of camera IDs linked to the chime), ringSettings (array of ring tone configurations)",
+  },
+  {
+    urlPath: "viewers",
+    singular: "viewer",
+    plural: "viewers",
+    label: "Viewer",
+    hint: "Known fields: name (string), liveview (string, liveview ID to display)",
+  },
+  {
+    urlPath: "sirens",
+    singular: "siren",
+    plural: "sirens",
+    label: "Siren",
+    hint: "Known fields: name (string), volume (integer 1-100), ledSettings (object with isEnabled boolean)",
+  },
+  {
+    urlPath: "fobs",
+    singular: "fob",
+    plural: "fobs",
+    label: "Fob",
+    hint: "Known fields: name (string)",
+  },
+  {
+    urlPath: "relays",
+    singular: "relay",
+    plural: "relays",
+    label: "Relay",
+    hint: "Known fields: name (string), ledSettings (object with isEnabled boolean)",
+  },
+  {
+    urlPath: "speakers",
+    singular: "speaker",
+    plural: "speakers",
+    label: "Speaker",
+    hint: "Known fields: name (string), volume (integer 0-100), micVolume (integer 0-100), isMicEnabled (boolean)",
+  },
+  {
+    urlPath: "bridges",
+    singular: "bridge",
+    plural: "bridges",
+    label: "Bridge",
+    hint: "Known fields: name (string)",
+  },
+  {
+    urlPath: "link-stations",
+    singular: "link_station",
+    plural: "link_stations",
+    label: "Link station",
+    hint: "Known fields: name (string)",
+  },
+  {
+    urlPath: "alarm-hubs",
+    singular: "alarm_hub",
+    plural: "alarm_hubs",
+    label: "Alarm hub",
+    hint: "Known fields: name (string)",
+  },
+];
 
 function registerDeviceCrud(
   server: McpServer,
   client: ProtectClient,
-  deviceType: DeviceType,
+  cfg: DeviceConfig,
   readOnly: boolean
 ) {
-  const plural = `${deviceType}s`;
-  const label = deviceType.charAt(0).toUpperCase() + deviceType.slice(1);
-
   server.registerTool(
-    `protect_list_${plural}`,
+    `protect_list_${cfg.plural}`,
     {
-      description: `List all ${plural} managed by UniFi Protect`,
+      description: `List all ${cfg.label.toLowerCase()}s managed by UniFi Protect`,
       annotations: READ_ONLY,
     },
     async () => {
       try {
-        const data = await client.get(`/${plural}`);
+        const data = await client.get(`/${cfg.urlPath}`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -40,15 +116,15 @@ function registerDeviceCrud(
   );
 
   server.registerTool(
-    `protect_get_${deviceType}`,
+    `protect_get_${cfg.singular}`,
     {
-      description: `Get details for a specific ${deviceType} by ID`,
-      inputSchema: { id: z.string().describe(`${label} ID`) },
+      description: `Get details for a specific ${cfg.label.toLowerCase()} by ID`,
+      inputSchema: { id: z.string().describe(`${cfg.label} ID`) },
       annotations: READ_ONLY,
     },
     async ({ id }) => {
       try {
-        const data = await client.get(safePath`/${plural}/${id}`);
+        const data = await client.get(safePath`/${cfg.urlPath}/${id}`);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -58,14 +134,14 @@ function registerDeviceCrud(
 
   if (!readOnly) {
     server.registerTool(
-      `protect_update_${deviceType}`,
+      `protect_update_${cfg.singular}`,
       {
-        description: `Update ${deviceType} settings (partial update via PATCH)`,
+        description: `Update ${cfg.label.toLowerCase()} settings (partial update via PATCH)`,
         inputSchema: {
-          id: z.string().describe(`${label} ID`),
+          id: z.string().describe(`${cfg.label} ID`),
           settings: z
             .record(z.string(), z.unknown())
-            .describe(`Partial ${deviceType} settings to update. ${settingsHints[deviceType]}`),
+            .describe(`Partial ${cfg.label.toLowerCase()} settings to update. ${cfg.hint}`),
           dryRun: z
             .boolean()
             .optional()
@@ -76,9 +152,9 @@ function registerDeviceCrud(
       async ({ id, settings, dryRun }) => {
         try {
           if (dryRun) {
-            return formatDryRun("PATCH", safePath`/${plural}/${id}`, settings);
+            return formatDryRun("PATCH", safePath`/${cfg.urlPath}/${id}`, settings);
           }
-          const data = await client.patch(safePath`/${plural}/${id}`, settings);
+          const data = await client.patch(safePath`/${cfg.urlPath}/${id}`, settings);
           return formatSuccess(data);
         } catch (err) {
           return formatError(err);
@@ -93,8 +169,10 @@ export function registerDeviceTools(
   client: ProtectClient,
   readOnly: boolean
 ) {
-  const deviceTypes: DeviceType[] = ["light", "sensor", "chime", "viewer"];
-  for (const dt of deviceTypes) {
-    registerDeviceCrud(server, client, dt, readOnly);
+  for (const cfg of DEVICES) {
+    registerDeviceCrud(server, client, cfg, readOnly);
   }
 }
+
+/** Exported for tests */
+export const _DEVICE_CONFIGS = DEVICES;
