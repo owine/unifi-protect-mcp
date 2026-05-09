@@ -3,6 +3,7 @@ import { ProtectClient } from "../client.js";
 import { registerSystemTools } from "./system.js";
 import { registerCameraTools } from "./cameras.js";
 import { registerDeviceTools } from "./devices.js";
+import { registerDeviceActionTools } from "./device-actions.js";
 import { registerLiveviewTools } from "./liveviews.js";
 import { registerFileTools } from "./files.js";
 import { registerSubscriptionTools } from "./subscriptions.js";
@@ -16,6 +17,7 @@ export function registerAllTools(
   registerSubscriptionTools(server, client);
   registerCameraTools(server, client, readOnly);
   registerDeviceTools(server, client, readOnly);
+  registerDeviceActionTools(server, client, readOnly);
   registerLiveviewTools(server, client, readOnly);
   registerFileTools(server, client, readOnly);
 }

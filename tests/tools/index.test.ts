@@ -47,6 +47,15 @@ const DEVICE_TOOLS_RO = [
   ...DEVICE_SINGULARS.map((s) => `protect_get_${s}`),
 ];
 
+const DEVICE_ACTION_TOOLS = [
+  "protect_play_siren",
+  "protect_stop_siren",
+  "protect_test_siren_sound",
+  "protect_test_speaker_sound",
+  "protect_activate_relay_output",
+  "protect_trigger_alarm_hub_output",
+];
+
 const LIVEVIEW_TOOLS = [
   "protect_list_liveviews",
   "protect_get_liveview",
@@ -81,6 +90,7 @@ const ALL_TOOLS_RW = [
   ...SUBSCRIPTION_TOOLS,
   ...CAMERA_TOOLS,
   ...DEVICE_TOOLS_RW,
+  ...DEVICE_ACTION_TOOLS,
   ...LIVEVIEW_TOOLS,
   ...FILE_TOOLS,
 ];
