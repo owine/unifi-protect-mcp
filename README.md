@@ -1,6 +1,6 @@
 # UniFi Protect MCP Server
 
-An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Provides 33 tools for managing cameras, lights, sensors, chimes, viewers, live views, and NVR status.
+An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.1.47** — 73 tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, NVR status, and WebSocket subscriptions.
 
 ## Prerequisites
 
@@ -75,13 +75,19 @@ This server provides layered safety controls for responsible operation:
 - **Confirmation parameter** — The most dangerous tools (`protect_disable_mic`, `protect_trigger_alarm_webhook`) require an explicit `confirm: true` parameter that must be present for the call to succeed
 - **Dry-run support** — All write tools (except those with `confirm`) accept an optional `dryRun: true` parameter that returns a preview of what would happen without making any changes
 
-## Tools (33 total)
+## Tools (73 total)
 
 ### System (2)
 | Tool | Description |
 |---|---|
 | `protect_get_info` | Get system information and version details |
 | `protect_list_nvrs` | List all NVR devices |
+
+### Subscriptions (2)
+| Tool | Description |
+|---|---|
+| `protect_subscribe_devices` | Subscribe via WebSocket to device state updates |
+| `protect_subscribe_events` | Subscribe via WebSocket to event notifications |
 
 ### Cameras (12)
 | Tool | Description |
@@ -127,6 +133,72 @@ This server provides layered safety controls for responsible operation:
 | `protect_get_viewer` | Get viewer details by ID |
 | `protect_update_viewer` | Update viewer settings |
 
+### Sirens (6)
+| Tool | Description |
+|---|---|
+| `protect_list_sirens` | List all sirens |
+| `protect_get_siren` | Get siren details by ID |
+| `protect_update_siren` | Update siren settings (name, volume, LED) |
+| `protect_play_siren` | Activate the siren alarm for a given duration (5/10/20/30s) |
+| `protect_stop_siren` | Stop an active siren |
+| `protect_test_siren_sound` | Test the siren sound for 5 seconds at a given volume |
+
+### Fobs (3)
+| Tool | Description |
+|---|---|
+| `protect_list_fobs` | List all key fobs |
+| `protect_get_fob` | Get fob details by ID |
+| `protect_update_fob` | Update fob settings |
+
+### Relays (4)
+| Tool | Description |
+|---|---|
+| `protect_list_relays` | List all relays |
+| `protect_get_relay` | Get relay details by ID |
+| `protect_update_relay` | Update relay settings |
+| `protect_activate_relay_output` | Set/toggle a relay output channel, with optional pulse duration |
+
+### Speakers (4)
+| Tool | Description |
+|---|---|
+| `protect_list_speakers` | List all speakers |
+| `protect_get_speaker` | Get speaker details by ID |
+| `protect_update_speaker` | Update speaker settings (volume, mic) |
+| `protect_test_speaker_sound` | Test the speaker sound at a given volume |
+
+### Bridges (3)
+| Tool | Description |
+|---|---|
+| `protect_list_bridges` | List all bridges |
+| `protect_get_bridge` | Get bridge details by ID |
+| `protect_update_bridge` | Update bridge settings |
+
+### Link Stations (3)
+| Tool | Description |
+|---|---|
+| `protect_list_link_stations` | List all link stations (non-alarm-hub gateways) |
+| `protect_get_link_station` | Get link station details by ID |
+| `protect_update_link_station` | Update link station settings |
+
+### Alarm Hubs (4)
+| Tool | Description |
+|---|---|
+| `protect_list_alarm_hubs` | List all alarm hubs |
+| `protect_get_alarm_hub` | Get alarm hub details by ID |
+| `protect_update_alarm_hub` | Update alarm hub settings |
+| `protect_trigger_alarm_hub_output` | Trigger an alarm hub output channel (sirens, lights, etc.) |
+
+### Arm Profiles (7) — local alarm manager
+| Tool | Description |
+|---|---|
+| `protect_list_arm_profiles` | List all arm profiles |
+| `protect_create_arm_profile` | Create a new arm profile |
+| `protect_set_current_arm_profile` | Set the active profile used when arming |
+| `protect_update_arm_profile` | Update an arm profile |
+| `protect_delete_arm_profile` | **DESTRUCTIVE:** Delete an arm profile by ID |
+| `protect_enable_arm_alarm` | Arm the alarm using the current profile |
+| `protect_disable_arm_alarm` | Disarm the alarm |
+
 ### Live Views (4)
 | Tool | Description |
 |---|---|
@@ -141,6 +213,14 @@ This server provides layered safety controls for responsible operation:
 | `protect_trigger_alarm_webhook` | Trigger an alarm webhook (fires external alarm action) |
 | `protect_list_files` | List files by type |
 | `protect_upload_file` | Upload a file (base64-encoded) |
+
+### Users (4)
+| Tool | Description |
+|---|---|
+| `protect_list_users` | List Protect users (filtered by access permissions) |
+| `protect_get_user` | Get a Protect user by ID |
+| `protect_list_ulp_users` | List UniFi Identity (ULP) users with enrolled credentials |
+| `protect_get_ulp_user` | Get a UniFi Identity user by ID |
 
 ## Development
 
