@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.4.0](https://github.com/owine/unifi-protect-mcp/compare/2.3.3...2.4.0) (2026-05-11)
+
+
+### Features
+
+* add arm profile management tools ([2594993](https://github.com/owine/unifi-protect-mcp/commit/2594993871bc5a530422a1af4810291ccd7e495d))
+* add device action tools for sirens, speakers, relays, and alarm hubs ([686bfc5](https://github.com/owine/unifi-protect-mcp/commit/686bfc508e4fa9245b5825cc8382404a1d55cf3a))
+* add Protect user and UniFi Identity user listing tools ([8fe9b6d](https://github.com/owine/unifi-protect-mcp/commit/8fe9b6d164a01cc77a152942e868e02bca1fe213))
+* extend devices.ts with new device domains for API 7.1.47 ([96c02a7](https://github.com/owine/unifi-protect-mcp/commit/96c02a705ea7e55c1467c103b23573898fd5a2e4))
+
+
+### Dependencies
+
+* bump fast-uri to 3.1.2 to fix CVE-2026-6322 ([ec7878b](https://github.com/owine/unifi-protect-mcp/commit/ec7878bebf4765573f5fb543410a06dd5e122b4b))
+* lock file maintenance ([#91](https://github.com/owine/unifi-protect-mcp/issues/91)) ([47ecf3a](https://github.com/owine/unifi-protect-mcp/commit/47ecf3ada1663cde92ea724f68ffd6d42e9e418f))
+* npm audit fix (hono, ip-address, express-rate-limit) ([7fb3641](https://github.com/owine/unifi-protect-mcp/commit/7fb3641b0e3283c8c9048b73a41c3f42cb2d0097))
+
 ## [2.3.3](https://github.com/owine/unifi-protect-mcp/compare/2.3.2...2.3.3) (2026-05-04)
 
 
