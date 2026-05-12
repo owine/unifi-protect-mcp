@@ -4,15 +4,22 @@
 
 MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.1.47** (73 tools across 9 domains).
 
+## Local dev setup
+
+- Node version pinned in `.nvmrc` (24.15.0). Use [fnm](https://github.com/Schniz/fnm) — `fnm use` auto-reads `.nvmrc` on `cd`. The published library declares broader `engines.node` (`^20 || ^22 || >=24`) for consumers; the `.nvmrc` only pins *development*.
+- Package manager: pnpm via Corepack. `corepack enable`, then `pnpm install`.
+- Dev install/build use pnpm; **publishing uses `npm publish --provenance`** (hybrid — npm has the most battle-tested OIDC flow).
+
 ## Commands
 
 ```bash
-npm run build        # Compile TypeScript to dist/
-npm run typecheck    # Type-check without emitting
-npm run lint         # ESLint (strict + stylistic)
-npm run lint:fix     # ESLint with auto-fix
-npm test             # Run all tests (vitest)
-npm run test:watch   # Run tests in watch mode
+pnpm install         # Install dependencies (frozen-lockfile in CI)
+pnpm run build       # Compile TypeScript to dist/
+pnpm run typecheck   # Type-check without emitting
+pnpm run lint        # ESLint (strict + stylistic)
+pnpm run lint:fix    # ESLint with auto-fix
+pnpm test            # Run all tests (vitest)
+pnpm run test:watch  # Run tests in watch mode
 ```
 
 ## Architecture
