@@ -1,52 +1,19 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:best-practices",
-    ":semanticCommits"
+    "github>owine/renovate-config",
+    "github>owine/renovate-config:automerge",
+    "github>owine/renovate-config:node",
+    "github>owine/renovate-config:docker"
   ],
-  "semanticCommitType": "deps",
-  "semanticCommitScope": null,
-  "timezone": "America/Chicago",
-  "schedule": [
-    "on monday"
-  ],
-  "automergeSchedule": [
-    "at any time"
-  ],
-  "prHourlyLimit": 0,
-  "prConcurrentLimit": 0,
-  "lockFileMaintenance": {
-    "automerge": true
-  },
   "packageRules": [
     {
-      "description": "Group all non-major updates into a single PR",
-      "matchUpdateTypes": [
-        "patch",
-        "minor",
-        "pin",
-        "digest"
-      ],
-      "matchPackageNames": [
-        "!@modelcontextprotocol/sdk"
-      ],
-      "groupName": "all non-major dependencies",
-      "automerge": true
-    },
-    {
-      "description": "MCP SDK — feat prefix for minor bump, always review",
-      "matchPackageNames": [
-        "@modelcontextprotocol/sdk"
-      ],
+      "description": "MCP SDK — review every bump manually. Carved out of the non-major automerge bundle and uses `feat:` prefix so a minor SDK bump triggers a minor release-please bump.",
+      "matchPackageNames": ["@modelcontextprotocol/sdk"],
+      "groupName": "mcp-sdk",
       "semanticCommitType": "feat",
-      "automerge": false
-    },
-    {
-      "description": "Never automerge major bumps",
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "automerge": false
+      "automerge": false,
+      "addLabels": ["needs-review"]
     }
   ]
 }
