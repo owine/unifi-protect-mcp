@@ -3,10 +3,10 @@ pre-commit:
   commands:
     eslint:
       glob: '*.{ts,js}'
-      run: fnm use --silent-if-unchanged && pnpm exec eslint {staged_files}
+      run: eval "$(fnm env)" && fnm use --silent-if-unchanged && pnpm exec eslint {staged_files}
     typecheck:
       glob: '*.ts'
-      run: fnm use --silent-if-unchanged && pnpm run typecheck
+      run: eval "$(fnm env)" && fnm use --silent-if-unchanged && pnpm run typecheck
     ggshield:
       run: |
         if [ -n "$GITGUARDIAN_API_KEY" ] && command -v ggshield >/dev/null 2>&1; then
