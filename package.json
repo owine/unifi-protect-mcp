@@ -22,7 +22,7 @@
   "engines": {
     "node": "v26.1.0"
   },
-  "packageManager": "pnpm@11.0.9",
+  "packageManager": "pnpm@11.1.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/owine/unifi-protect-mcp.git"
