@@ -6,7 +6,7 @@ MCP server exposing UniFi Protect's Integration API as tool calls. Built with th
 
 ## Local dev setup
 
-- Node version pinned in `.nvmrc` (24.15.0). Use [fnm](https://github.com/Schniz/fnm) — `fnm use` auto-reads `.nvmrc` on `cd`. The published library declares broader `engines.node` (`^20 || ^22 || >=24`) for consumers; the `.nvmrc` only pins *development*.
+- Node version pinned in `.nvmrc` (24.15.0). Use [fnm](https://github.com/Schniz/fnm) — `fnm use` auto-reads `.nvmrc` on `cd`. The published library declares broader `engines.node` (`^22.13.0 || ^24.0.0`) for consumers; the `.nvmrc` only pins *development*.
 - Package manager: pnpm via Corepack. `corepack enable`, then `pnpm install`.
 - Dev install/build use pnpm; **publishing uses `npm publish --provenance`** (hybrid — npm has the most battle-tested OIDC flow).
 
