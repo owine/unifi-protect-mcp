@@ -14,6 +14,13 @@
       "semanticCommitType": "feat",
       "automerge": false,
       "addLabels": ["needs-review"]
+    },
+    {
+      "description": "Don't pin engines.node — this is a library and the engines range must stay broad for consumers. Overrides the node preset's default pin behavior.",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["engines"],
+      "matchPackageNames": ["node"],
+      "enabled": false
     }
   ]
 }
