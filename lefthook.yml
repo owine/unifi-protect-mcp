@@ -1,0 +1,16 @@
+pre-commit:
+  parallel: true
+  commands:
+    eslint:
+      glob: '*.{ts,js}'
+      run: pnpm exec eslint {staged_files}
+    typecheck:
+      glob: '*.ts'
+      run: pnpm run typecheck
+    ggshield:
+      run: |
+        if [ -n "$GITGUARDIAN_API_KEY" ] && command -v ggshield >/dev/null 2>&1; then
+          ggshield secret scan pre-commit
+        else
+          echo "ggshield: skipped (GITGUARDIAN_API_KEY unset or ggshield not installed)"
+        fi
