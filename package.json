@@ -43,12 +43,12 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@types/node": "24.12.3",
+    "@types/node": "24.12.4",
     "@types/ws": "8.18.1",
     "@vitest/coverage-v8": "4.1.5",
     "eslint": "10.3.0",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.59.2",
+    "typescript-eslint": "8.59.3",
     "vitest": "4.1.5"
   }
 }
