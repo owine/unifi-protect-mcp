@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.6.0](https://github.com/owine/unifi-protect-mcp/compare/2.5.0...2.6.0) (2026-05-13)
+
+
+### Features
+
+* add lefthook with eslint + typecheck + ggshield ([27af1b7](https://github.com/owine/unifi-protect-mcp/commit/27af1b75b0168e09d1225f2d28fa9f59fe821528))
+
+
+### Bug Fixes
+
+* **lefthook:** prefix each Node command with 'eval "$(fnm env)"' ([ca853d5](https://github.com/owine/unifi-protect-mcp/commit/ca853d54f1322636041e45ea172d07919c9c0bbc))
+* **lefthook:** wrap each Node command with 'fnm use' for shell-agnostic resolution ([dd0731f](https://github.com/owine/unifi-protect-mcp/commit/dd0731f74d759d40f84a74d197e3624c65ffb53b))
+* **node:** proper LTS engines range; drop EOL Node 20 from CI matrix ([b2dd89a](https://github.com/owine/unifi-protect-mcp/commit/b2dd89a8dc588e85536b2eaa61edf1be1847ee48))
+
 ## [2.5.0](https://github.com/owine/unifi-protect-mcp/compare/2.4.0...2.5.0) (2026-05-13)
 
 
