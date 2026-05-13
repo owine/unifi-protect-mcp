@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.5.0](https://github.com/owine/unifi-protect-mcp/compare/2.4.0...2.5.0) (2026-05-13)
+
+
+### Features
+
+* pin dependency @modelcontextprotocol/sdk to 1.29.0 ([#95](https://github.com/owine/unifi-protect-mcp/issues/95)) ([81623ab](https://github.com/owine/unifi-protect-mcp/commit/81623ab70db3705ed67e2bf57a475adf8d26d6ae))
+
+
+### Bug Fixes
+
+* pin dependencies ([#96](https://github.com/owine/unifi-protect-mcp/issues/96)) ([fe2f36d](https://github.com/owine/unifi-protect-mcp/commit/fe2f36dddee8eba1c59b8bc940f6495c98b7371b))
+
+
+### Dependencies
+
+* lock file maintenance ([#99](https://github.com/owine/unifi-protect-mcp/issues/99)) ([a32d0cb](https://github.com/owine/unifi-protect-mcp/commit/a32d0cb9e3668624713f31f490f6843a1795c424))
+
 ## [2.4.0](https://github.com/owine/unifi-protect-mcp/compare/2.3.3...2.4.0) (2026-05-11)
 
 
