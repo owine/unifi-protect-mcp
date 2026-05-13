@@ -20,7 +20,7 @@
     "lint:fix": "eslint . --fix"
   },
   "engines": {
-    "node": "v26.1.0"
+    "node": "^22.13.0 || ^24.0.0"
   },
   "packageManager": "pnpm@11.1.1",
   "repository": {
