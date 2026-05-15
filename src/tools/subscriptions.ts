@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY } from "../utils/safety.js";
+import { subscriptionOutputSchema } from "../schemas/misc.js";
 
 const durationSchema = z
   .number()
@@ -59,8 +60,9 @@ export function registerSubscriptionTools(
     "protect_subscribe_devices",
     {
       description:
-        "Connect to the device update WebSocket and collect messages for a specified duration. Returns real-time add/update/remove events for Protect-managed hardware devices.",
+        "Connect to the device update WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?}; each message has {type: 'add'|'update'|'remove', modelKey: 'camera'|'light'|'sensor'|..., id, payload: partial device fields that changed}. Use to detect state changes like isRecording flipping, battery drops, or new devices being adopted — fields delivered are only those that changed, not the full device object.",
       inputSchema: { duration: durationSchema },
+      outputSchema: subscriptionOutputSchema,
       annotations: READ_ONLY,
     },
     async ({ duration }) => {
@@ -81,8 +83,9 @@ export function registerSubscriptionTools(
     "protect_subscribe_events",
     {
       description:
-        "Connect to the Protect event WebSocket and collect messages for a specified duration. Returns events including motion, ring (doorbell), and smartDetect (person/vehicle/animal/package).",
+        "Connect to the Protect event WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?}; each event message includes: id, type ('motion' | 'ring' | 'smartDetectZone' | 'smartDetectLine' | 'sensorMotion' | 'sensorAlarm' | 'fingerprint' | 'nfcCard' | ...), start, end (null while ongoing), camera/sensor id, score, smartDetectTypes (['person','vehicle','animal','package','license_plate','face']), metadata (e.g. detected license plate text, NFC card id, fingerprint id, ULP user match).",
       inputSchema: { duration: durationSchema },
+      outputSchema: subscriptionOutputSchema,
       annotations: READ_ONLY,
     },
     async ({ duration }) => {

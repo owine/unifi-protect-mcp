@@ -4,6 +4,10 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import {
+  armProfileListOutputSchema,
+  armProfileOutputSchema,
+} from "../schemas/misc.js";
 
 const ACTIVATION_DELAY_VALUES = [0, 60000, 300000, 600000] as const;
 
@@ -15,7 +19,9 @@ export function registerArmProfileTools(
   server.registerTool(
     "protect_list_arm_profiles",
     {
-      description: "List all arm profiles. Only available when using local alarm manager.",
+      description:
+        "List all arm profiles (only available when using the local alarm manager — the standalone NVR alarm system, not Protect cloud alerts). Returns array. Response shape is NOT verified against Protect 7.1.60 (no arm profiles on the reference console); expect at least id, modelKey, name plus profile configuration fields — inspect a live response to confirm.",
+      outputSchema: armProfileListOutputSchema,
       annotations: READ_ONLY,
     },
     async () => {
@@ -44,6 +50,7 @@ export function registerArmProfileTools(
           .describe("Activation delay in milliseconds. Allowed: 0 (none), 60000 (1m), 300000 (5m), 600000 (10m)."),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
+      outputSchema: armProfileOutputSchema,
       annotations: WRITE,
     },
     async ({ name, automations, schedules, recordEverything, activationDelay, dryRun }) => {
@@ -95,6 +102,7 @@ export function registerArmProfileTools(
           .describe(`Partial arm profile settings. Known fields: name (string 1-255 chars), automations (array of strings), schedules (array of objects), recordEverything (boolean), activationDelay (number, allowed: ${ACTIVATION_DELAY_VALUES.join(", ")})`),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
+      outputSchema: armProfileOutputSchema,
       annotations: WRITE,
     },
     async ({ id, settings, dryRun }) => {

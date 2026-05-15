@@ -2,7 +2,7 @@
 
 ## Project overview
 
-MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.1.47** (73 tools across 9 domains).
+MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.1.60** (73 tools across 9 domains).
 
 ## Local dev setup
 
@@ -40,6 +40,11 @@ src/
     files.ts          # File listing, upload
     system.ts         # NVR info, protect system info
     subscriptions.ts  # WebSocket subscriptions for devices and events
+  schemas/            # Zod output schemas for tools/list metadata + runtime validation
+    common.ts         # passthroughObject(), deviceCommonFields, listResultSchema()
+    cameras.ts        # cameraSchema, rtspStreamSchema, talkbackSessionOutputSchema
+    devices.ts        # DEVICE_SCHEMAS map for the 11 config-driven device types
+    misc.ts           # nvr, user, ulp-user, liveview, arm-profile, file, subscription schemas
   utils/
     responses.ts      # formatSuccess() / formatError() helpers
 ```
@@ -47,12 +52,22 @@ src/
 ### Adding a new tool
 
 1. Add a function `registerXTools(server, client, readOnly)` in `src/tools/<domain>.ts`
-2. Use `server.registerTool(name, { description, inputSchema, annotations }, handler)` — follow the existing try/catch + `formatSuccess`/`formatError` pattern
+2. Use `server.registerTool(name, { description, inputSchema, outputSchema, annotations }, handler)` — follow the existing try/catch + `formatSuccess`/`formatError` pattern
 3. Set appropriate annotations: `readOnlyHint` and `destructiveHint`
 4. For write tools: gate behind `if (!readOnly)`, add optional `dryRun` parameter
 5. For dangerous tools: require `confirm: z.literal(true)` parameter
 6. Wire it into `src/tools/index.ts` via `registerAllTools()`
 7. Add tests in `tests/tools/<domain>.test.ts` using `createMockServer()` and `createMockClient()` from `tests/tools/_helpers.ts`
+
+### Output schemas
+
+Tools declare an `outputSchema` (a Zod shape — `Record<string, ZodType>`) so MCP clients receive a typed response contract in `tools/list`, and the SDK validates `structuredContent` against it at call time.
+
+Conventions:
+- **All fields `.optional()`** — Protect's responses vary by hardware/firmware. Required fields would cause spurious validation failures.
+- **`.passthrough()` on every object** (via `passthroughObject()` in `schemas/common.ts`) — lets new/unknown fields flow through without rejection when Protect adds them.
+- **List endpoints** wrap the array under `{ result: z.array(itemSchema) }` because `structuredContent` must be an object per MCP spec. `formatSuccess()` auto-wraps non-object/array data under the same key.
+- The schema describes *what the LLM should know about*, not a strict 1:1 mirror of the API. Treat it as documentation that happens to be machine-readable.
 
 ### Tool safety
 

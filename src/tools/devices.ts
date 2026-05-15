@@ -4,13 +4,19 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import {
+  DEVICE_SCHEMAS,
+  itemOutputShape,
+  listOutputShape,
+} from "../schemas/devices.js";
 
 interface DeviceConfig {
   urlPath: string;   // URL segment (may contain hyphens, e.g. "link-stations")
   singular: string;  // Tool-name singular (snake_case, e.g. "link_station")
   plural: string;    // Tool-name plural (snake_case, e.g. "link_stations")
   label: string;     // Human-readable label, e.g. "Link station"
-  hint: string;      // Description of patchable fields
+  hint: string;      // Description of patchable fields (for PATCH tools)
+  returns: string;   // Description of fields returned by GET tools (for LLM context)
 }
 
 const DEVICES: DeviceConfig[] = [
@@ -20,6 +26,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "lights",
     label: "Light",
     hint: "Known fields: name (string), isLightForceEnabled (boolean), lightModeSettings (object with mode, enableAt), lightDeviceSettings (object with isIndicatorEnabled, pirDuration, pirSensitivity, ledLevel)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
   {
     urlPath: "sensors",
@@ -27,6 +35,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "sensors",
     label: "Sensor",
     hint: "Known fields: name (string), motionSettings (object), humiditySettings (object), temperatureSettings (object), lightSettings (object), alarmSettings (object)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
   {
     urlPath: "chimes",
@@ -34,6 +44,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "chimes",
     label: "Chime",
     hint: "Known fields: name (string), cameraIds (array of camera IDs linked to the chime), ringSettings (array of ring tone configurations)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
   {
     urlPath: "viewers",
@@ -41,6 +53,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "viewers",
     label: "Viewer",
     hint: "Known fields: name (string), liveview (string, liveview ID to display)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
   {
     urlPath: "sirens",
@@ -48,6 +62,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "sirens",
     label: "Siren",
     hint: "Known fields: name (string), volume (integer 1-100), ledSettings (object with isEnabled boolean)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
   {
     urlPath: "fobs",
@@ -55,6 +71,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "fobs",
     label: "Fob",
     hint: "Known fields: name (string)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
   {
     urlPath: "relays",
@@ -62,6 +80,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "relays",
     label: "Relay",
     hint: "Known fields: name (string), ledSettings (object with isEnabled boolean)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
   {
     urlPath: "speakers",
@@ -69,6 +89,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "speakers",
     label: "Speaker",
     hint: "Known fields: name (string), volume (integer 0-100), micVolume (integer 0-100), isMicEnabled (boolean)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
   {
     urlPath: "bridges",
@@ -76,6 +98,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "bridges",
     label: "Bridge",
     hint: "Known fields: name (string)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
   {
     urlPath: "link-stations",
@@ -83,6 +107,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "link_stations",
     label: "Link station",
     hint: "Known fields: name (string)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
   {
     urlPath: "alarm-hubs",
@@ -90,6 +116,8 @@ const DEVICES: DeviceConfig[] = [
     plural: "alarm_hubs",
     label: "Alarm hub",
     hint: "Known fields: name (string)",
+    returns:
+      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
   },
 ];
 
@@ -99,10 +127,12 @@ function registerDeviceCrud(
   cfg: DeviceConfig,
   readOnly: boolean
 ) {
+  const schemaKey = cfg.singular as keyof typeof DEVICE_SCHEMAS;
   server.registerTool(
     `protect_list_${cfg.plural}`,
     {
-      description: `List all ${cfg.label.toLowerCase()}s managed by UniFi Protect`,
+      description: `List all ${cfg.label.toLowerCase()}s managed by UniFi Protect. Returns array; each ${cfg.label.toLowerCase()} includes: ${cfg.returns}.`,
+      outputSchema: listOutputShape(schemaKey),
       annotations: READ_ONLY,
     },
     async () => {
@@ -118,8 +148,9 @@ function registerDeviceCrud(
   server.registerTool(
     `protect_get_${cfg.singular}`,
     {
-      description: `Get details for a specific ${cfg.label.toLowerCase()} by ID`,
+      description: `Get full details for a specific ${cfg.label.toLowerCase()} by ID. Returns: ${cfg.returns}.`,
       inputSchema: { id: z.string().describe(`${cfg.label} ID`) },
+      outputSchema: itemOutputShape(schemaKey),
       annotations: READ_ONLY,
     },
     async ({ id }) => {
@@ -147,6 +178,7 @@ function registerDeviceCrud(
             .optional()
             .describe("If true, return what would happen without making changes"),
         },
+        outputSchema: itemOutputShape(schemaKey),
         annotations: WRITE,
       },
       async ({ id, settings, dryRun }) => {

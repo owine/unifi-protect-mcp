@@ -4,6 +4,12 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import {
+  cameraOutputSchema,
+  cameraListOutputSchema,
+  rtspStreamOutputSchema,
+  talkbackSessionOutputSchema,
+} from "../schemas/cameras.js";
 
 export function registerCameraTools(
   server: McpServer,
@@ -15,7 +21,9 @@ export function registerCameraTools(
   server.registerTool(
     "protect_list_cameras",
     {
-      description: "List all cameras managed by UniFi Protect",
+      description:
+        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.1.60-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage, ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config.",
+      outputSchema: cameraListOutputSchema,
       annotations: READ_ONLY,
     },
     async () => {
@@ -31,8 +39,10 @@ export function registerCameraTools(
   server.registerTool(
     "protect_get_camera",
     {
-      description: "Get details for a specific camera by ID",
+      description:
+        "Get details for a specific camera by ID. The Protect Integration API returns the SAME field set as protect_list_cameras entries (id, mac, name, modelKey, state, activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags, lcdMessage, ledSettings, osdSettings, smartDetectSettings) — there is no extended/by-id-only payload. Recording state, motion events, zones, and channel/RTSP config are NOT exposed by this API surface.",
       inputSchema: { id: z.string().describe("Camera ID") },
+      outputSchema: cameraOutputSchema,
       annotations: READ_ONLY,
     },
     async ({ id }) => {
@@ -48,7 +58,8 @@ export function registerCameraTools(
   server.registerTool(
     "protect_get_snapshot",
     {
-      description: "Get a JPEG snapshot from a camera (returns image)",
+      description:
+        "Get a JPEG snapshot from a camera. Returns a base64-encoded image/jpeg (rendered directly by MCP clients). Use highQuality=true for full-resolution capture from the camera's main channel; otherwise a low-res thumbnail is returned.",
       inputSchema: {
         id: z.string().describe("Camera ID"),
         highQuality: z
@@ -82,8 +93,10 @@ export function registerCameraTools(
   server.registerTool(
     "protect_get_rtsp_streams",
     {
-      description: "Get active RTSPS stream sessions for a camera",
+      description:
+        "Get active RTSPS stream sessions for a camera. Returns the per-quality stream URLs currently published (keys typically: high, medium, low, package). Empty/missing keys mean no session is currently active at that quality — use protect_create_rtsp_stream to start one.",
       inputSchema: { id: z.string().describe("Camera ID") },
+      outputSchema: rtspStreamOutputSchema,
       annotations: READ_ONLY,
     },
     async ({ id }) => {
@@ -114,6 +127,7 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
+      outputSchema: cameraOutputSchema,
       annotations: WRITE,
     },
     async ({ id, settings, dryRun }) => {
@@ -143,6 +157,7 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
+      outputSchema: rtspStreamOutputSchema,
       annotations: WRITE,
     },
     async ({ id, qualities, dryRun }) => {
@@ -209,6 +224,7 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
+      outputSchema: talkbackSessionOutputSchema,
       annotations: WRITE,
     },
     async ({ id, dryRun }) => {

@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { fileListOutputSchema } from "../schemas/misc.js";
 
 export function registerFileTools(
   server: McpServer,
@@ -13,12 +14,14 @@ export function registerFileTools(
   server.registerTool(
     "protect_list_files",
     {
-      description: "List files of a given type (only 'animations' is supported)",
+      description:
+        "List files of a given type (only 'animations' is currently supported — GIF clips uploadable to G4 Doorbell screens). Returns array. Per-record shape is NOT verified against Protect 7.1.60 (no files on the reference console) — inspect a live response to confirm fields.",
       inputSchema: {
         fileType: z
           .string()
           .describe("File type to list (only 'animations' is currently supported)"),
       },
+      outputSchema: fileListOutputSchema,
       annotations: READ_ONLY,
     },
     async ({ fileType }) => {

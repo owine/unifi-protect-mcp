@@ -4,6 +4,10 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import {
+  liveviewListOutputSchema,
+  liveviewOutputSchema,
+} from "../schemas/misc.js";
 
 export function registerLiveviewTools(
   server: McpServer,
@@ -13,7 +17,9 @@ export function registerLiveviewTools(
   server.registerTool(
     "protect_list_liveviews",
     {
-      description: "List all live views configured in UniFi Protect",
+      description:
+        "List all live views (camera grid layouts shown on viewers / in the Protect UI). Returns array; each liveview includes (Integration API 7.1.60-verified): id, modelKey, name, isDefault, isGlobal, layout (number, slot count), owner (user ID), slots (array of {cameras: string[], cycleMode, cycleInterval}). NOTE: slots use a `cameras` string-array, not a single `cameraId`.",
+      outputSchema: liveviewListOutputSchema,
       annotations: READ_ONLY,
     },
     async () => {
@@ -29,8 +35,10 @@ export function registerLiveviewTools(
   server.registerTool(
     "protect_get_liveview",
     {
-      description: "Get details for a specific live view by ID",
+      description:
+        "Get details for a specific live view by ID. Returns: id, modelKey, name, isDefault, isGlobal, layout, owner, slots (each slot: cameras string[], cycleMode, cycleInterval). The full slot list is needed when updating because PATCH replaces the slots array.",
       inputSchema: { id: z.string().describe("Liveview ID") },
+      outputSchema: liveviewOutputSchema,
       annotations: READ_ONLY,
     },
     async ({ id }) => {
@@ -58,6 +66,7 @@ export function registerLiveviewTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
+      outputSchema: liveviewOutputSchema,
       annotations: WRITE,
     },
     async ({ settings, dryRun }) => {
@@ -87,6 +96,7 @@ export function registerLiveviewTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
+      outputSchema: liveviewOutputSchema,
       annotations: WRITE,
     },
     async ({ id, settings, dryRun }) => {

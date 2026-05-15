@@ -2,31 +2,36 @@ import { describe, it, expect } from "vitest";
 import { formatSuccess, formatError } from "../../src/utils/responses.js";
 
 describe("formatSuccess", () => {
-  it("wraps data as JSON text content", () => {
-    const result = formatSuccess({ id: "abc", name: "cam1" });
+  it("wraps data as JSON text content and structured content", () => {
+    const data = { id: "abc", name: "cam1" };
+    const result = formatSuccess(data);
     expect(result).toEqual({
       content: [
         {
           type: "text",
-          text: JSON.stringify({ id: "abc", name: "cam1" }, null, 2),
+          text: JSON.stringify(data, null, 2),
         },
       ],
+      structuredContent: data,
     });
   });
 
-  it("handles arrays", () => {
+  it("wraps arrays under `result` so structuredContent stays an object", () => {
     const result = formatSuccess([1, 2, 3]);
     expect(result.content[0].text).toBe(JSON.stringify([1, 2, 3], null, 2));
+    expect(result.structuredContent).toEqual({ result: [1, 2, 3] });
   });
 
-  it("handles null", () => {
+  it("wraps null under `result`", () => {
     const result = formatSuccess(null);
     expect(result.content[0].text).toBe("null");
+    expect(result.structuredContent).toEqual({ result: null });
   });
 
-  it("handles strings", () => {
+  it("wraps primitives under `result`", () => {
     const result = formatSuccess("ok");
     expect(result.content[0].text).toBe('"ok"');
+    expect(result.structuredContent).toEqual({ result: "ok" });
   });
 });
 
