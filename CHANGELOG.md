@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.7.0](https://github.com/owine/unifi-protect-mcp/compare/2.6.0...2.7.0) (2026-05-15)
+
+
+### Features
+
+* add outputSchema and live-verified field docs for read tools ([c2816d7](https://github.com/owine/unifi-protect-mcp/commit/c2816d7e7d602f588430deb8ac945d6bff3b174b))
+
+
+### Dependencies
+
+* lock file maintenance ([#115](https://github.com/owine/unifi-protect-mcp/issues/115)) ([4606979](https://github.com/owine/unifi-protect-mcp/commit/4606979fbccbaa640261579b99e56be8c577fc66))
+
 ## [2.6.0](https://github.com/owine/unifi-protect-mcp/compare/2.5.0...2.6.0) (2026-05-13)
 
 
