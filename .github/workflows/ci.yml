@@ -26,7 +26,7 @@ jobs:
       - run: pnpm run lint
       - run: pnpm run build
 
-  test:
+  test-matrix:
     needs: lint
     runs-on: ubuntu-24.04
     strategy:
@@ -44,6 +44,22 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
       - run: pnpm test
+
+  # Aggregator with a stable name so branch rulesets can require a single `test`
+  # check regardless of how the matrix dimensions change.
+  test:
+    needs: test-matrix
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify matrix succeeded
+        env:
+          MATRIX_RESULT: ${{ needs.test-matrix.result }}
+        run: |
+          if [ "$MATRIX_RESULT" != "success" ]; then
+            echo "test-matrix did not succeed: $MATRIX_RESULT"
+            exit 1
+          fi
 
   security:
     # Skip on Renovate runs — Renovate runs its own vulnerability checks
