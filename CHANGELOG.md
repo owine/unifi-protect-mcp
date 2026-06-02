@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.3](https://github.com/owine/unifi-protect-mcp/compare/2.7.2...2.7.3) (2026-06-02)
+
+
+### Dependencies
+
+* lock file maintenance ([#130](https://github.com/owine/unifi-protect-mcp/issues/130)) ([e72e623](https://github.com/owine/unifi-protect-mcp/commit/e72e623368917f0b8b91da3a4277ff869dfce87a))
+
 ## [2.7.2](https://github.com/owine/unifi-protect-mcp/compare/2.7.1...2.7.2) (2026-05-26)
 
 
