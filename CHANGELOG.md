@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.5](https://github.com/owine/unifi-protect-mcp/compare/2.7.4...2.7.5) (2026-06-16)
+
+
+### Dependencies
+
+* lock file maintenance all non-major dependencies ([#145](https://github.com/owine/unifi-protect-mcp/issues/145)) ([67211a2](https://github.com/owine/unifi-protect-mcp/commit/67211a2cf1c8084ce7c7e10e1298f9aab650af86))
+* lock file maintenance all non-major dependencies ([#147](https://github.com/owine/unifi-protect-mcp/issues/147)) ([d4bdb3c](https://github.com/owine/unifi-protect-mcp/commit/d4bdb3cce55100a021d6bb9f47bd8c5819989653))
+
 ## [2.7.4](https://github.com/owine/unifi-protect-mcp/compare/2.7.3...2.7.4) (2026-06-09)
 
 
