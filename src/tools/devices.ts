@@ -19,6 +19,10 @@ interface DeviceConfig {
   returns: string;   // Description of fields returned by GET tools (for LLM context)
 }
 
+// Field lists below are from the UniFi Protect Integration API 7.1.83 docs.
+// Chimes are additionally verified against live console responses; the rest
+// have no instances on the available console (top-level fields documented,
+// nested shapes intentionally left opaque in the output schema).
 const DEVICES: DeviceConfig[] = [
   {
     urlPath: "lights",
@@ -27,34 +31,33 @@ const DEVICES: DeviceConfig[] = [
     label: "Light",
     hint: "Known fields: name (string), isLightForceEnabled (boolean), lightModeSettings (object with mode, enableAt), lightDeviceSettings (object with isIndicatorEnabled, pirDuration, pirSensitivity, ledLevel)",
     returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+      "id, modelKey, name, mac, state, lightModeSettings (mode, enableAt), lightDeviceSettings (isIndicatorEnabled, pirDuration, pirSensitivity, ledLevel), isDark, isLightOn, isLightForceEnabled, lastMotion, isPirMotionDetected, camera (7.1.83 docs)",
   },
   {
     urlPath: "sensors",
     singular: "sensor",
     plural: "sensors",
     label: "Sensor",
-    hint: "Known fields: name (string), motionSettings (object), humiditySettings (object), temperatureSettings (object), lightSettings (object), alarmSettings (object)",
+    hint: "Known fields: name (string), motionSettings (object), humiditySettings (object), temperatureSettings (object), lightSettings (object), alarmSettings (object), glassBreakSettings (object), leakSettings (object), scheduleMode (\"always\" | \"when_armed\"), armProfileIds (array of up to 32 strings), hasCustomSensitivityWhenArmed (boolean)",
     returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+      "id, modelKey, name, mac, state, mountType, batteryStatus (percentage, isLow), stats (light, humidity, temperature), lightSettings, humiditySettings, temperatureSettings, isOpened, openStatusChangedAt, isMotionDetected, motionDetectedAt, motionSettings, glassBreakSettings, scheduleMode, armProfileIds, hasCustomSensitivityWhenArmed, alarmTriggeredAt, alarmSettings, leakDetectedAt, externalLeakDetectedAt, leakSettings, tamperingDetectedAt, wirelessConnectionState (7.1.83 docs)",
   },
   {
     urlPath: "chimes",
     singular: "chime",
     plural: "chimes",
     label: "Chime",
-    hint: "Known fields: name (string), cameraIds (array of camera IDs linked to the chime), ringSettings (array of ring tone configurations)",
+    hint: "Known fields: name (string), cameraIds (array of camera IDs linked to the chime), ringSettings (array of objects: cameraId, volume, ringtoneId, repeatTimes)",
     returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+      "id, modelKey, name, mac, state, cameraIds (array of camera IDs), ringSettings (array of objects: cameraId, volume, ringtoneId, repeatTimes) — verified live 7.1.83",
   },
   {
     urlPath: "viewers",
     singular: "viewer",
     plural: "viewers",
     label: "Viewer",
-    hint: "Known fields: name (string), liveview (string, liveview ID to display)",
-    returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+    hint: "Known fields: name (string), liveview (string, liveview ID to display, or null)",
+    returns: "id, modelKey, name, mac, state, liveview, streamLimit (7.1.83 docs)",
   },
   {
     urlPath: "sirens",
@@ -63,7 +66,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Siren",
     hint: "Known fields: name (string), volume (integer 1-100), ledSettings (object with isEnabled boolean)",
     returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+      "id, modelKey, name, mac, state, volume, ledSettings (isEnabled), sirenStatus (isActive, activatedAt, duration), connectionType, wirelessConnectionState (7.1.83 docs)",
   },
   {
     urlPath: "fobs",
@@ -72,7 +75,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Fob",
     hint: "Known fields: name (string)",
     returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+      "id, modelKey, name, mac, state, awayState, buttonLabels, featureFlags (buttons[]), wirelessConnectionState (7.1.83 docs)",
   },
   {
     urlPath: "relays",
@@ -81,7 +84,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Relay",
     hint: "Known fields: name (string), ledSettings (object with isEnabled boolean)",
     returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+      "id, modelKey, name, mac, state, ledSettings (isEnabled), outputs (array), inputs (array), wirelessConnectionState (7.1.83 docs)",
   },
   {
     urlPath: "speakers",
@@ -90,7 +93,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Speaker",
     hint: "Known fields: name (string), volume (integer 0-100), micVolume (integer 0-100), isMicEnabled (boolean)",
     returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+      "id, modelKey, name, mac, state, volume, micVolume, isMicEnabled, speakerState (status, mode), featureFlags (hasMic) (7.1.83 docs)",
   },
   {
     urlPath: "bridges",
@@ -99,7 +102,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Bridge",
     hint: "Known fields: name (string)",
     returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+      "id, modelKey, name, mac, state, platform, clients (array of MACs), maxClients (7.1.83 docs)",
   },
   {
     urlPath: "link-stations",
@@ -108,7 +111,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Link station",
     hint: "Known fields: name (string)",
     returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+      "id, modelKey (\"linkstation\"), name, mac, state, isAlarmHub, ledSettings (isEnabled), lastEvent, alarmHub (object) (7.1.83 docs)",
   },
   {
     urlPath: "alarm-hubs",
@@ -117,7 +120,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Alarm hub",
     hint: "Known fields: name (string)",
     returns:
-      "id, modelKey, name, mac, state (universal identity fields). Protect Integration API 7.1.60 returns a thin object; additional device-specific fields are NOT verified (no instances on reference console) — inspect a live response before relying on them",
+      "id, modelKey (\"linkstation\"), name, mac, state, isAlarmHub, ledSettings (isEnabled), lastEvent, alarmHub (object) (7.1.83 docs)",
   },
 ];
 

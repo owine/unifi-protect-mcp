@@ -8,11 +8,12 @@ import {
 } from "./common.js";
 
 /**
- * Schemas below are verified against live UniFi Protect Integration API 7.1.60
- * responses (Melrose NVR Pro console, 2026-05-15). The Integration API surface
- * is much thinner than the internal Protect app API — only the fields observed
- * in real responses are typed; `.passthrough()` still allows anything extra a
- * different firmware/hardware mix might add.
+ * Schemas below are verified against live UniFi Protect Integration API 7.1.83
+ * responses (Melrose NVR Pro console, 2026-06-20) where instances exist, and
+ * against the 7.1.83 published docs otherwise (arm profiles, files — no
+ * instances on the console). The Integration API surface is much thinner than
+ * the internal Protect app API — only observed/documented fields are typed;
+ * `.passthrough()` still allows anything extra a firmware/hardware mix adds.
  */
 
 // --- System ---
@@ -23,7 +24,8 @@ export const infoOutputSchema = {
 
 // GET /nvrs returns a SINGLE nvr object (not an array, despite the tool name).
 const armModeSchema = passthroughObject({
-  status: nullableString("disabled | armed | ..."),
+  status: nullableString("disabled | arming | armed | ..."),
+  armProfileId: nullableString("Active arm profile ID (present when arming/armed)"),
   armedAt: unknownField("Unix epoch ms when armed, or null (number|null)"),
   willBeArmedAt: unknownField("Scheduled arm time, or null (number|null)"),
   breachDetectedAt: unknownField("Unix epoch ms of last breach, or null"),
@@ -100,25 +102,33 @@ export const liveviewOutputSchema = { ...liveviewSchema.shape };
 export const liveviewListOutputSchema = listResultSchema(liveviewSchema);
 
 // --- Arm profiles ---
-// No instances on the verification console — fields unverified. Kept minimal:
-// only the identity field is typed; everything else flows via passthrough.
+// Fields from the 7.1.83 docs (no instances on the console to verify live).
+// Arm profiles carry no `modelKey`. Nested arrays stay unknownField.
 
 export const armProfileSchema = passthroughObject({
   id: idField("Arm profile ID"),
-  modelKey: nullableString("Resource kind"),
   name: nullableString("Arm profile name"),
+  automations: unknownField("Associated automation IDs (array of strings)"),
+  creator: nullableString("ID of the user who created the profile"),
+  schedules: unknownField("Arm schedules (array of objects)"),
+  recordEverything: unknownField("Record everything while active (boolean)"),
+  activationDelay: unknownField("Activation delay in ms: 0 | 60000 | 300000 | 600000 (number)"),
+  createdAt: unknownField("Creation timestamp in epoch ms (number)"),
+  updatedAt: unknownField("Last update timestamp in epoch ms (number)"),
 });
 
 export const armProfileListOutputSchema = listResultSchema(armProfileSchema);
 export const armProfileOutputSchema = { ...armProfileSchema.shape };
 
 // --- Files ---
-// `protect_list_files` (only fileType=animations supported) — unverified shape.
+// Device asset files (only fileType=animations supported). Shape from 7.1.83
+// docs: { name, type, originalName, path } — no id/modelKey.
 
 export const fileSchema = passthroughObject({
-  id: idField("File ID"),
-  modelKey: nullableString("Resource kind"),
-  name: nullableString("File name"),
+  name: nullableString("Stored file name (server-generated)"),
+  type: nullableString('Asset file type, e.g. "animations"'),
+  originalName: nullableString("Original uploaded file name"),
+  path: nullableString("Server-side storage path"),
 });
 
 export const fileListOutputSchema = listResultSchema(fileSchema);

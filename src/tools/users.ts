@@ -16,7 +16,7 @@ export function registerUserTools(server: McpServer, client: ProtectClient) {
     "protect_list_users",
     {
       description:
-        "List all Protect users (filtered by the API key's access permissions). Returns array; each user includes (Integration API 7.1.60-verified): id, modelKey, name, firstName, lastName, email, ucoreUserId. The Integration API does NOT expose roles, permissions, login history, groups, or notification settings.",
+        "List all Protect users (filtered by the API key's access permissions). Returns array; each user includes (Integration API 7.1.83-verified): id, modelKey, name, firstName, lastName, email, ucoreUserId. The Integration API does NOT expose roles, permissions, login history, groups, or notification settings.",
       outputSchema: userListOutputSchema,
       annotations: READ_ONLY,
     },
@@ -53,7 +53,7 @@ export function registerUserTools(server: McpServer, client: ProtectClient) {
     "protect_list_ulp_users",
     {
       description:
-        "List all UniFi Identity (ULP) users. Returns array; each ULP user includes (Integration API 7.1.60-verified): id, modelKey, firstName, lastName, fullName, status (e.g. ACTIVE). Enrolled-credential detail (NFC cards, fingerprints) is NOT exposed by this API surface.",
+        "List all UniFi Identity (ULP) users. Returns array; each ULP user includes (Integration API 7.1.83-verified): id, modelKey, firstName, lastName, fullName, status (e.g. ACTIVE). Enrolled-credential detail (NFC cards, fingerprints) is NOT exposed by this API surface.",
       outputSchema: ulpUserListOutputSchema,
       annotations: READ_ONLY,
     },

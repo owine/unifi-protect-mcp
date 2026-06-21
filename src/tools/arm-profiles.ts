@@ -20,7 +20,7 @@ export function registerArmProfileTools(
     "protect_list_arm_profiles",
     {
       description:
-        "List all arm profiles (only available when using the local alarm manager — the standalone NVR alarm system, not Protect cloud alerts). Returns array. Response shape is NOT verified against Protect 7.1.60 (no arm profiles on the reference console); expect at least id, modelKey, name plus profile configuration fields — inspect a live response to confirm.",
+        "List all arm profiles (only available when using the local alarm manager — the standalone NVR alarm system, not Protect cloud alerts). Returns array; each profile (7.1.83 docs): id, name, automations[], creator, schedules[], recordEverything, activationDelay (0 | 60000 | 300000 | 600000), createdAt, updatedAt.",
       outputSchema: armProfileListOutputSchema,
       annotations: READ_ONLY,
     },

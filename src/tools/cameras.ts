@@ -22,7 +22,7 @@ export function registerCameraTools(
     "protect_list_cameras",
     {
       description:
-        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.1.60-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage, ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config.",
+        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.1.83-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage (type, resetAt, text), ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config.",
       outputSchema: cameraListOutputSchema,
       annotations: READ_ONLY,
     },
@@ -40,7 +40,7 @@ export function registerCameraTools(
     "protect_get_camera",
     {
       description:
-        "Get details for a specific camera by ID. The Protect Integration API returns the SAME field set as protect_list_cameras entries (id, mac, name, modelKey, state, activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags, lcdMessage, ledSettings, osdSettings, smartDetectSettings) — there is no extended/by-id-only payload. Recording state, motion events, zones, and channel/RTSP config are NOT exposed by this API surface.",
+        "Get details for a specific camera by ID. The Protect Integration API returns the SAME field set as protect_list_cameras entries (id, mac, name, modelKey, state, activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags, lcdMessage, ledSettings, osdSettings, smartDetectSettings) — there is no extended/by-id-only payload (confirmed live on 7.1.83). Recording state, motion events, zones, and channel/RTSP config are NOT exposed by this API surface.",
       inputSchema: { id: z.string().describe("Camera ID") },
       outputSchema: cameraOutputSchema,
       annotations: READ_ONLY,
@@ -59,20 +59,28 @@ export function registerCameraTools(
     "protect_get_snapshot",
     {
       description:
-        "Get a JPEG snapshot from a camera. Returns a base64-encoded image/jpeg (rendered directly by MCP clients). Use highQuality=true for full-resolution capture from the camera's main channel; otherwise a low-res thumbnail is returned.",
+        "Get a JPEG snapshot from a camera. Returns a base64-encoded image/jpeg (rendered directly by MCP clients). Use highQuality=true for full-resolution capture; set channel=package to capture from the secondary package camera on doorbells with hasPackageCamera=true.",
       inputSchema: {
         id: z.string().describe("Camera ID"),
         highQuality: z
           .boolean()
           .optional()
           .describe("If true, request a high-quality snapshot"),
+        channel: z
+          .enum(["main", "package"])
+          .optional()
+          .describe('Camera channel to capture. Use "package" for cameras with hasPackageCamera=true (defaults to main)'),
       },
       annotations: READ_ONLY,
     },
-    async ({ id, highQuality }) => {
+    async ({ id, highQuality, channel }) => {
       try {
-        const url = highQuality
-          ? safePath`/cameras/${id}/snapshot?highQuality=true`
+        const params = new URLSearchParams();
+        if (highQuality) params.set("highQuality", "true");
+        if (channel) params.set("channel", channel);
+        const query = params.toString();
+        const url = query
+          ? safePath`/cameras/${id}/snapshot` + `?${query}`
           : safePath`/cameras/${id}/snapshot`;
         const { data, mimeType } = await client.getBinary(url);
         return {
@@ -121,7 +129,7 @@ export function registerCameraTools(
         id: z.string().describe("Camera ID"),
         settings: z
           .record(z.string(), z.unknown())
-          .describe("Partial camera settings to update. Known fields: name (string), osdSettings (object), ledSettings (object), lcdMessage (object), videoMode (string: \"default\" | \"highFps\" | \"slo-mo\"), hdrType (string: \"off\" | \"normal\" | \"always\"), micVolume (number 0-100), smartDetectSettings (object)"),
+          .describe("Partial camera settings to update. Known fields: name (string), osdSettings (object), ledSettings (object), lcdMessage (object: type, resetAt, text), videoMode (string: \"default\" | \"highFps\" | \"sport\" | \"slowShutter\" | \"lprReflex\" | \"lprNoneReflex\"), hdrType (string: \"auto\" | \"on\" | \"off\"), micVolume (number 0-100), smartDetectSettings (object)"),
         dryRun: z
           .boolean()
           .optional()
@@ -216,7 +224,8 @@ export function registerCameraTools(
   server.registerTool(
     "protect_create_talkback",
     {
-      description: "Create a talkback (two-way audio) session for a camera",
+      description:
+        "Create a talkback (two-way audio) session for a camera. Returns: url, codec, samplingRate, bitsPerSample (the audio config for encoding outbound audio).",
       inputSchema: {
         id: z.string().describe("Camera ID"),
         dryRun: z
