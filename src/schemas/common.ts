@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * Schema primitives for Protect outputSchema declarations.
  *
- * Hard-won rule (verified against live 7.1.60): the UniFi Protect Integration
+ * Hard-won rule (verified against live 7.1.83): the UniFi Protect Integration
  * API returns explicit `null` for absent string fields (e.g. a user with no
  * email returns `email: null`, not omitted). `z.string().optional()` permits
  * `undefined` but REJECTS `null`, which fails SDK output validation and breaks

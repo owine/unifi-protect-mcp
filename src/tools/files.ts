@@ -15,7 +15,7 @@ export function registerFileTools(
     "protect_list_files",
     {
       description:
-        "List files of a given type (only 'animations' is currently supported — GIF clips uploadable to G4 Doorbell screens). Returns array. Per-record shape is NOT verified against Protect 7.1.60 (no files on the reference console) — inspect a live response to confirm fields.",
+        "List files of a given type (only 'animations' is currently supported — clips uploadable to G4 Doorbell screens). Returns array; each record (7.1.83 docs): name (server-generated), type, originalName, path.",
       inputSchema: {
         fileType: z
           .string()
@@ -71,7 +71,7 @@ export function registerFileTools(
         contentType: z
           .string()
           .default("image/gif")
-          .describe("MIME type of the file (accepted: image/gif, image/png, image/jpeg)"),
+          .describe("MIME type of the file (accepted: image/gif, image/jpeg, image/png, audio/mpeg, audio/mp4, audio/wave, audio/x-caf)"),
         dryRun: z
           .boolean()
           .optional()

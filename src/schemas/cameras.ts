@@ -7,10 +7,10 @@ import {
 } from "./common.js";
 
 /**
- * Verified against live UniFi Protect Integration API 7.1.60 (2026-05-15).
+ * Verified against live UniFi Protect Integration API 7.1.83 (2026-06-20).
  * The Integration API camera object is far smaller than the internal Protect
  * app's camera model — no isRecording/lastMotion/channels/firmwareVersion/etc.
- * `list` and `get-by-id` return the same field set.
+ * `list` and `get-by-id` return the same field set (confirmed live).
  */
 
 const featureFlagsSchema = passthroughObject({
@@ -43,6 +43,14 @@ const smartDetectSettingsSchema = passthroughObject({
   audioTypes: unknownField("Enabled audio-detect types (array of strings)"),
 });
 
+// Verified live (7.1.83): doorbell LCD message. `resetAt` is null when the
+// message has no expiry, so it stays unknownField (number|null).
+const lcdMessageSchema = passthroughObject({
+  type: nullableString('Message type, e.g. "CUSTOM_MESSAGE", "LEAVE_PACKAGE_AT_DOOR", "DO_NOT_DISTURB"'),
+  resetAt: unknownField("Auto-reset timestamp in epoch ms, or null (number|null)"),
+  text: nullableString("Message text shown on the doorbell LCD"),
+});
+
 export const cameraSchema = passthroughObject({
   id: idField("Camera ID"),
   mac: nullableString("MAC address"),
@@ -56,7 +64,7 @@ export const cameraSchema = passthroughObject({
   micVolume: unknownField("Microphone volume 0-100 (number)"),
   videoMode: nullableString('Video mode, e.g. "default"'),
   featureFlags: featureFlagsSchema.optional(),
-  lcdMessage: unknownField("Doorbell LCD message (object; often empty {})"),
+  lcdMessage: lcdMessageSchema.optional(),
   ledSettings: ledSettingsSchema.optional(),
   osdSettings: osdSettingsSchema.optional(),
   smartDetectSettings: smartDetectSettingsSchema.optional(),
@@ -76,6 +84,11 @@ export const rtspStreamSchema = passthroughObject({
 });
 export const rtspStreamOutputSchema = { ...rtspStreamSchema.shape };
 
+// Verified against 7.1.83 docs: talkback returns the stream URL plus audio
+// config the client needs to encode outbound audio.
 export const talkbackSessionOutputSchema = {
-  url: nullableString("Talkback session URL"),
+  url: nullableString("Talkback session URL (e.g. rtp://host:port)"),
+  codec: nullableString('Audio codec, e.g. "opus"'),
+  samplingRate: unknownField("Audio sampling rate in Hz (number)"),
+  bitsPerSample: unknownField("Audio bit depth (number)"),
 };
