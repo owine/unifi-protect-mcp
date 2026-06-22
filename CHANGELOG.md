@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.8.0](https://github.com/owine/unifi-protect-mcp/compare/2.7.5...2.8.0) (2026-06-22)
+
+
+### Features
+
+* align tool schemas with UniFi Protect API 7.1.83 ([#149](https://github.com/owine/unifi-protect-mcp/issues/149)) ([4bce900](https://github.com/owine/unifi-protect-mcp/commit/4bce9008d507b7ca8698ea394e84f86e3b79379d))
+
+
+### Dependencies
+
+* lock file maintenance all non-major dependencies ([#155](https://github.com/owine/unifi-protect-mcp/issues/155)) ([807f1be](https://github.com/owine/unifi-protect-mcp/commit/807f1beb62cf6c013dd7cbb646c5b7f638f96a24))
+* lock file maintenance all non-major dependencies ([#156](https://github.com/owine/unifi-protect-mcp/issues/156)) ([df6ac04](https://github.com/owine/unifi-protect-mcp/commit/df6ac04058fc6e0b63831fd6029fc365a5ffd9f3))
+
 ## [2.7.5](https://github.com/owine/unifi-protect-mcp/compare/2.7.4...2.7.5) (2026-06-16)
 
 
