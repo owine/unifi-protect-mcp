@@ -43,13 +43,13 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@types/node": "24.13.2",
+    "@types/node": "24.13.3",
     "@types/ws": "8.18.1",
     "@vitest/coverage-v8": "4.1.9",
     "eslint": "10.6.0",
-    "lefthook": "2.1.9",
+    "lefthook": "2.1.10",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.62.1",
+    "typescript-eslint": "8.63.0",
     "vitest": "4.1.9"
   }
 }
