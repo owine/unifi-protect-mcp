@@ -4,7 +4,7 @@ An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration 
 
 ## Prerequisites
 
-- Node.js 22.13+ or 24.x (see `engines` in `package.json`)
+- Node.js 22.x (22.13 or newer) or 24.x — see `engines` in `package.json`
 - A UniFi Protect system with the Integration API enabled
 - An API key generated from your UniFi Protect console
 
