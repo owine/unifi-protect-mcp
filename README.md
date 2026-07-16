@@ -1,10 +1,10 @@
 # UniFi Protect MCP Server
 
-An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.1.60** — 73 tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, NVR status, and WebSocket subscriptions.
+An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.1.83** — 73 tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, NVR status, and WebSocket subscriptions.
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22.13+ or 24.x (see `engines` in `package.json`)
 - A UniFi Protect system with the Integration API enabled
 - An API key generated from your UniFi Protect console
 
@@ -27,9 +27,12 @@ If you prefer to build locally:
 ```bash
 git clone https://github.com/owine/unifi-protect-mcp.git
 cd unifi-protect-mcp
-npm install
-npm run build
+corepack enable   # provides pnpm at the version pinned in package.json
+pnpm install
+pnpm run build
 ```
+
+This project uses pnpm — `npm install` ignores `pnpm-lock.yaml` and may resolve different dependency versions than CI.
 
 Then add to Claude Code:
 
@@ -224,13 +227,20 @@ This server provides layered safety controls for responsible operation:
 
 ## Development
 
+The Node version used for development is pinned in `.nvmrc`. With [fnm](https://github.com/Schniz/fnm) installed, `fnm use` reads it automatically on `cd`.
+
 ```bash
-npm run build        # Compile TypeScript
-npm start            # Run the server
-npm run typecheck    # Type-check without emitting
-npm run lint         # ESLint
-npm test             # Run all tests (vitest)
+pnpm run build         # Compile TypeScript
+pnpm start             # Run the server
+pnpm run typecheck     # Type-check without emitting
+pnpm run lint          # ESLint
+pnpm run lint:fix      # ESLint with auto-fix
+pnpm test              # Run all tests (vitest)
+pnpm run test:watch    # Run tests in watch mode
+pnpm run test:coverage # Run tests with coverage
 ```
+
+Git hooks are managed by [lefthook](https://github.com/evilmartians/lefthook) — `pnpm exec lefthook install` enables them. Pre-commit runs ESLint on staged files and a full typecheck, so fnm and pnpm both need to be on your PATH.
 
 ### Commit conventions
 

@@ -6,7 +6,7 @@ MCP server exposing UniFi Protect's Integration API as tool calls. Built with th
 
 ## Local dev setup
 
-- Node version pinned in `.nvmrc` (24.15.0). Use [fnm](https://github.com/Schniz/fnm) — `fnm use` auto-reads `.nvmrc` on `cd`. The published library declares broader `engines.node` (`^22.13.0 || ^24.0.0`) for consumers; the `.nvmrc` only pins *development*.
+- Node version pinned in `.nvmrc` (24.18.0). Use [fnm](https://github.com/Schniz/fnm) — `fnm use` auto-reads `.nvmrc` on `cd`. The published library declares broader `engines.node` (`^22.13.0 || ^24.0.0`) for consumers; the `.nvmrc` only pins *development*.
 - Package manager: pnpm via Corepack. `corepack enable`, then `pnpm install`.
 - Dev install/build use pnpm; **publishing uses `npm publish --provenance`** (hybrid — npm has the most battle-tested OIDC flow).
 
@@ -47,15 +47,17 @@ src/
     misc.ts           # nvr, user, ulp-user, liveview, arm-profile, file, subscription schemas
   utils/
     responses.ts      # formatSuccess() / formatError() helpers
+    safety.ts         # READ_ONLY/WRITE/DESTRUCTIVE annotation constants, formatDryRun(), requireConfirmation()
+    url.ts            # safePath tagged template — URL-encodes interpolated path segments
 ```
 
 ### Adding a new tool
 
 1. Add a function `registerXTools(server, client, readOnly)` in `src/tools/<domain>.ts`
 2. Use `server.registerTool(name, { description, inputSchema, outputSchema, annotations }, handler)` — follow the existing try/catch + `formatSuccess`/`formatError` pattern
-3. Set appropriate annotations: `readOnlyHint` and `destructiveHint`
-4. For write tools: gate behind `if (!readOnly)`, add optional `dryRun` parameter
-5. For dangerous tools: require `confirm: z.literal(true)` parameter
+3. Set annotations from the constants in `utils/safety.ts` — `READ_ONLY`, `WRITE`, or `DESTRUCTIVE` (these expand to the `readOnlyHint`/`destructiveHint` pairs)
+4. For write tools: gate behind `if (!readOnly)`, add an optional `dryRun` parameter, and return `formatDryRun(method, path, body)` when it is set
+5. For dangerous tools: require `confirm: z.literal(true)` and guard the handler with `requireConfirmation()` from `utils/safety.ts`
 6. Wire it into `src/tools/index.ts` via `registerAllTools()`
 7. Add tests in `tests/tools/<domain>.test.ts` using `createMockServer()` and `createMockClient()` from `tests/tools/_helpers.ts`
 
@@ -84,6 +86,7 @@ Tests mock `ProtectClient` methods and capture tool handlers via `createMockServ
 
 - ESLint with `typescript-eslint` strict + stylistic rulesets
 - All imports use `.js` extensions (Node16 module resolution)
+- Build request paths with the ``safePath`` tagged template from `utils/url.ts` — never interpolate an ID into a path with a plain template literal
 - Use `z.string().describe()` for tool parameter descriptions
 - `no-explicit-any` and `no-non-null-assertion` are relaxed in test files only
 
