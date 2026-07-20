@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.9.0](https://github.com/owine/unifi-protect-mcp/compare/2.8.3...2.9.0) (2026-07-20)
+
+
+### Features
+
+* update actions/setup-node action to v7 ([#188](https://github.com/owine/unifi-protect-mcp/issues/188)) ([6ebcb16](https://github.com/owine/unifi-protect-mcp/commit/6ebcb165027594309f58a1b60ef17917329686f9))
+
+
+### Dependencies
+
+* update actions/setup-node action to v6.5.0 ([#182](https://github.com/owine/unifi-protect-mcp/issues/182)) ([0559ee1](https://github.com/owine/unifi-protect-mcp/commit/0559ee19a2a08670b050fe301e41c9076090c410))
+* update all non-major dependencies ([#183](https://github.com/owine/unifi-protect-mcp/issues/183)) ([7931100](https://github.com/owine/unifi-protect-mcp/commit/79311007c729a3207ca738f39297d7039ebc9e82))
+* update pnpm to v11.13.1 ([#184](https://github.com/owine/unifi-protect-mcp/issues/184)) ([dab350c](https://github.com/owine/unifi-protect-mcp/commit/dab350cb01c09672042009db809aba59d10cac29))
+* update pnpm to v11.15.1 ([#189](https://github.com/owine/unifi-protect-mcp/issues/189)) ([2a1f825](https://github.com/owine/unifi-protect-mcp/commit/2a1f8256520ca8ec64f3ee8bcbfeedb33c93b41f))
+
 ## [2.8.3](https://github.com/owine/unifi-protect-mcp/compare/2.8.2...2.8.3) (2026-07-13)
 
 
