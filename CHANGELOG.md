@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.0](https://github.com/owine/unifi-protect-mcp/compare/2.9.0...2.10.0) (2026-07-23)
+
+
+### Features
+
+* run TypeScript 6 and 7 side-by-side to unblock the v7 upgrade ([#191](https://github.com/owine/unifi-protect-mcp/issues/191)) ([5b90427](https://github.com/owine/unifi-protect-mcp/commit/5b90427cef43a09fa634945558ce303ff04624ff))
+
 ## [2.9.0](https://github.com/owine/unifi-protect-mcp/compare/2.8.3...2.9.0) (2026-07-20)
 
 
