@@ -10,6 +10,22 @@ MCP server exposing UniFi Protect's Integration API as tool calls. Built with th
 - Package manager: pnpm via Corepack. `corepack enable`, then `pnpm install`.
 - Dev install/build use pnpm; **publishing uses `npm publish --provenance`** (hybrid — npm has the most battle-tested OIDC flow).
 
+### TypeScript 6/7 side-by-side
+
+`package.json` deliberately aliases both TypeScript packages — **do not "simplify" this back to a single `typescript` entry**:
+
+```jsonc
+"@typescript/native": "npm:typescript@7.0.2",        // real TS 7 — owns the `tsc` bin
+"typescript": "npm:@typescript/typescript6@6.0.2",   // vendors TS 6.0.3 — owns the `tsc6` bin
+```
+
+typescript-eslint cannot run on TypeScript 7: the Go port ships no JS API, so `typescript-estree` crashes at module load with `TypeError: Cannot read properties of undefined (reading 'Cjs')`. Aliasing the `typescript` *specifier* to `@typescript/typescript6` keeps a real JS API in front of the linter, while `@typescript/native` claims the `tsc` bin so `build`/`typecheck` use the v7 compiler with no script changes.
+
+- `tsc` → 7.0.2 (build, typecheck), `tsc6` → 6.0.3 (what the linter resolves)
+- Sanity check after dependency changes: `node -e 'console.log(require("typescript/package.json").name)'` must print `@typescript/typescript6`, and `pnpm lint` must not crash
+- Collapse the split only once [typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940) is resolved (upstream targets TS 7.1, which is expected to ship a new API)
+- Renovate PR titles for these two entries read oddly because of the aliasing — check which *specifier* moved, not just the version string
+
 ## Commands
 
 ```bash
