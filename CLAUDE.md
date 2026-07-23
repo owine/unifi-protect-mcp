@@ -19,6 +19,8 @@ MCP server exposing UniFi Protect's Integration API as tool calls. Built with th
 "typescript": "npm:@typescript/typescript6@6.0.2",   // vendors TS 6.0.3 — owns the `tsc6` bin
 ```
 
+The `6.0.2` / `6.0.3` mismatch is **not a typo**: `@typescript/typescript6` carries its own version line (`6.0.2`), independent of the TypeScript release it vendors (`6.0.3`). Confirm with `node -e 'console.log(require("typescript/package.json").version)'` → `6.0.2` and `./node_modules/.bin/tsc6 --version` → `6.0.3`.
+
 typescript-eslint cannot run on TypeScript 7: the Go port ships no JS API, so `typescript-estree` crashes at module load with `TypeError: Cannot read properties of undefined (reading 'Cjs')`. Aliasing the `typescript` *specifier* to `@typescript/typescript6` keeps a real JS API in front of the linter, while `@typescript/native` claims the `tsc` bin so `build`/`typecheck` use the v7 compiler with no script changes.
 
 - `tsc` → 7.0.2 (build, typecheck), `tsc6` → 6.0.3 (what the linter resolves)
