@@ -47,7 +47,7 @@
     "@types/ws": "8.18.1",
     "@typescript/native": "npm:typescript@7.0.2",
     "@vitest/coverage-v8": "4.1.10",
-    "eslint": "10.7.0",
+    "eslint": "10.8.0",
     "lefthook": "2.1.10",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "typescript-eslint": "8.65.0",
