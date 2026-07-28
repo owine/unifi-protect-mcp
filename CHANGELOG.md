@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.10.0](https://github.com/owine/unifi-protect-mcp/compare/2.9.0...2.10.0) (2026-07-27)
+
+
+### Features
+
+* run TypeScript 6 and 7 side-by-side to unblock the v7 upgrade ([#191](https://github.com/owine/unifi-protect-mcp/issues/191)) ([5b90427](https://github.com/owine/unifi-protect-mcp/commit/5b90427cef43a09fa634945558ce303ff04624ff))
+
+
+### Dependencies
+
+* update actions/checkout action to v7.0.1 ([#196](https://github.com/owine/unifi-protect-mcp/issues/196)) ([2ed5856](https://github.com/owine/unifi-protect-mcp/commit/2ed5856955be4c6280c168b2affa6734b87ee414))
+* update dependency eslint to v10.8.0 ([#199](https://github.com/owine/unifi-protect-mcp/issues/199)) ([c399236](https://github.com/owine/unifi-protect-mcp/commit/c399236c4c4253732569f5b060a566582b991ae7))
+* update dependency typescript-eslint to v8.65.0 ([#197](https://github.com/owine/unifi-protect-mcp/issues/197)) ([4c073d0](https://github.com/owine/unifi-protect-mcp/commit/4c073d05274b0a58174381c9790146a3357d03d6))
+* update pnpm to v11.17.0 ([#198](https://github.com/owine/unifi-protect-mcp/issues/198)) ([47ea5b7](https://github.com/owine/unifi-protect-mcp/commit/47ea5b7af1aafa710603fef27b03081091a2f983))
+
 ## [2.9.0](https://github.com/owine/unifi-protect-mcp/compare/2.8.3...2.9.0) (2026-07-20)
 
 
