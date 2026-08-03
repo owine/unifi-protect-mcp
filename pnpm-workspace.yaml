@@ -1,2 +1,17 @@
 allowBuilds:
   lefthook: true
+
+# CI safety: `pnpm install` errors if the lockfile drifts from package.json.
+# The release-age soak lives in the shared Renovate preset, NOT here — a
+# pnpm-side minimumReleaseAge double-gates against Renovate and blocks
+# updates (including 0-day CVE fixes) from landing.
+preferFrozenLockfile: true
+
+# `pnpm add` writes exact versions (caret/tilde ranges already in package.json
+# are still fine for a library — this only controls what `pnpm add` writes).
+saveExact: true
+
+# `pnpm audit` fails on moderate+ vulnerabilities by default. CI passes
+# `--audit-level=high` explicitly, which overrides this.
+audit:
+  level: moderate
