@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.11.0](https://github.com/owine/unifi-protect-mcp/compare/2.10.0...2.11.0) (2026-08-04)
+
+
+### Features
+
+* update dependency @modelcontextprotocol/sdk to v1.30.0 ([#204](https://github.com/owine/unifi-protect-mcp/issues/204)) ([78f4808](https://github.com/owine/unifi-protect-mcp/commit/78f4808b0433ff02f75c3ac13f3694c0eb8a20ff))
+
+
+### Dependencies
+
+* update pnpm to v11.19.0 ([#207](https://github.com/owine/unifi-protect-mcp/issues/207)) ([5936e94](https://github.com/owine/unifi-protect-mcp/commit/5936e94a74e3ff705a28f5029888b59cbab10b6b))
+* update toolchain-versions ([#203](https://github.com/owine/unifi-protect-mcp/issues/203)) ([af18796](https://github.com/owine/unifi-protect-mcp/commit/af18796e660b50b2d2c78835d25daea08fa6e33e))
+
 ## [2.10.0](https://github.com/owine/unifi-protect-mcp/compare/2.9.0...2.10.0) (2026-07-27)
 
 
