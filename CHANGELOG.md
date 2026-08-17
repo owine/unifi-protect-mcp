@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.11.2](https://github.com/owine/unifi-protect-mcp/compare/2.11.1...2.11.2) (2026-08-17)
+
+
+### Dependencies
+
+* update dependency eslint to v10.8.1 ([#219](https://github.com/owine/unifi-protect-mcp/issues/219)) ([2b8a39d](https://github.com/owine/unifi-protect-mcp/commit/2b8a39db88ef04f646e2efe4bf08917b654145ea))
+* update dependency typescript-eslint to v8.67.0 ([#223](https://github.com/owine/unifi-protect-mcp/issues/223)) ([e21abec](https://github.com/owine/unifi-protect-mcp/commit/e21abec6106729f9c924f49504f64af2aac5023c))
+* update dependency ws to v8.21.3 ([#217](https://github.com/owine/unifi-protect-mcp/issues/217)) ([0c782b4](https://github.com/owine/unifi-protect-mcp/commit/0c782b449534c06deb94ce66659d33abdd4ee3b5))
+* update pnpm to v11.21.0 ([#224](https://github.com/owine/unifi-protect-mcp/issues/224)) ([b17608f](https://github.com/owine/unifi-protect-mcp/commit/b17608ff93cfb4c6d0b4d3896ea3572378fe1d0e))
+* update pnpm/setup action to v2.0.2 ([#222](https://github.com/owine/unifi-protect-mcp/issues/222)) ([e7f8b51](https://github.com/owine/unifi-protect-mcp/commit/e7f8b51221973c127676144be18aa8f016104306))
+
 ## [2.11.1](https://github.com/owine/unifi-protect-mcp/compare/2.11.0...2.11.1) (2026-08-10)
 
 
