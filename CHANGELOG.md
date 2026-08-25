@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.11.3](https://github.com/owine/unifi-protect-mcp/compare/2.11.2...2.11.3) (2026-08-25)
+
+
+### Dependencies
+
+* update dependency eslint to v10.9.0 ([#230](https://github.com/owine/unifi-protect-mcp/issues/230)) ([8139d53](https://github.com/owine/unifi-protect-mcp/commit/8139d535b72190d4d5c781ebeeadd0b953fc1358))
+* update pnpm to v11.22.0 ([#227](https://github.com/owine/unifi-protect-mcp/issues/227)) ([a6e8e14](https://github.com/owine/unifi-protect-mcp/commit/a6e8e147cdbc0705f3049d36a16f787f5e204de2))
+* update testing to v4.1.11 ([#226](https://github.com/owine/unifi-protect-mcp/issues/226)) ([e0ec758](https://github.com/owine/unifi-protect-mcp/commit/e0ec7586c1c704ff7265d11d1f750b7e795d2919))
+
 ## [2.11.2](https://github.com/owine/unifi-protect-mcp/compare/2.11.1...2.11.2) (2026-08-17)
 
 
