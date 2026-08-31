@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.11.4](https://github.com/owine/unifi-protect-mcp/compare/2.11.3...2.11.4) (2026-08-31)
+
+
+### Dependencies
+
+* update all non-major dependencies ([#234](https://github.com/owine/unifi-protect-mcp/issues/234)) ([5293b29](https://github.com/owine/unifi-protect-mcp/commit/5293b29635eb18b00d8fead94979653e62ad465b))
+* update dependency typescript-eslint to v8.68.0 ([#235](https://github.com/owine/unifi-protect-mcp/issues/235)) ([e0a5d3f](https://github.com/owine/unifi-protect-mcp/commit/e0a5d3f862da13d8801548a9e0eb51abe1dc09d7))
+* update dependency zod to v4.5.1 ([#238](https://github.com/owine/unifi-protect-mcp/issues/238)) ([d30febf](https://github.com/owine/unifi-protect-mcp/commit/d30febfe6a4132c94c674bd244a37f0093f2f809))
+* update dependency zod to v4.5.4 ([#240](https://github.com/owine/unifi-protect-mcp/issues/240)) ([9cf59d6](https://github.com/owine/unifi-protect-mcp/commit/9cf59d6e24138690eceedaf13569847211da9bb3))
+* update pnpm/setup action to v2.1.0 ([#241](https://github.com/owine/unifi-protect-mcp/issues/241)) ([8e8e567](https://github.com/owine/unifi-protect-mcp/commit/8e8e567f133f9114ecbb75b86055eed709be9265))
+* update toolchain-versions ([#236](https://github.com/owine/unifi-protect-mcp/issues/236)) ([7af3f46](https://github.com/owine/unifi-protect-mcp/commit/7af3f4678248521ad116593fefb188ba423af317))
+
 ## [2.11.3](https://github.com/owine/unifi-protect-mcp/compare/2.11.2...2.11.3) (2026-08-25)
 
 
