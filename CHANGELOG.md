@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.12.0](https://github.com/owine/unifi-protect-mcp/compare/2.11.5...2.12.0) (2026-09-14)
+
+
+### Features
+
+* update testing to v5 ([#254](https://github.com/owine/unifi-protect-mcp/issues/254)) ([e7f35f5](https://github.com/owine/unifi-protect-mcp/commit/e7f35f5bf33db65871f189b0cfafee649514f358))
+
+
+### Dependencies
+
+* update all non-major dependencies ([#251](https://github.com/owine/unifi-protect-mcp/issues/251)) ([d7097f5](https://github.com/owine/unifi-protect-mcp/commit/d7097f5b014907280b81e2e35260c05c6d74763f))
+* update dependency typescript-eslint to v8.70.0 ([#252](https://github.com/owine/unifi-protect-mcp/issues/252)) ([84061b5](https://github.com/owine/unifi-protect-mcp/commit/84061b53a9247ff19d9b32928c62f5b2ff639b66))
+* update toolchain-versions ([#253](https://github.com/owine/unifi-protect-mcp/issues/253)) ([5e15098](https://github.com/owine/unifi-protect-mcp/commit/5e15098be73707e1bd91af92d114721abbf70d97))
+
 ## [2.11.5](https://github.com/owine/unifi-protect-mcp/compare/2.11.4...2.11.5) (2026-09-07)
 
 
