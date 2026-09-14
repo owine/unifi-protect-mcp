@@ -83,9 +83,12 @@ export function registerPosTools(
           .min(1)
           .optional()
           .describe(
-            "Transaction time in epoch milliseconds. Must be within the last 24 " +
-              "hours and no more than 5 minutes ahead of server time; out-of-range " +
-              "values are rejected. A value within the allowed skew is clamped to now."
+            "Transaction time in epoch milliseconds. Protect validates this " +
+              "against the NVR clock: it must be within the last 24 hours and no " +
+              "more than 5 minutes ahead of server time. Protect rejects an " +
+              "out-of-range value with a 400 and clamps an in-skew value to now. " +
+              "This tool forwards the value unchanged rather than pre-checking it, " +
+              "because the window is relative to NVR time, not this process clock."
           ),
         dryRun: z
           .boolean()
