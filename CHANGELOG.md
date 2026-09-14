@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.0](https://github.com/owine/unifi-protect-mcp/compare/2.12.0...2.13.0) (2026-09-14)
+
+
+### Features
+
+* align with UniFi Protect API 7.3.47 ([#257](https://github.com/owine/unifi-protect-mcp/issues/257)) ([6e486b1](https://github.com/owine/unifi-protect-mcp/commit/6e486b13682432c6062368f05941265384345295))
+
 ## [2.12.0](https://github.com/owine/unifi-protect-mcp/compare/2.11.5...2.12.0) (2026-09-14)
 
 
