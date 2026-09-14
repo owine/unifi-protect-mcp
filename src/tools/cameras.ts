@@ -22,7 +22,7 @@ export function registerCameraTools(
     "protect_list_cameras",
     {
       description:
-        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.1.83-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage (type, resetAt, text), ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config.",
+        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.3.47-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), type (hardware model name, e.g. UVC G6 Turret), guid (hardware MODEL GUID — every camera of the same model returns the same value, so it is NOT a per-camera identifier; use id), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage (type, resetAt, text), ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config.",
       outputSchema: cameraListOutputSchema,
       annotations: READ_ONLY,
     },
@@ -40,7 +40,7 @@ export function registerCameraTools(
     "protect_get_camera",
     {
       description:
-        "Get details for a specific camera by ID. The Protect Integration API returns the SAME field set as protect_list_cameras entries (id, mac, name, modelKey, state, activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags, lcdMessage, ledSettings, osdSettings, smartDetectSettings) — there is no extended/by-id-only payload (confirmed live on 7.1.83). Recording state, motion events, zones, and channel/RTSP config are NOT exposed by this API surface.",
+        "Get details for a specific camera by ID. The Protect Integration API returns the SAME field set as protect_list_cameras entries (id, mac, name, modelKey, state, type, guid, activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags, lcdMessage, ledSettings, osdSettings, smartDetectSettings) — there is no extended/by-id-only payload (confirmed live on 7.3.47). Recording state, motion events, zones, and channel/RTSP config are NOT exposed by this API surface.",
       inputSchema: { id: z.string().describe("Camera ID") },
       outputSchema: cameraOutputSchema,
       annotations: READ_ONLY,

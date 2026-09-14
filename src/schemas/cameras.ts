@@ -1,4 +1,5 @@
 import {
+  hardwareModelFields,
   idField,
   listResultSchema,
   nullableString,
@@ -7,7 +8,7 @@ import {
 } from "./common.js";
 
 /**
- * Verified against live UniFi Protect Integration API 7.1.83 (2026-06-20).
+ * Verified against live UniFi Protect Integration API 7.3.47 (2026-09-14).
  * The Integration API camera object is far smaller than the internal Protect
  * app's camera model — no isRecording/lastMotion/channels/firmwareVersion/etc.
  * `list` and `get-by-id` return the same field set (confirmed live).
@@ -57,6 +58,7 @@ export const cameraSchema = passthroughObject({
   name: nullableString("Camera name"),
   modelKey: nullableString('Always "camera"'),
   state: nullableString("CONNECTED | DISCONNECTED | ..."),
+  ...hardwareModelFields(),
   activePatrolSlot: unknownField("Active PTZ patrol slot, or null (number|null)"),
   hasPackageCamera: unknownField("Has a secondary package camera (boolean)"),
   hdrType: nullableString('HDR mode, e.g. "auto"'),

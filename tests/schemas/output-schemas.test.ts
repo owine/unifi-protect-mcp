@@ -10,6 +10,11 @@ import {
   lightSchema,
 } from "../../src/schemas/devices.js";
 import {
+  alarmHubSchema,
+  fobSchema,
+  sensorSchema,
+} from "../../src/schemas/devices.js";
+import {
   armProfileSchema,
   fileSchema,
   liveviewSchema,
@@ -20,14 +25,14 @@ import {
 
 /**
  * Samples below are REAL UniFi Protect Integration API responses captured from
- * a live console running 7.1.83 (2026-06-20), trimmed to representative shape.
- * Device types with no instances on the console (light, arm profile, file) use
- * the verbatim 7.1.83 doc response samples. These guard that the schemas accept
+ * a live console running 7.3.47 (2026-09-14), trimmed to representative shape.
+ * Device types with no instances on the console (light, sensor, fob, alarm hub,
+ * arm profile, file) use the verbatim published doc response samples. These guard that the schemas accept
  * ground truth — including explicit nulls — not just internally consistent
  * guesses.
  */
 
-describe("output schemas (verified against live 7.1.83 responses)", () => {
+describe("output schemas (verified against live 7.3.47 responses)", () => {
   it("camera schema accepts a real camera response with a typed lcdMessage", () => {
     const sample = {
       id: "683f6e44001d1603e4320bd8",
@@ -278,5 +283,137 @@ describe("output schemas (verified against live 7.1.83 responses)", () => {
   it("still rejects a wrong type on a confident identity field", () => {
     const result = z.object(cameraSchema.shape).safeParse({ id: 12345 });
     expect(result.success).toBe(false);
+  });
+
+  // --- Fields added in Protect 7.3.x ---
+
+  it("camera schema accepts the 7.3.x type/guid pair (captured live 7.3.47)", () => {
+    const parsed = cameraSchema.parse({
+      id: "6803e86a017e3503e4006b50",
+      modelKey: "camera",
+      state: "CONNECTED",
+      name: "Front Camera",
+      type: "UVC G6 Turret",
+      guid: "be9d8e45-62a8-ae84-8b23-71723c7decaf",
+      mac: "84784824E645",
+    });
+    expect(parsed.type).toBe("UVC G6 Turret");
+    expect(parsed.guid).toBe("be9d8e45-62a8-ae84-8b23-71723c7decaf");
+  });
+
+  it("guid is a model identifier, not a device identity (two units, one guid)", () => {
+    // Captured live 7.3.47: distinct cameras of the same model share a guid.
+    // This is documented in the schema description; the test pins the fact so a
+    // future edit cannot quietly re-describe guid as unique per device.
+    const shared = "be9d8e45-62a8-ae84-8b23-71723c7decaf";
+    const a = cameraSchema.parse({ id: "6803e86a017e3503e4006b50", guid: shared });
+    const b = cameraSchema.parse({ id: "68d5eab800308d03e40321f9", guid: shared });
+    expect(a.guid).toBe(b.guid);
+    expect(a.id).not.toBe(b.id);
+  });
+
+  it("nvr schema accepts the 7.3.x type/guid/mac fields (captured live 7.3.47)", () => {
+    const parsed = nvrSchema.parse({
+      id: "67f5751003927603e40003ec",
+      modelKey: "nvr",
+      name: "Melrose NVR Pro",
+      type: "UNVR-PRO",
+      guid: "10b3fc63-28eb-4f7e-b8de-7579cd609cf5",
+      mac: "0CEA1447C0A4",
+    });
+    expect(parsed.mac).toBe("0CEA1447C0A4");
+  });
+
+  it("ulp user schema accepts the 7.3.x email field, incl. a service account", () => {
+    // Captured live 7.3.47: service accounts return "" rather than null here,
+    // but nullableString must tolerate both.
+    expect(() =>
+      ulpUserSchema.parse({
+        id: "fe92f806-6942-4b59-8be2-66950701cdfa",
+        modelKey: "ulpUser",
+        firstName: "Oliver",
+        lastName: "Wine",
+        fullName: "Oliver Wine",
+        email: "ow@mroliverwine.com",
+        status: "ACTIVE",
+      })
+    ).not.toThrow();
+    expect(() =>
+      ulpUserSchema.parse({
+        id: "222eb570-10db-4636-bc06-fff0ec31f0ac",
+        modelKey: "ulpUser",
+        firstName: "scrypted",
+        lastName: "",
+        fullName: "scrypted",
+        email: "",
+        status: "ACTIVE",
+      })
+    ).not.toThrow();
+    expect(() => ulpUserSchema.parse({ id: "x", email: null })).not.toThrow();
+  });
+
+  it("sensor schema accepts the 7.3.x featureFlags block (7.3.47 docs)", () => {
+    const parsed = sensorSchema.parse({
+      id: "66d025b301ebc903e80003ea",
+      modelKey: "sensor",
+      state: "CONNECTED",
+      type: "UP Sense",
+      guid: "6b8fdd7c-7e4c-4156-bb39-be05ca855491",
+      featureFlags: {
+        temperature: { channelCount: 1 },
+        humidity: { channelCount: 1 },
+        light: { channelCount: 1 },
+        motion: { channelCount: 1 },
+        waterLeak: { channelCount: 1 },
+        open: { channelCount: 1 },
+        tamper: { channelCount: 1 },
+        smoke: { channelCount: 1 },
+      },
+    });
+    expect(parsed.featureFlags).toBeDefined();
+  });
+
+  it("fob schema accepts the 7.3.x keypad/arm-control fields (7.3.47 docs)", () => {
+    expect(() =>
+      fobSchema.parse({
+        id: "66d025b301ebc903e80003ea",
+        modelKey: "fob",
+        hasKeypad: false,
+        armControlSettings: {
+          enabled: true,
+          armProfileId: "string",
+          nightProfileId: "string",
+        },
+        keypadSettings: {
+          beepEnabled: true,
+          beepVolume: 100,
+          backlightEnabled: true,
+          backlightBrightness: 100,
+        },
+      })
+    ).not.toThrow();
+    // The docs also render these collapsed as bare {} on the list endpoint.
+    expect(() =>
+      fobSchema.parse({ id: "x", armControlSettings: {}, keypadSettings: {} })
+    ).not.toThrow();
+  });
+
+  it("alarm hub schema accepts the 7.3.x tamper/thread fields (7.3.47 docs)", () => {
+    const parsed = alarmHubSchema.parse({
+      id: "66d025b301ebc903e80003ea",
+      modelKey: "linkstation",
+      deviceTamperStatus: "tampered",
+      threadState: {
+        network: {
+          status: "ready",
+          role: "disabled",
+          networkName: "string",
+          channel: 11,
+          joinedDeviceCount: 0,
+          lastUpdatedAt: 0,
+        },
+      },
+    });
+    expect(parsed.deviceTamperStatus).toBe("tampered");
   });
 });

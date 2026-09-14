@@ -1,4 +1,5 @@
 import {
+  hardwareModelFields,
   idField,
   listResultSchema,
   nullableString,
@@ -9,9 +10,9 @@ import {
 /**
  * Device schemas for the config-driven Protect device types.
  *
- * Field sets are derived from the UniFi Protect Integration API 7.1.83 docs
+ * Field sets are derived from the UniFi Protect Integration API 7.3.47 docs
  * (per-type response samples). Chimes were additionally verified against live
- * console responses (2026-06-20); the rest have no instances on the available
+ * console responses (2026-09-14); the rest have no instances on the available
  * console, so their TOP-LEVEL fields are typed from the published docs while
  * every nested object/array is left as `unknownField()` (z.unknown()) — naming
  * the field for the LLM without risking SDK output-validation failures on a
@@ -29,6 +30,7 @@ const deviceIdentity = () => ({
   name: nullableString("Device name"),
   mac: nullableString("MAC address"),
   state: nullableString("CONNECTED | DISCONNECTED | ..."),
+  ...hardwareModelFields(),
 });
 
 export const lightSchema = passthroughObject({
@@ -48,6 +50,10 @@ export const lightSchema = passthroughObject({
 export const sensorSchema = passthroughObject({
   ...deviceIdentity(),
   mountType: nullableString('Mount type, e.g. "door", "leak", "garage"'),
+  featureFlags: unknownField(
+    "Sensor capability flags, added in 7.3.x (object: temperature, humidity, " +
+      "light, motion, waterLeak, open, tamper, smoke — each { channelCount })"
+  ),
   batteryStatus: unknownField("Battery status (object: percentage, isLow)"),
   stats: unknownField("Environmental stats (object: light, humidity, temperature)"),
   lightSettings: unknownField("Light threshold settings (object)"),
@@ -103,6 +109,14 @@ export const fobSchema = passthroughObject({
   awayState: nullableString('Away state, e.g. "ONLINE"'),
   buttonLabels: nullableString('Button label preset, e.g. "securityActions"'),
   featureFlags: unknownField("Feature flags (object: buttons[])"),
+  hasKeypad: unknownField("Whether this fob has a keypad, added in 7.3.x (boolean)"),
+  armControlSettings: unknownField(
+    "Arm-control config, added in 7.3.x (object: enabled, armProfileId, nightProfileId)"
+  ),
+  keypadSettings: unknownField(
+    "Keypad config, added in 7.3.x (object: beepEnabled, beepVolume, " +
+      "backlightEnabled, backlightBrightness)"
+  ),
   wirelessConnectionState: unknownField("Wireless link state (object)"),
 });
 
@@ -140,6 +154,14 @@ const linkStationLikeSchema = () =>
     lastEvent: unknownField("Last event timestamp in epoch ms (number)"),
     alarmHub: unknownField(
       "Alarm hub status (object: armed, battery, connector, cover, output, input, …)"
+    ),
+    deviceTamperStatus: nullableString(
+      'Tamper status, added in 7.3.x, e.g. "tampered"'
+    ),
+    threadState: unknownField(
+      "Thread radio state, added in 7.3.x (object: network — status, role, " +
+        "networkName, channel, panId, extendedPanId, joinedDeviceCount, " +
+        "errorReason, lastUpdatedAt)"
     ),
   });
 

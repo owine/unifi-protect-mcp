@@ -138,9 +138,9 @@ describe("safety compliance", () => {
   });
 
   describe("tool counts", () => {
-    it("registers 73 tools in read-write mode", () => {
+    it("registers 74 tools in read-write mode", () => {
       const { configs: rwConfigs } = registerAll(false);
-      expect(rwConfigs.size).toBe(73);
+      expect(rwConfigs.size).toBe(74);
     });
 
     it("registers 38 tools in read-only mode", () => {
