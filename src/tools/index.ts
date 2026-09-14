@@ -9,6 +9,7 @@ import { registerFileTools } from "./files.js";
 import { registerSubscriptionTools } from "./subscriptions.js";
 import { registerArmProfileTools } from "./arm-profiles.js";
 import { registerUserTools } from "./users.js";
+import { registerPosTools } from "./pos.js";
 
 export function registerAllTools(
   server: McpServer,
@@ -24,4 +25,5 @@ export function registerAllTools(
   registerFileTools(server, client, readOnly);
   registerArmProfileTools(server, client, readOnly);
   registerUserTools(server, client);
+  registerPosTools(server, client, readOnly);
 }

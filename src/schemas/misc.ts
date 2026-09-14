@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  hardwareModelFields,
   idField,
   listResultSchema,
   nullableString,
@@ -8,9 +9,9 @@ import {
 } from "./common.js";
 
 /**
- * Schemas below are verified against live UniFi Protect Integration API 7.1.83
- * responses (Melrose NVR Pro console, 2026-06-20) where instances exist, and
- * against the 7.1.83 published docs otherwise (arm profiles, files — no
+ * Schemas below are verified against live UniFi Protect Integration API 7.3.47
+ * responses (Melrose NVR Pro console, 2026-09-14) where instances exist, and
+ * against the 7.3.47 published docs otherwise (arm profiles, files — no
  * instances on the console). The Integration API surface is much thinner than
  * the internal Protect app API — only observed/documented fields are typed;
  * `.passthrough()` still allows anything extra a firmware/hardware mix adds.
@@ -45,6 +46,8 @@ export const nvrSchema = passthroughObject({
   id: idField("NVR ID"),
   modelKey: nullableString('Always "nvr"'),
   name: nullableString("NVR name"),
+  ...hardwareModelFields(),
+  mac: nullableString("MAC address, added in 7.3.x"),
   doorbellSettings: doorbellSettingsSchema.optional(),
   armMode: armModeSchema.optional(),
 });
@@ -73,6 +76,10 @@ export const ulpUserSchema = passthroughObject({
   firstName: nullableString("First name"),
   lastName: nullableString("Last name"),
   fullName: nullableString("Full name"),
+  email: nullableString(
+    "Email address, added in 7.3.x. Empty string for service accounts " +
+      "(verified live 7.3.47)"
+  ),
   status: nullableString("Account status, e.g. ACTIVE"),
 });
 

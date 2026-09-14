@@ -1,6 +1,6 @@
 # UniFi Protect MCP Server
 
-An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.1.83** — 73 tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, NVR status, and WebSocket subscriptions.
+An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.3.47** — 74 tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, point-of-sale events, NVR status, and WebSocket subscriptions.
 
 ## Prerequisites
 
@@ -224,6 +224,11 @@ This server provides layered safety controls for responsible operation:
 | `protect_get_user` | Get a Protect user by ID |
 | `protect_list_ulp_users` | List UniFi Identity (ULP) users with enrolled credentials |
 | `protect_get_ulp_user` | Get a UniFi Identity user by ID |
+
+### Point of Sale (1)
+| Tool | Description |
+|---|---|
+| `protect_ingest_pos_transaction` | Record a POS transaction as a camera event so it can be overlaid on recorded footage |
 
 ## Development
 

@@ -46,6 +46,27 @@ export function nullableString(description: string) {
   return z.string().nullable().optional().describe(description);
 }
 
+/**
+ * Hardware-model fields that Protect 7.3.x added to every device resource and
+ * to the NVR.
+ *
+ * VERIFIED LIVE (7.3.47): `guid` identifies the hardware MODEL, not the unit.
+ * Three "UVC G6 Turret" cameras on the test console all return the same guid,
+ * as do two "UP Chime PoE" chimes. Despite the name, it is NOT a per-device
+ * identifier — `id` remains the only device identity.
+ */
+export function hardwareModelFields() {
+  return {
+    type: nullableString(
+      'Hardware model name, e.g. "UVC G6 Turret", "UP Chime PoE", "UNVR-PRO"'
+    ),
+    guid: nullableString(
+      "Hardware MODEL GUID, shared by every unit of the same model. NOT a " +
+        "per-device identifier — use `id` to identify a device."
+    ),
+  };
+}
+
 /** Output-schema shape for list endpoints that return a top-level array. */
 export function listResultSchema<T extends z.ZodTypeAny>(itemSchema: T) {
   return {

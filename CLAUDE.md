@@ -2,7 +2,7 @@
 
 ## Project overview
 
-MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.1.83** (73 tools across 9 domains).
+MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.3.47** (74 tools across 10 domains).
 
 ## Local dev setup
 
@@ -54,15 +54,17 @@ src/
     device-actions.ts # Action endpoints: siren play/stop/test, speaker test, relay activate, alarm-hub trigger
     arm-profiles.ts   # Arm profile CRUD, set-current, enable/disable arm alarm
     users.ts          # Read-only Protect users + UniFi Identity (ULP) users
+    pos.ts            # Point-of-sale transaction ingestion (overlays POS data on footage)
     liveviews.ts      # Live view CRUD
     files.ts          # File listing, upload
     system.ts         # NVR info, protect system info
     subscriptions.ts  # WebSocket subscriptions for devices and events
   schemas/            # Zod output schemas for tools/list metadata + runtime validation
-    common.ts         # passthroughObject(), deviceCommonFields, listResultSchema()
+    common.ts         # passthroughObject(), hardwareModelFields(), listResultSchema()
     cameras.ts        # cameraSchema, rtspStreamSchema, talkbackSessionOutputSchema
     devices.ts        # DEVICE_SCHEMAS map for the 11 config-driven device types
     misc.ts           # nvr, user, ulp-user, liveview, arm-profile, file, subscription schemas
+    pos.ts            # posTransactionOutputSchema
   utils/
     responses.ts      # formatSuccess() / formatError() helpers
     safety.ts         # READ_ONLY/WRITE/DESTRUCTIVE annotation constants, formatDryRun(), requireConfirmation()

@@ -76,6 +76,8 @@ const USER_TOOLS = [
   "protect_get_ulp_user",
 ];
 
+const POS_TOOLS = ["protect_ingest_pos_transaction"];
+
 const ARM_PROFILE_TOOLS = [
   "protect_list_arm_profiles",
   "protect_create_arm_profile",
@@ -115,6 +117,7 @@ const ALL_TOOLS_RW = [
   ...FILE_TOOLS,
   ...ARM_PROFILE_TOOLS,
   ...USER_TOOLS,
+  ...POS_TOOLS,
 ];
 
 const WRITE_TOOLS = ALL_TOOLS_RW.filter((t) => !READ_ONLY_TOOLS.includes(t));
