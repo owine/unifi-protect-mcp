@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.1](https://github.com/owine/unifi-protect-mcp/compare/2.13.0...2.13.1) (2026-09-19)
+
+
+### Bug Fixes
+
+* pin Trivy to v0.74.0 so the security scan reads pnpm 12 lockfiles ([#260](https://github.com/owine/unifi-protect-mcp/issues/260)) ([71d5048](https://github.com/owine/unifi-protect-mcp/commit/71d504852ab3dd5a73f3a3054c2877a82e1a893e))
+
 ## [2.13.0](https://github.com/owine/unifi-protect-mcp/compare/2.12.0...2.13.0) (2026-09-14)
 
 
