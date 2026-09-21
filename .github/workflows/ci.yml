@@ -39,9 +39,6 @@ jobs:
           runtime: node@${{ matrix.node-version }}
           cache: true
           require-lockfile: true
-      # TEMPORARY: confirm the matrix version wins over .nvmrc auto-detection.
-      # Remove before merge.
-      - run: node --version
       - run: pnpm run build
       - run: pnpm test
 
