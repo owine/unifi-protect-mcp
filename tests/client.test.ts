@@ -247,6 +247,91 @@ describe("ProtectClient", () => {
     });
   });
 
+  describe("transport hardening", () => {
+    function rawFetch(headers: Record<string, string>, body: Record<string, unknown>) {
+      return vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(headers),
+        ...body,
+      } as unknown as Response);
+    }
+
+    it("rejects redirects on JSON requests", async () => {
+      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      await client.get("/nvrs");
+      expect(fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ redirect: "error" })
+      );
+    });
+
+    it("applies an abort signal to JSON requests", async () => {
+      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      await client.get("/nvrs");
+      const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it("rejects a JSON response whose content-length exceeds the limit", async () => {
+      vi.stubGlobal(
+        "fetch",
+        rawFetch(
+          { "content-type": "application/json", "content-length": "99999999" },
+          { text: async () => "{}", json: async () => ({}) }
+        )
+      );
+      await expect(client.get("/nvrs")).rejects.toThrow(/exceeds/i);
+    });
+
+    it("reports an empty JSON body distinctly from a parse failure", async () => {
+      vi.stubGlobal("fetch", mockFetch("", { contentType: "application/json" }));
+      await expect(client.get("/nvrs")).rejects.toThrow(/empty body/i);
+    });
+
+    it("rejects redirects on binary downloads", async () => {
+      vi.stubGlobal(
+        "fetch",
+        rawFetch({ "content-type": "image/jpeg" }, { arrayBuffer: async () => new ArrayBuffer(4) })
+      );
+      await client.getBinary("/cameras/1/snapshot");
+      expect(fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ redirect: "error" })
+      );
+    });
+
+    it("applies an abort signal to binary downloads", async () => {
+      vi.stubGlobal(
+        "fetch",
+        rawFetch({ "content-type": "image/jpeg" }, { arrayBuffer: async () => new ArrayBuffer(4) })
+      );
+      await client.getBinary("/cameras/1/snapshot");
+      const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it("rejects a binary download whose content-length exceeds the limit", async () => {
+      vi.stubGlobal(
+        "fetch",
+        rawFetch(
+          { "content-type": "video/mp4", "content-length": "999999999" },
+          { arrayBuffer: async () => new ArrayBuffer(4) }
+        )
+      );
+      await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(/exceeds/i);
+    });
+
+    it("rejects redirects on binary uploads", async () => {
+      vi.stubGlobal("fetch", mockFetch({ ok: true }));
+      await client.postBinary("/files/video", Buffer.from("data"), "video/mp4");
+      expect(fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ redirect: "error" })
+      );
+    });
+  });
+
   describe("connectWebSocket", () => {
     it("has connectWebSocket method", () => {
       expect(typeof client.connectWebSocket).toBe("function");

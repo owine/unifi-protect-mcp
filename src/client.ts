@@ -1,6 +1,27 @@
 import WebSocket from "ws";
 import { Config } from "./config.js";
 
+/** Protect answers JSON calls quickly; a longer wait means something is wrong. */
+const REQUEST_TIMEOUT_MS = 25_000;
+/** Snapshots and file uploads are larger, so they get a longer budget. */
+const BINARY_TIMEOUT_MS = 60_000;
+const MAX_JSON_BYTES = 10_000_000;
+const MAX_BINARY_BYTES = 100_000_000;
+
+/**
+ * Best-effort size guard. Protect sets content-length on the responses that
+ * can actually get large (snapshots, exports); a chunked response without the
+ * header is not caught here.
+ */
+function enforceSizeLimit(response: Response, limit: number): void {
+  const declared = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > limit) {
+    throw new Error(
+      `Response exceeds the ${limit.toString()}-byte limit (content-length ${declared.toString()})`
+    );
+  }
+}
+
 export class ProtectClient {
   private baseUrl: string;
   private headers: Record<string, string>;
@@ -32,6 +53,9 @@ export class ProtectClient {
       options.body = JSON.stringify(body);
     }
 
+    options.redirect = "error";
+    options.signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+
     const response = await fetch(url, options);
 
     if (!response.ok) {
@@ -39,11 +63,21 @@ export class ProtectClient {
       throw new Error(`HTTP ${response.status}: ${text}`);
     }
 
+    enforceSizeLimit(response, MAX_JSON_BYTES);
+
     const contentType = response.headers.get("content-type") ?? "";
+    const text = await response.text();
     if (contentType.includes("application/json")) {
-      return response.json();
+      if (text.trim() === "") {
+        // A bare JSON.parse would report "Unexpected end of JSON input", which
+        // reads as a broken tool rather than an unusable Protect response.
+        throw new Error(
+          `Protect returned an empty body for ${method} ${path} with a JSON content type`
+        );
+      }
+      return JSON.parse(text);
     }
-    return response.text();
+    return text;
   }
 
   async get(path: string): Promise<unknown> {
@@ -67,12 +101,16 @@ export class ProtectClient {
     const response = await fetch(url, {
       method: "GET",
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
+      redirect: "error",
+      signal: AbortSignal.timeout(BINARY_TIMEOUT_MS),
     });
 
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`HTTP ${response.status}: ${text}`);
     }
+
+    enforceSizeLimit(response, MAX_BINARY_BYTES);
 
     const mimeType =
       response.headers.get("content-type") ?? "application/octet-stream";
@@ -93,6 +131,8 @@ export class ProtectClient {
         "Content-Type": contentType,
       },
       body: new Uint8Array(data),
+      redirect: "error",
+      signal: AbortSignal.timeout(BINARY_TIMEOUT_MS),
     });
 
     if (!response.ok) {
