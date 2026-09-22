@@ -79,9 +79,26 @@ This server provides layered safety controls for responsible operation:
 
 To reach a console through Ubiquiti's Cloud Connector instead of over the local
 network, set `UNIFI_PROTECT_HOST=api.ui.com` and `UNIFI_PROTECT_CONSOLE_ID` to
-the console's ID. The existing `UNIFI_PROTECT_API_KEY` supplies the key, and
-every tool — including snapshots and WebSocket subscriptions — is routed
-through `/v1/connector/consoles/{id}`. Keep TLS verification enabled.
+the console's ID, and supply a **Site Manager** API key (unifi.ui.com →
+Settings → API) as `UNIFI_PROTECT_API_KEY`. That is a different credential
+from a local console API key. Requests are routed through
+`/v1/connector/consoles/{id}`. Keep TLS verification enabled.
+
+Find your console ID with:
+
+```bash
+curl -s https://api.ui.com/v1/hosts -H "X-API-KEY: $KEY" | jq -r '.data[].id'
+```
+
+**WebSocket subscriptions do not work over Cloud Connector.** The connector
+proxies REST calls but returns HTTP 404 on a WebSocket upgrade, so
+`protect_subscribe_devices` and `protect_subscribe_events` fail fast with an
+explanatory error. Every other tool, including snapshots and file uploads,
+works. Connect directly to the console host if you need subscriptions.
+
+Note that `/v1/hosts` reports `protect` under `controllers` for consoles where
+Protect is merely available, not necessarily installed; only consoles actually
+running Protect will answer.
 
 Setting `UNIFI_PROTECT_CONSOLE_ID` against a local host is not fatal: the
 server logs a warning and talks to that host directly.

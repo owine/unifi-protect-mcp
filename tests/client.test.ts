@@ -416,10 +416,19 @@ describe("ProtectClient", () => {
       );
     });
 
-    it("prefixes WebSocket subscriptions with the console path", () => {
-      new ProtectClient(connectorConfig).connectWebSocket("/subscribe/events");
+    // Verified live 2026-09-22: REST proxies fine through the connector, but
+    // the same path returns HTTP 404 on WebSocket upgrade. Fail with a usable
+    // message instead of surfacing an opaque 404 to the MCP client.
+    it("refuses WebSocket subscriptions over Cloud Connector", () => {
+      expect(() =>
+        new ProtectClient(connectorConfig).connectWebSocket("/subscribe/events")
+      ).toThrow(/Cloud Connector/);
+    });
+
+    it("still opens WebSockets against a direct host", () => {
+      new ProtectClient(baseConfig).connectWebSocket("/subscribe/events");
       expect(wsUrls.at(-1)).toBe(
-        "wss://api.ui.com/v1/connector/consoles/CONSOLE1/proxy/protect/integration/v1/subscribe/events"
+        "wss://192.168.1.1/proxy/protect/integration/v1/subscribe/events"
       );
     });
 

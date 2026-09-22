@@ -45,6 +45,7 @@ async function readErrorBody(response: Response, limit: number): Promise<string>
 export class ProtectClient {
   private baseUrl: string;
   private headers: Record<string, string>;
+  private usingConnector: boolean;
 
   constructor(config: Config) {
     // Cloud Connector only exists behind api.ui.com. A console ID set against
@@ -60,6 +61,7 @@ export class ProtectClient {
     const consolePath = useConnector
       ? `/v1/connector/consoles/${config.consoleId ?? ""}`
       : "";
+    this.usingConnector = useConnector;
     this.baseUrl = `https://${config.host}${consolePath}/proxy/protect/integration/v1`;
     this.headers = {
       "X-API-KEY": config.apiKey,
@@ -184,6 +186,14 @@ export class ProtectClient {
   }
 
   connectWebSocket(path: string): WebSocket {
+    if (this.usingConnector) {
+      // Verified against a live console: the connector proxies REST calls but
+      // answers 404 to a WebSocket upgrade on the same path. Say so plainly
+      // rather than letting an opaque 404 reach the MCP client.
+      throw new Error(
+        "WebSocket subscriptions are not available over Cloud Connector; connect directly to the console host instead"
+      );
+    }
     const url = `wss://${this.baseUrl.replace(/^https?:\/\//, "")}${path}`;
     return new WebSocket(url, {
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
