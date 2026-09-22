@@ -166,6 +166,7 @@ describe("ProtectClient", () => {
         vi.fn().mockResolvedValue({
           ok: false,
           status: 500,
+          headers: new Headers(),
           text: async () => "Server Error",
         })
       );
@@ -328,6 +329,49 @@ describe("ProtectClient", () => {
         )
       );
       await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(/exceeds/i);
+    });
+
+    function failingFetch(headers: Record<string, string>, text: () => Promise<string>) {
+      return vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        headers: new Headers(headers),
+        text,
+        body: { cancel: async () => undefined },
+      } as unknown as Response);
+    }
+
+    it("does not read an oversized JSON error body", async () => {
+      const text = vi.fn(async () => "never read");
+      vi.stubGlobal("fetch", failingFetch({ "content-length": "99999999" }, text));
+      await expect(client.get("/nvrs")).rejects.toThrow(/HTTP 500.*exceeds/s);
+      expect(text).not.toHaveBeenCalled();
+    });
+
+    it("does not read an oversized binary error body", async () => {
+      const text = vi.fn(async () => "never read");
+      vi.stubGlobal("fetch", failingFetch({ "content-length": "999999999" }, text));
+      await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(
+        /HTTP 500.*exceeds/s
+      );
+      expect(text).not.toHaveBeenCalled();
+    });
+
+    it("does not read an oversized error body on binary upload", async () => {
+      const text = vi.fn(async () => "never read");
+      vi.stubGlobal("fetch", failingFetch({ "content-length": "999999999" }, text));
+      await expect(
+        client.postBinary("/files/video", Buffer.from("data"), "video/mp4")
+      ).rejects.toThrow(/HTTP 500.*exceeds/s);
+      expect(text).not.toHaveBeenCalled();
+    });
+
+    it("truncates a long error body in the thrown message", async () => {
+      const long = "x".repeat(50_000);
+      vi.stubGlobal("fetch", failingFetch({}, async () => long));
+      await expect(client.get("/nvrs")).rejects.toThrow(/truncated/);
+      const err = await client.get("/nvrs").catch((e: Error) => e);
+      expect((err as Error).message.length).toBeLessThan(3000);
     });
 
     it("rejects redirects on binary uploads", async () => {

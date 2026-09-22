@@ -7,6 +7,8 @@ const REQUEST_TIMEOUT_MS = 25_000;
 const BINARY_TIMEOUT_MS = 60_000;
 const MAX_JSON_BYTES = 10_000_000;
 const MAX_BINARY_BYTES = 100_000_000;
+/** Error text is forwarded to the MCP client, so keep it context-sized. */
+const MAX_ERROR_BODY_CHARS = 2_000;
 
 /**
  * Best-effort size guard. Protect sets content-length on the responses that
@@ -20,6 +22,24 @@ function enforceSizeLimit(response: Response, limit: number): void {
       `Response exceeds the ${limit.toString()}-byte limit (content-length ${declared.toString()})`
     );
   }
+}
+
+/**
+ * Read an error body for inclusion in a thrown message. Error responses bypass
+ * the caller's size check, so bound them here too: an oversized body is left
+ * unread, and a merely long one is truncated before it reaches an MCP client's
+ * context window.
+ */
+async function readErrorBody(response: Response, limit: number): Promise<string> {
+  const declared = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > limit) {
+    await response.body?.cancel();
+    return `<error body exceeds the ${limit.toString()}-byte limit and was not read>`;
+  }
+  const text = await response.text();
+  return text.length > MAX_ERROR_BODY_CHARS
+    ? `${text.slice(0, MAX_ERROR_BODY_CHARS)}… (truncated)`
+    : text;
 }
 
 export class ProtectClient {
@@ -72,8 +92,9 @@ export class ProtectClient {
     const response = await fetch(url, options);
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text}`);
+      throw new Error(
+        `HTTP ${response.status}: ${await readErrorBody(response, MAX_JSON_BYTES)}`
+      );
     }
 
     enforceSizeLimit(response, MAX_JSON_BYTES);
@@ -119,8 +140,9 @@ export class ProtectClient {
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text}`);
+      throw new Error(
+        `HTTP ${response.status}: ${await readErrorBody(response, MAX_BINARY_BYTES)}`
+      );
     }
 
     enforceSizeLimit(response, MAX_BINARY_BYTES);
@@ -149,8 +171,9 @@ export class ProtectClient {
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text}`);
+      throw new Error(
+        `HTTP ${response.status}: ${await readErrorBody(response, MAX_BINARY_BYTES)}`
+      );
     }
 
     const ct = response.headers.get("content-type") ?? "";
