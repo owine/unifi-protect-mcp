@@ -48,6 +48,7 @@ claude mcp add-json unifi-protect '{"command":"node","args":["/path/to/unifi-pro
 | `UNIFI_PROTECT_API_KEY` | Yes | — | API key from Protect integration settings |
 | `UNIFI_PROTECT_VERIFY_SSL` | No | `true` | Set to `false` to skip TLS certificate verification (needed for self-signed certs) |
 | `UNIFI_PROTECT_READ_ONLY` | No | `true` | Set to `false` to enable write/mutating tools (default is monitoring-only mode) |
+| `UNIFI_PROTECT_CONSOLE_ID` | No | — | Cloud Connector console ID. Only used when `UNIFI_PROTECT_HOST` is `api.ui.com`; ignored (with a warning on stderr) otherwise |
 
 ### Manual Configuration
 
@@ -74,6 +75,17 @@ Alternatively, add to your `~/.claude.json` under the top-level `"mcpServers"` k
 This server provides layered safety controls for responsible operation:
 
 - **Tool annotations** — Every tool declares `readOnlyHint` and `destructiveHint` so MCP clients (like Claude Code) can make informed confirmation decisions
+### Cloud Connector
+
+To reach a console through Ubiquiti's Cloud Connector instead of over the local
+network, set `UNIFI_PROTECT_HOST=api.ui.com` and `UNIFI_PROTECT_CONSOLE_ID` to
+the console's ID. The existing `UNIFI_PROTECT_API_KEY` supplies the key, and
+every tool — including snapshots and WebSocket subscriptions — is routed
+through `/v1/connector/consoles/{id}`. Keep TLS verification enabled.
+
+Setting `UNIFI_PROTECT_CONSOLE_ID` against a local host is not fatal: the
+server logs a warning and talks to that host directly.
+
 - **Read-only mode** — Enabled by default. Only read operations (list, get, snapshot) are registered. Set `UNIFI_PROTECT_READ_ONLY=false` to enable write/mutating tools
 - **Confirmation parameter** — The most dangerous tools (`protect_disable_mic`, `protect_trigger_alarm_webhook`) require an explicit `confirm: true` parameter that must be present for the call to succeed
 - **Dry-run support** — All write tools (except those with `confirm`) accept an optional `dryRun: true` parameter that returns a preview of what would happen without making any changes

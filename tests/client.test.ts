@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ProtectClient } from "../src/client.js";
 import type { Config } from "../src/config.js";
 
+const { wsUrls } = vi.hoisted(() => ({ wsUrls: [] as string[] }));
+vi.mock("ws", () => ({
+  // A function expression, not an arrow: connectWebSocket calls it with `new`.
+  default: vi.fn(function (url: string) {
+    wsUrls.push(url);
+  }),
+}));
+
 function mockFetch(body: unknown, options?: { status?: number; contentType?: string }) {
   const status = options?.status ?? 200;
   const contentType = options?.contentType ?? "application/json";
@@ -329,6 +337,58 @@ describe("ProtectClient", () => {
         expect.any(String),
         expect.objectContaining({ redirect: "error" })
       );
+    });
+  });
+
+  describe("Cloud Connector", () => {
+    const connectorConfig: Config = {
+      ...baseConfig,
+      host: "api.ui.com",
+      consoleId: "CONSOLE1",
+    };
+    const connectorBase =
+      "https://api.ui.com/v1/connector/consoles/CONSOLE1/proxy/protect/integration/v1";
+
+    it("prefixes JSON requests with the console path", async () => {
+      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      await new ProtectClient(connectorConfig).get("/nvrs");
+      expect(fetch).toHaveBeenCalledWith(`${connectorBase}/nvrs`, expect.anything());
+    });
+
+    it("prefixes binary downloads with the console path", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          headers: new Headers({ "content-type": "image/jpeg" }),
+          arrayBuffer: async () => new ArrayBuffer(4),
+        } as unknown as Response)
+      );
+      await new ProtectClient(connectorConfig).getBinary("/cameras/1/snapshot");
+      expect(fetch).toHaveBeenCalledWith(
+        `${connectorBase}/cameras/1/snapshot`,
+        expect.anything()
+      );
+    });
+
+    it("prefixes WebSocket subscriptions with the console path", () => {
+      new ProtectClient(connectorConfig).connectWebSocket("/subscribe/events");
+      expect(wsUrls.at(-1)).toBe(
+        "wss://api.ui.com/v1/connector/consoles/CONSOLE1/proxy/protect/integration/v1/subscribe/events"
+      );
+    });
+
+    it("ignores the console ID when the host is not api.ui.com", async () => {
+      const warn = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      await new ProtectClient({ ...baseConfig, consoleId: "CONSOLE1" }).get("/nvrs");
+      expect(fetch).toHaveBeenCalledWith(
+        "https://192.168.1.1/proxy/protect/integration/v1/nvrs",
+        expect.anything()
+      );
+      expect(warn).toHaveBeenCalled();
+      warn.mockRestore();
     });
   });
 

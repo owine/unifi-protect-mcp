@@ -27,7 +27,20 @@ export class ProtectClient {
   private headers: Record<string, string>;
 
   constructor(config: Config) {
-    this.baseUrl = `https://${config.host}/proxy/protect/integration/v1`;
+    // Cloud Connector only exists behind api.ui.com. A console ID set against
+    // a local console is ignored rather than fatal: every tool still works
+    // against that console, and refusing to start helps nobody.
+    const useConnector =
+      config.consoleId !== undefined && config.host === "api.ui.com";
+    if (config.consoleId !== undefined && !useConnector) {
+      console.error(
+        `Ignoring UNIFI_PROTECT_CONSOLE_ID: Cloud Connector requires host api.ui.com, but host is ${config.host}.`
+      );
+    }
+    const consolePath = useConnector
+      ? `/v1/connector/consoles/${config.consoleId ?? ""}`
+      : "";
+    this.baseUrl = `https://${config.host}${consolePath}/proxy/protect/integration/v1`;
     this.headers = {
       "X-API-KEY": config.apiKey,
       "Content-Type": "application/json",
