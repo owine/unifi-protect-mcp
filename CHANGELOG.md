@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.14.0](https://github.com/owine/unifi-protect-mcp/compare/2.13.0...2.14.0) (2026-09-22)
+
+
+### Features
+
+* Cloud Connector support and client transport hardening ([#272](https://github.com/owine/unifi-protect-mcp/issues/272)) ([08ef219](https://github.com/owine/unifi-protect-mcp/commit/08ef219ba0f67552924399c71409094610184f30))
+
+
+### Bug Fixes
+
+* pin Trivy to v0.74.0 so the security scan reads pnpm 12 lockfiles ([#260](https://github.com/owine/unifi-protect-mcp/issues/260)) ([71d5048](https://github.com/owine/unifi-protect-mcp/commit/71d504852ab3dd5a73f3a3054c2877a82e1a893e))
+
+
+### Dependencies
+
+* update all non-major dependencies ([#265](https://github.com/owine/unifi-protect-mcp/issues/265)) ([50ad368](https://github.com/owine/unifi-protect-mcp/commit/50ad3689a17d1becd6390bf9b95415d454f022b5))
+* update dependency @types/node to v24.13.6 ([#269](https://github.com/owine/unifi-protect-mcp/issues/269)) ([98742b8](https://github.com/owine/unifi-protect-mcp/commit/98742b83a0863ab5691769787ad48074c71d136f))
+* update dependency eslint to v10.11.0 ([#271](https://github.com/owine/unifi-protect-mcp/issues/271)) ([c85d3db](https://github.com/owine/unifi-protect-mcp/commit/c85d3dba9f8c7df87fc735d8f76a5571e5e49173))
+* update pnpm to v12.4.2 ([#266](https://github.com/owine/unifi-protect-mcp/issues/266)) ([11d1323](https://github.com/owine/unifi-protect-mcp/commit/11d13234f2f9261b0c8414636f86cb54223aa7f3))
+* update pnpm to v12.5.0 ([#268](https://github.com/owine/unifi-protect-mcp/issues/268)) ([c620640](https://github.com/owine/unifi-protect-mcp/commit/c620640addd17525160d6790e679e5d15738a584))
+* update pnpm to v12.5.1 ([#270](https://github.com/owine/unifi-protect-mcp/issues/270)) ([3468afa](https://github.com/owine/unifi-protect-mcp/commit/3468afa5c42f3bca8256c1acef4c450beac04882))
+* update testing to v5.0.1 ([#267](https://github.com/owine/unifi-protect-mcp/issues/267)) ([3aa6f16](https://github.com/owine/unifi-protect-mcp/commit/3aa6f1671b4ae825ad0aaf8a8dd34ad6bd8467c1))
+
 ## [2.13.0](https://github.com/owine/unifi-protect-mcp/compare/2.12.0...2.13.0) (2026-09-14)
 
 
