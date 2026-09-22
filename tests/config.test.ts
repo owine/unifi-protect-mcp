@@ -91,4 +91,22 @@ describe("loadConfig", () => {
     loadConfig();
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
+  it("accepts a Cloud Connector console ID", () => {
+    process.env.UNIFI_PROTECT_HOST = "api.ui.com";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    process.env.UNIFI_PROTECT_CONSOLE_ID = "ABC123:DEF456";
+    const config = loadConfig();
+    expect(config.consoleId).toBe("ABC123:DEF456");
+  });
+
+  it("calls process.exit(1) when the console ID has invalid characters", () => {
+    process.env.UNIFI_PROTECT_HOST = "api.ui.com";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    process.env.UNIFI_PROTECT_CONSOLE_ID = "bad/../path";
+    const exitSpy = vi
+      .spyOn(process, "exit")
+      .mockImplementation(() => undefined as never);
+    loadConfig();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
 });

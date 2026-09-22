@@ -1,12 +1,68 @@
 import WebSocket from "ws";
 import { Config } from "./config.js";
 
+/** Protect answers JSON calls quickly; a longer wait means something is wrong. */
+const REQUEST_TIMEOUT_MS = 25_000;
+/** Snapshots and file uploads are larger, so they get a longer budget. */
+const BINARY_TIMEOUT_MS = 60_000;
+const MAX_JSON_BYTES = 10_000_000;
+const MAX_BINARY_BYTES = 100_000_000;
+/** Error text is forwarded to the MCP client, so keep it context-sized. */
+const MAX_ERROR_BODY_CHARS = 2_000;
+
+/**
+ * Best-effort size guard. Protect sets content-length on the responses that
+ * can actually get large (snapshots, exports); a chunked response without the
+ * header is not caught here.
+ */
+function enforceSizeLimit(response: Response, limit: number): void {
+  const declared = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > limit) {
+    throw new Error(
+      `Response exceeds the ${limit.toString()}-byte limit (content-length ${declared.toString()})`
+    );
+  }
+}
+
+/**
+ * Read an error body for inclusion in a thrown message. Error responses bypass
+ * the caller's size check, so bound them here too: an oversized body is left
+ * unread, and a merely long one is truncated before it reaches an MCP client's
+ * context window.
+ */
+async function readErrorBody(response: Response, limit: number): Promise<string> {
+  const declared = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > limit) {
+    await response.body?.cancel();
+    return `<error body exceeds the ${limit.toString()}-byte limit and was not read>`;
+  }
+  const text = await response.text();
+  return text.length > MAX_ERROR_BODY_CHARS
+    ? `${text.slice(0, MAX_ERROR_BODY_CHARS)}… (truncated)`
+    : text;
+}
+
 export class ProtectClient {
   private baseUrl: string;
   private headers: Record<string, string>;
+  private usingConnector: boolean;
 
   constructor(config: Config) {
-    this.baseUrl = `https://${config.host}/proxy/protect/integration/v1`;
+    // Cloud Connector only exists behind api.ui.com. A console ID set against
+    // a local console is ignored rather than fatal: every tool still works
+    // against that console, and refusing to start helps nobody.
+    const useConnector =
+      config.consoleId !== undefined && config.host === "api.ui.com";
+    if (config.consoleId !== undefined && !useConnector) {
+      console.error(
+        `Ignoring UNIFI_PROTECT_CONSOLE_ID: Cloud Connector requires host api.ui.com, but host is ${config.host}.`
+      );
+    }
+    const consolePath = useConnector
+      ? `/v1/connector/consoles/${config.consoleId ?? ""}`
+      : "";
+    this.usingConnector = useConnector;
+    this.baseUrl = `https://${config.host}${consolePath}/proxy/protect/integration/v1`;
     this.headers = {
       "X-API-KEY": config.apiKey,
       "Content-Type": "application/json",
@@ -32,18 +88,32 @@ export class ProtectClient {
       options.body = JSON.stringify(body);
     }
 
+    options.redirect = "error";
+    options.signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+
     const response = await fetch(url, options);
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text}`);
+      throw new Error(
+        `HTTP ${response.status}: ${await readErrorBody(response, MAX_JSON_BYTES)}`
+      );
     }
 
+    enforceSizeLimit(response, MAX_JSON_BYTES);
+
     const contentType = response.headers.get("content-type") ?? "";
+    const text = await response.text();
     if (contentType.includes("application/json")) {
-      return response.json();
+      if (text.trim() === "") {
+        // A bare JSON.parse would report "Unexpected end of JSON input", which
+        // reads as a broken tool rather than an unusable Protect response.
+        throw new Error(
+          `Protect returned an empty body for ${method} ${path} with a JSON content type`
+        );
+      }
+      return JSON.parse(text);
     }
-    return response.text();
+    return text;
   }
 
   async get(path: string): Promise<unknown> {
@@ -67,12 +137,17 @@ export class ProtectClient {
     const response = await fetch(url, {
       method: "GET",
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
+      redirect: "error",
+      signal: AbortSignal.timeout(BINARY_TIMEOUT_MS),
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text}`);
+      throw new Error(
+        `HTTP ${response.status}: ${await readErrorBody(response, MAX_BINARY_BYTES)}`
+      );
     }
+
+    enforceSizeLimit(response, MAX_BINARY_BYTES);
 
     const mimeType =
       response.headers.get("content-type") ?? "application/octet-stream";
@@ -93,11 +168,14 @@ export class ProtectClient {
         "Content-Type": contentType,
       },
       body: new Uint8Array(data),
+      redirect: "error",
+      signal: AbortSignal.timeout(BINARY_TIMEOUT_MS),
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text}`);
+      throw new Error(
+        `HTTP ${response.status}: ${await readErrorBody(response, MAX_BINARY_BYTES)}`
+      );
     }
 
     const ct = response.headers.get("content-type") ?? "";
@@ -108,6 +186,14 @@ export class ProtectClient {
   }
 
   connectWebSocket(path: string): WebSocket {
+    if (this.usingConnector) {
+      // Verified against a live console: the connector proxies REST calls but
+      // answers 404 to a WebSocket upgrade on the same path. Say so plainly
+      // rather than letting an opaque 404 reach the MCP client.
+      throw new Error(
+        "WebSocket subscriptions are not available over Cloud Connector; connect directly to the console host instead"
+      );
+    }
     const url = `wss://${this.baseUrl.replace(/^https?:\/\//, "")}${path}`;
     return new WebSocket(url, {
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },

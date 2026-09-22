@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ProtectClient } from "../src/client.js";
 import type { Config } from "../src/config.js";
 
+const { wsUrls } = vi.hoisted(() => ({ wsUrls: [] as string[] }));
+vi.mock("ws", () => ({
+  // A function expression, not an arrow: connectWebSocket calls it with `new`.
+  default: vi.fn(function (url: string) {
+    wsUrls.push(url);
+  }),
+}));
+
 function mockFetch(body: unknown, options?: { status?: number; contentType?: string }) {
   const status = options?.status ?? 200;
   const contentType = options?.contentType ?? "application/json";
@@ -158,6 +166,7 @@ describe("ProtectClient", () => {
         vi.fn().mockResolvedValue({
           ok: false,
           status: 500,
+          headers: new Headers(),
           text: async () => "Server Error",
         })
       );
@@ -244,6 +253,195 @@ describe("ProtectClient", () => {
       await client.post("/cameras/1/rtsps-stream");
       const callArgs = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(callArgs[1]).not.toHaveProperty("body");
+    });
+  });
+
+  describe("transport hardening", () => {
+    function rawFetch(headers: Record<string, string>, body: Record<string, unknown>) {
+      return vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(headers),
+        ...body,
+      } as unknown as Response);
+    }
+
+    it("rejects redirects on JSON requests", async () => {
+      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      await client.get("/nvrs");
+      expect(fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ redirect: "error" })
+      );
+    });
+
+    it("applies an abort signal to JSON requests", async () => {
+      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      await client.get("/nvrs");
+      const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it("rejects a JSON response whose content-length exceeds the limit", async () => {
+      vi.stubGlobal(
+        "fetch",
+        rawFetch(
+          { "content-type": "application/json", "content-length": "99999999" },
+          { text: async () => "{}", json: async () => ({}) }
+        )
+      );
+      await expect(client.get("/nvrs")).rejects.toThrow(/exceeds/i);
+    });
+
+    it("reports an empty JSON body distinctly from a parse failure", async () => {
+      vi.stubGlobal("fetch", mockFetch("", { contentType: "application/json" }));
+      await expect(client.get("/nvrs")).rejects.toThrow(/empty body/i);
+    });
+
+    it("rejects redirects on binary downloads", async () => {
+      vi.stubGlobal(
+        "fetch",
+        rawFetch({ "content-type": "image/jpeg" }, { arrayBuffer: async () => new ArrayBuffer(4) })
+      );
+      await client.getBinary("/cameras/1/snapshot");
+      expect(fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ redirect: "error" })
+      );
+    });
+
+    it("applies an abort signal to binary downloads", async () => {
+      vi.stubGlobal(
+        "fetch",
+        rawFetch({ "content-type": "image/jpeg" }, { arrayBuffer: async () => new ArrayBuffer(4) })
+      );
+      await client.getBinary("/cameras/1/snapshot");
+      const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it("rejects a binary download whose content-length exceeds the limit", async () => {
+      vi.stubGlobal(
+        "fetch",
+        rawFetch(
+          { "content-type": "video/mp4", "content-length": "999999999" },
+          { arrayBuffer: async () => new ArrayBuffer(4) }
+        )
+      );
+      await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(/exceeds/i);
+    });
+
+    function failingFetch(headers: Record<string, string>, text: () => Promise<string>) {
+      return vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        headers: new Headers(headers),
+        text,
+        body: { cancel: async () => undefined },
+      } as unknown as Response);
+    }
+
+    it("does not read an oversized JSON error body", async () => {
+      const text = vi.fn(async () => "never read");
+      vi.stubGlobal("fetch", failingFetch({ "content-length": "99999999" }, text));
+      await expect(client.get("/nvrs")).rejects.toThrow(/HTTP 500.*exceeds/s);
+      expect(text).not.toHaveBeenCalled();
+    });
+
+    it("does not read an oversized binary error body", async () => {
+      const text = vi.fn(async () => "never read");
+      vi.stubGlobal("fetch", failingFetch({ "content-length": "999999999" }, text));
+      await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(
+        /HTTP 500.*exceeds/s
+      );
+      expect(text).not.toHaveBeenCalled();
+    });
+
+    it("does not read an oversized error body on binary upload", async () => {
+      const text = vi.fn(async () => "never read");
+      vi.stubGlobal("fetch", failingFetch({ "content-length": "999999999" }, text));
+      await expect(
+        client.postBinary("/files/video", Buffer.from("data"), "video/mp4")
+      ).rejects.toThrow(/HTTP 500.*exceeds/s);
+      expect(text).not.toHaveBeenCalled();
+    });
+
+    it("truncates a long error body in the thrown message", async () => {
+      const long = "x".repeat(50_000);
+      vi.stubGlobal("fetch", failingFetch({}, async () => long));
+      await expect(client.get("/nvrs")).rejects.toThrow(/truncated/);
+      const err = await client.get("/nvrs").catch((e: Error) => e);
+      expect((err as Error).message.length).toBeLessThan(3000);
+    });
+
+    it("rejects redirects on binary uploads", async () => {
+      vi.stubGlobal("fetch", mockFetch({ ok: true }));
+      await client.postBinary("/files/video", Buffer.from("data"), "video/mp4");
+      expect(fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ redirect: "error" })
+      );
+    });
+  });
+
+  describe("Cloud Connector", () => {
+    const connectorConfig: Config = {
+      ...baseConfig,
+      host: "api.ui.com",
+      consoleId: "CONSOLE1",
+    };
+    const connectorBase =
+      "https://api.ui.com/v1/connector/consoles/CONSOLE1/proxy/protect/integration/v1";
+
+    it("prefixes JSON requests with the console path", async () => {
+      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      await new ProtectClient(connectorConfig).get("/nvrs");
+      expect(fetch).toHaveBeenCalledWith(`${connectorBase}/nvrs`, expect.anything());
+    });
+
+    it("prefixes binary downloads with the console path", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          headers: new Headers({ "content-type": "image/jpeg" }),
+          arrayBuffer: async () => new ArrayBuffer(4),
+        } as unknown as Response)
+      );
+      await new ProtectClient(connectorConfig).getBinary("/cameras/1/snapshot");
+      expect(fetch).toHaveBeenCalledWith(
+        `${connectorBase}/cameras/1/snapshot`,
+        expect.anything()
+      );
+    });
+
+    // Verified live 2026-09-22: REST proxies fine through the connector, but
+    // the same path returns HTTP 404 on WebSocket upgrade. Fail with a usable
+    // message instead of surfacing an opaque 404 to the MCP client.
+    it("refuses WebSocket subscriptions over Cloud Connector", () => {
+      expect(() =>
+        new ProtectClient(connectorConfig).connectWebSocket("/subscribe/events")
+      ).toThrow(/Cloud Connector/);
+    });
+
+    it("still opens WebSockets against a direct host", () => {
+      new ProtectClient(baseConfig).connectWebSocket("/subscribe/events");
+      expect(wsUrls.at(-1)).toBe(
+        "wss://192.168.1.1/proxy/protect/integration/v1/subscribe/events"
+      );
+    });
+
+    it("ignores the console ID when the host is not api.ui.com", async () => {
+      const warn = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      await new ProtectClient({ ...baseConfig, consoleId: "CONSOLE1" }).get("/nvrs");
+      expect(fetch).toHaveBeenCalledWith(
+        "https://192.168.1.1/proxy/protect/integration/v1/nvrs",
+        expect.anything()
+      );
+      expect(warn).toHaveBeenCalled();
+      warn.mockRestore();
     });
   });
 
