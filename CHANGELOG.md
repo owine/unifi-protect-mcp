@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.14.1](https://github.com/owine/unifi-protect-mcp/compare/2.14.0...2.14.1) (2026-09-29)
+
+
+### Dependencies
+
+* update dependency @modelcontextprotocol/sdk to v1.30.1 ([#275](https://github.com/owine/unifi-protect-mcp/issues/275)) ([86de422](https://github.com/owine/unifi-protect-mcp/commit/86de42262a863e6146a70e5a46251f7f571168c5))
+* update dependency @types/node to v24.19.0 ([#281](https://github.com/owine/unifi-protect-mcp/issues/281)) ([9a6e4eb](https://github.com/owine/unifi-protect-mcp/commit/9a6e4eb20983bd9885dcd1dc742584843b70d0be))
+* update dependency typescript-eslint to v8.70.1 ([#276](https://github.com/owine/unifi-protect-mcp/issues/276)) ([7bb3ada](https://github.com/owine/unifi-protect-mcp/commit/7bb3adab46b4134912362600af22d180532b0158))
+* update testing to v5.0.2 ([#278](https://github.com/owine/unifi-protect-mcp/issues/278)) ([d01d531](https://github.com/owine/unifi-protect-mcp/commit/d01d5311ba8ea87a367308c2fd85cc89cd7af8da))
+
 ## [2.14.0](https://github.com/owine/unifi-protect-mcp/compare/2.13.0...2.14.0) (2026-09-22)
 
 
