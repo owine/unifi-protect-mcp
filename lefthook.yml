@@ -8,9 +8,13 @@ pre-commit:
       glob: '*.ts'
       run: eval "$(fnm env)" && fnm use --silent-if-unchanged && pnpm run typecheck
     ggshield:
+      # GitGuardian secret scan on staged content. ggshield finds its token in
+      # GITGUARDIAN_API_KEY or the keychain (`ggshield auth login`), so don't gate
+      # on the env var. Skipped only when ggshield isn't installed, so contributors
+      # without it aren't blocked. Not run in CI, so this is the only GG check.
       run: |
-        if [ -n "$GITGUARDIAN_API_KEY" ] && command -v ggshield >/dev/null 2>&1; then
+        if command -v ggshield >/dev/null 2>&1; then
           ggshield secret scan pre-commit
         else
-          echo "ggshield: skipped (GITGUARDIAN_API_KEY unset or ggshield not installed)"
+          echo "ggshield: skipped (ggshield not installed)"
         fi
