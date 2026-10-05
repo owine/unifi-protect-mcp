@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.14.2](https://github.com/owine/unifi-protect-mcp/compare/2.14.1...2.14.2) (2026-10-05)
+
+
+### Dependencies
+
+* update dependency @modelcontextprotocol/sdk to v1.31.0 ([#286](https://github.com/owine/unifi-protect-mcp/issues/286)) ([cd9da5e](https://github.com/owine/unifi-protect-mcp/commit/cd9da5e70c09479cdfad1999653860f821f88257))
+* update dependency @modelcontextprotocol/sdk to v1.32.0 ([#292](https://github.com/owine/unifi-protect-mcp/issues/292)) ([d07bcc6](https://github.com/owine/unifi-protect-mcp/commit/d07bcc6bfae4fdca4bc7f2e2f320e513da8ded76))
+* update dependency eslint to v10.12.0 ([#293](https://github.com/owine/unifi-protect-mcp/issues/293)) ([45cbb19](https://github.com/owine/unifi-protect-mcp/commit/45cbb1960abe24c549e71133c15601803b78d2b0))
+* update dependency typescript-eslint to v8.71.0 ([#287](https://github.com/owine/unifi-protect-mcp/issues/287)) ([db14cfa](https://github.com/owine/unifi-protect-mcp/commit/db14cfa4b76626efcfdaf7e052e326e26878b8aa))
+* update pnpm to v12.8.2 ([#288](https://github.com/owine/unifi-protect-mcp/issues/288)) ([d0f9013](https://github.com/owine/unifi-protect-mcp/commit/d0f901350033b939e495dd46c99a6d37dfac24a6))
+* update testing to v5.0.3 ([#285](https://github.com/owine/unifi-protect-mcp/issues/285)) ([ec73c43](https://github.com/owine/unifi-protect-mcp/commit/ec73c4373e8657b3baacbf33b2c2550bda83291b))
+
 ## [2.14.1](https://github.com/owine/unifi-protect-mcp/compare/2.14.0...2.14.1) (2026-09-29)
 
 
