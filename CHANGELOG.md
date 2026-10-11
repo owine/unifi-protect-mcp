@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.14.3](https://github.com/owine/unifi-protect-mcp/compare/2.14.2...2.14.3) (2026-10-11)
+
+
+### Dependencies
+
+* update pnpm to v12.9.0 ([#294](https://github.com/owine/unifi-protect-mcp/issues/294)) ([5dfbc60](https://github.com/owine/unifi-protect-mcp/commit/5dfbc6035ed5be767b8d78301b11dcb69cfa8f09))
+
 ## [2.14.2](https://github.com/owine/unifi-protect-mcp/compare/2.14.1...2.14.2) (2026-10-05)
 
 
