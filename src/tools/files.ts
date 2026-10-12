@@ -30,7 +30,7 @@ export function registerFileTools(
     "protect_list_files",
     {
       description:
-        "List device asset files (only 'animations' is supported — clips uploadable to G4 Doorbell screens). Returns array; each record (7.3.70 docs): name (server-generated), type, originalName, path.",
+        "List device asset files (only 'animations' is supported — clips uploadable to G4 Doorbell screens). Returns array; each record (verified live 7.3.70): id, name (server-generated), type, originalName, path, size, createdAt, updatedAt, metadata. Each upload yields two records — the stored image and a derived <name>.gif preview.",
       inputSchema: { fileType: FILE_TYPE },
       outputSchema: fileListOutputSchema,
       annotations: READ_ONLY,
@@ -51,7 +51,7 @@ export function registerFileTools(
     "protect_upload_file",
     {
       description:
-        "Upload a base64-encoded device asset file (sent as multipart/form-data). Returns: name (server-generated), type, originalName, path.",
+        "Upload a base64-encoded device asset file (sent as multipart/form-data). Protect converts the image (a GIF is stored as PNG, with the extension appended to originalName) and shortly afterwards creates a second <name>.gif preview asset; protect_list_files shows both. Returns: id, name (server-generated), type, originalName, path, size, createdAt, updatedAt, metadata.",
       inputSchema: {
         fileType: FILE_TYPE,
         base64Data: z.string().describe("Base64-encoded file content"),

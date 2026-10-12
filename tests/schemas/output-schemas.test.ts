@@ -18,6 +18,7 @@ import {
 } from "../../src/schemas/devices.js";
 import {
   armProfileSchema,
+  fileListOutputSchema,
   fileOutputSchema,
   fileSchema,
   liveviewSchema,
@@ -779,6 +780,38 @@ describe("output schemas (verified against live 7.3.47 responses, re-verified 7.
     };
     const parsed = z.object(fileOutputSchema).parse(sample);
     expect(parsed).toEqual(sample);
+  });
+
+  it("file schemas accept live 7.3.70 upload + list records (incl. undocumented fields)", () => {
+    // Captured live 2026-10-12: the upload response, then the derived preview
+    // asset Protect created ~2s later. id/size/createdAt/updatedAt/metadata are
+    // not in the docs.
+    const uploaded = {
+      type: "animations",
+      name: "b12dd210-c666-11b1-0bc9-d3fce587eec3.png",
+      originalName: "mcp-upload-test.gif.png",
+      path: "/srv/unifi-protect/storage/animations/b12dd210-c666-11b1-0bc9-d3fce587eec3.png",
+      size: 102,
+      createdAt: "2026-10-12T17:59:39.092Z",
+      updatedAt: "2026-10-12T17:59:39.092Z",
+      metadata: {},
+      id: "b12dd210-c666-11b1-0bc9-d3fce587eec3.png",
+    };
+    const preview = {
+      type: "animations",
+      name: "b12dd210-c666-11b1-0bc9-d3fce587eec3.png.gif",
+      originalName: "b12dd210-c666-11b1-0bc9-d3fce587eec3.png.gif",
+      path: "/srv/unifi-protect/storage/animations/b12dd210-c666-11b1-0bc9-d3fce587eec3.png.gif",
+      size: 1218,
+      createdAt: "2026-10-12T17:59:41.607Z",
+      updatedAt: "2026-10-12T17:59:41.619Z",
+      metadata: {},
+      id: "b12dd210-c666-11b1-0bc9-d3fce587eec3.png.gif",
+    };
+    expect(z.object(fileOutputSchema).parse(uploaded)).toEqual(uploaded);
+    expect(z.object(fileListOutputSchema).parse({ result: [uploaded, preview] })).toEqual({
+      result: [uploaded, preview],
+    });
   });
 
   it("POS transaction output schema accepts the 7.3.70 doc response sample", () => {
