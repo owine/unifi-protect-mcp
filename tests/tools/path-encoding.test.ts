@@ -3,6 +3,7 @@ import { createMockServer, createMockClient, mockFn } from "./_helpers.js";
 import { registerCameraTools } from "../../src/tools/cameras.js";
 import { registerDeviceTools } from "../../src/tools/devices.js";
 import { registerFileTools } from "../../src/tools/files.js";
+import { registerAlarmManagerTools } from "../../src/tools/alarm-manager.js";
 import { registerLiveviewTools } from "../../src/tools/liveviews.js";
 
 /**
@@ -35,6 +36,7 @@ beforeEach(() => {
   registerCameraTools(mock.server, client, false);
   registerDeviceTools(mock.server, client, false);
   registerFileTools(mock.server, client, false);
+  registerAlarmManagerTools(mock.server, client, false);
   registerLiveviewTools(mock.server, client, false);
 });
 
@@ -152,6 +154,17 @@ describe("path encoding in file tools", () => {
     assertPathContains("get", ENCODED_ID);
   });
 
+  it("protect_upload_file encodes fileType", async () => {
+    await handlers.get("protect_upload_file")!({
+      fileType: MALICIOUS_ID,
+      base64Data: "dGVzdA==",
+      contentType: "image/gif",
+    });
+    assertPathContains("postFile", ENCODED_ID);
+  });
+});
+
+describe("path encoding in alarm manager tools", () => {
   it("protect_trigger_alarm_webhook encodes id", async () => {
     await handlers.get("protect_trigger_alarm_webhook")!({
       id: MALICIOUS_ID,
@@ -160,13 +173,15 @@ describe("path encoding in file tools", () => {
     assertPathContains("post", ENCODED_ID);
   });
 
-  it("protect_upload_file encodes fileType", async () => {
-    await handlers.get("protect_upload_file")!({
-      fileType: MALICIOUS_ID,
-      base64Data: "dGVzdA==",
-      contentType: "image/gif",
+  it("protect_trigger_alarm_webhook dryRun encodes id in path", async () => {
+    const result = await handlers.get("protect_trigger_alarm_webhook")!({
+      id: MALICIOUS_ID,
+      confirm: true,
+      dryRun: true,
     });
-    assertPathContains("postFile", ENCODED_ID);
+    const data = JSON.parse(result.content[0].text);
+    expect(data.path).toContain(ENCODED_ID);
+    expect(data.path).not.toContain(MALICIOUS_ID);
   });
 });
 

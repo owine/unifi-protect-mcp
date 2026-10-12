@@ -2,7 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
+import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { fileListOutputSchema } from "../schemas/misc.js";
 
@@ -48,34 +48,6 @@ export function registerFileTools(
   if (readOnly) return;
 
   server.registerTool(
-    "protect_trigger_alarm_webhook",
-    {
-      description:
-        "Trigger an alarm manager webhook by ID. This fires an external alarm action.",
-      inputSchema: {
-        id: z
-          .string()
-          .min(1)
-          .describe("User-defined webhook ID matching an alarm manager configuration"),
-        confirm: z
-          .literal(true)
-          .describe("Must be true to confirm triggering the alarm webhook"),
-      },
-      annotations: DESTRUCTIVE,
-    },
-    async ({ id, confirm }) => {
-      const denied = requireConfirmation(confirm, "trigger the alarm webhook");
-      if (denied) return denied;
-      try {
-        await client.post(safePath`/alarm-manager/webhook/${id}`);
-        return formatSuccess({ triggered: true, webhookId: id });
-      } catch (err) {
-        return formatError(err);
-      }
-    }
-  );
-
-  server.registerTool(
     "protect_upload_file",
     {
       description: "Upload a base64-encoded device asset file (sent as multipart/form-data)",
@@ -86,6 +58,11 @@ export function registerFileTools(
           .enum(UPLOAD_CONTENT_TYPES)
           .default("image/gif")
           .describe("MIME type of the file"),
+        fileName: z
+          .string()
+          .min(1)
+          .optional()
+          .describe("Original file name to record (reported back as originalName)"),
         dryRun: z
           .boolean()
           .optional()
@@ -93,9 +70,9 @@ export function registerFileTools(
       },
       annotations: WRITE,
     },
-    async ({ fileType, base64Data, contentType, dryRun }) => {
+    async ({ fileType, base64Data, contentType, fileName, dryRun }) => {
       try {
-        const name = defaultFileName(contentType);
+        const name = fileName ?? defaultFileName(contentType);
         if (dryRun) {
           return formatDryRun("POST", safePath`/files/${fileType}`, {
             contentType,

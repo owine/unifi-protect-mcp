@@ -371,6 +371,31 @@ describe("camera tools", () => {
         "IRREVERSIBLE"
       );
     });
+
+    it("returns dry-run preview without calling client", async () => {
+      mockFn(client, "post").mockClear();
+      const result = await handlers.get("protect_disable_mic")!({
+        id: "cam1",
+        confirm: true,
+        dryRun: true,
+      });
+      const data = JSON.parse(result.content[0].text);
+      expect(data.dryRun).toBe(true);
+      expect(data.action).toBe("POST");
+      expect(data.path).toBe("/cameras/cam1/disable-mic-permanently");
+      expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
+    it("still requires confirm when dryRun is set", async () => {
+      mockFn(client, "post").mockClear();
+      const result = await handlers.get("protect_disable_mic")!({
+        id: "cam1",
+        confirm: false,
+        dryRun: true,
+      });
+      expectError(result);
+      expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
   });
 
   describe("protect_start_ptz_patrol", () => {

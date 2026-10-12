@@ -3,6 +3,7 @@ import { createMockServer, createMockClient, parseInputSchema } from "./_helpers
 import { registerCameraTools } from "../../src/tools/cameras.js";
 import { registerDeviceTools } from "../../src/tools/devices.js";
 import { registerFileTools } from "../../src/tools/files.js";
+import { registerAlarmManagerTools } from "../../src/tools/alarm-manager.js";
 import { registerLiveviewTools } from "../../src/tools/liveviews.js";
 
 /**
@@ -18,6 +19,7 @@ const client = createMockClient();
 registerCameraTools(server, client, false);
 registerDeviceTools(server, client, false);
 registerFileTools(server, client, false);
+registerAlarmManagerTools(server, client, false);
 registerLiveviewTools(server, client, false);
 
 describe("confirm: z.literal(true) pattern", () => {
@@ -145,6 +147,7 @@ describe("optional dryRun field", () => {
     "protect_create_liveview",
     "protect_update_liveview",
     "protect_upload_file",
+    "protect_trigger_alarm_webhook",
   ];
 
   for (const toolName of toolsWithDryRun) {

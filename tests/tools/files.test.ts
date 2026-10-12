@@ -14,63 +14,20 @@ describe("file tools", () => {
   const client = createMockClient();
   registerFileTools(server, client, false);
 
-  describe("protect_trigger_alarm_webhook", () => {
-    it("triggers webhook by ID when confirm is true", async () => {
-      mockFn(client, "post").mockResolvedValue("");
-      const result = await handlers.get("protect_trigger_alarm_webhook")!({
-        id: "wh1",
-        confirm: true,
-      });
-      expectSuccess(result, "triggered");
-      expectSuccess(result, "wh1");
-      expect(mockFn(client, "post")).toHaveBeenCalledWith(
-        "/alarm-manager/webhook/wh1"
-      );
-    });
-
-    it("returns error on failure", async () => {
-      mockFn(client, "post").mockRejectedValue(new Error("not found"));
-      const result = await handlers.get("protect_trigger_alarm_webhook")!({
-        id: "x",
-        confirm: true,
-      });
-      expectError(result);
-    });
-
-    it("has destructive annotations", () => {
-      expect(configs.get("protect_trigger_alarm_webhook")!.annotations).toEqual({
-        readOnlyHint: false,
-        destructiveHint: true,
-      });
-    });
-
-    it("has alarm description", () => {
-      expect(configs.get("protect_trigger_alarm_webhook")!.description).toContain(
-        "external alarm"
-      );
-    });
-
-    it("rejects an empty webhook id", () => {
-      const schema = parseInputSchema(configs, "protect_trigger_alarm_webhook");
-      expect(schema.safeParse({ id: "", confirm: true }).success).toBe(false);
-      expect(schema.safeParse({ id: "wh1", confirm: true }).success).toBe(true);
-    });
-  });
-
   describe("protect_list_files", () => {
     it("lists files by type", async () => {
-      mockFn(client, "get").mockResolvedValue([{ id: "f1", type: "video" }]);
+      mockFn(client, "get").mockResolvedValue([{ name: "f1", type: "animations" }]);
       const result = await handlers.get("protect_list_files")!({
-        fileType: "video",
+        fileType: "animations",
       });
-      expectSuccess(result, "video");
-      expect(mockFn(client, "get")).toHaveBeenCalledWith("/files/video");
+      expectSuccess(result, "animations");
+      expect(mockFn(client, "get")).toHaveBeenCalledWith("/files/animations");
     });
 
     it("returns error on failure", async () => {
       mockFn(client, "get").mockRejectedValue(new Error("fail"));
       const result = await handlers.get("protect_list_files")!({
-        fileType: "video",
+        fileType: "animations",
       });
       expectError(result);
     });
@@ -133,6 +90,22 @@ describe("file tools", () => {
       expect(mockFn(client, "postFile").mock.calls[0][3]).toBe("upload.wav");
     });
 
+    it("passes an explicit fileName through", async () => {
+      mockFn(client, "postFile").mockClear().mockResolvedValue({ name: "f5" });
+      await handlers.get("protect_upload_file")!({
+        fileType: "animations",
+        base64Data: "abc",
+        contentType: "image/png",
+        fileName: "doorbell-welcome.png",
+      });
+      expect(mockFn(client, "postFile")).toHaveBeenCalledWith(
+        "/files/animations",
+        expect.any(Buffer),
+        "image/png",
+        "doorbell-welcome.png"
+      );
+    });
+
     it("returns error on failure", async () => {
       mockFn(client, "postFile").mockRejectedValue(new Error("too large"));
       const result = await handlers.get("protect_upload_file")!({
@@ -163,7 +136,24 @@ describe("file tools", () => {
       expect(mockFn(client, "postFile")).not.toHaveBeenCalled();
     });
 
+    it("includes an explicit fileName in the dry-run preview", async () => {
+      const result = await handlers.get("protect_upload_file")!({
+        fileType: "animations",
+        base64Data: "abc",
+        contentType: "audio/mpeg",
+        fileName: "chime.mp3",
+        dryRun: true,
+      });
+      const data = JSON.parse(result.content[0].text);
+      expect(data.body.fileName).toBe("chime.mp3");
+    });
 
+    it("has write annotations", () => {
+      expect(configs.get("protect_upload_file")!.annotations).toEqual({
+        readOnlyHint: false,
+        destructiveHint: false,
+      });
+    });
     describe("input schema", () => {
       const schema = parseInputSchema(configs, "protect_upload_file");
 
@@ -207,6 +197,17 @@ describe("file tools", () => {
             .success
         ).toBe(false);
       });
+
+      it("rejects an empty fileName", () => {
+        expect(
+          schema.safeParse({
+            fileType: "animations",
+            base64Data: "abc",
+            contentType: "image/gif",
+            fileName: "",
+          }).success
+        ).toBe(false);
+      });
     });
   });
 });
@@ -221,7 +222,6 @@ describe("file tools - read-only mode", () => {
   });
 
   it("does not register write tools", () => {
-    expect(handlers.has("protect_trigger_alarm_webhook")).toBe(false);
     expect(handlers.has("protect_upload_file")).toBe(false);
   });
 });
