@@ -201,6 +201,52 @@ describe("camera tools", () => {
       expect(data.action).toBe("DELETE");
       expect(mockFn(client, "delete")).not.toHaveBeenCalled();
     });
+
+    it("sends multiple qualities as repeated query keys", async () => {
+      mockFn(client, "delete").mockResolvedValue({ deleted: true });
+      const result = await handlers.get("protect_delete_rtsp_stream")!({
+        id: "cam1",
+        qualities: ["high", "medium", "package"],
+      });
+      expectSuccess(result, "deleted");
+      expect(mockFn(client, "delete")).toHaveBeenCalledWith(
+        "/cameras/cam1/rtsps-stream?qualities=high&qualities=medium&qualities=package"
+      );
+    });
+
+    it("dry-run preview uses repeated query keys for multiple qualities", async () => {
+      mockFn(client, "delete").mockClear();
+      const result = await handlers.get("protect_delete_rtsp_stream")!({
+        id: "cam1",
+        qualities: ["high", "medium"],
+        dryRun: true,
+      });
+      const data = JSON.parse(result.content[0].text);
+      expect(data.path).toBe(
+        "/cameras/cam1/rtsps-stream?qualities=high&qualities=medium"
+      );
+      expect(mockFn(client, "delete")).not.toHaveBeenCalled();
+    });
+
+    it("encodes the camera ID in the path", async () => {
+      mockFn(client, "delete").mockResolvedValue({ deleted: true });
+      await handlers.get("protect_delete_rtsp_stream")!({
+        id: "cam/1?x",
+        qualities: ["low"],
+      });
+      expect(mockFn(client, "delete")).toHaveBeenCalledWith(
+        "/cameras/cam%2F1%3Fx/rtsps-stream?qualities=low"
+      );
+    });
+
+    it("returns error on failure", async () => {
+      mockFn(client, "delete").mockRejectedValue(new Error("fail"));
+      const result = await handlers.get("protect_delete_rtsp_stream")!({
+        id: "cam1",
+        qualities: ["high"],
+      });
+      expectError(result);
+    });
   });
 
   describe("protect_create_talkback", () => {
