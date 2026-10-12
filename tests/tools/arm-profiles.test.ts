@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createMockServer, createMockClient, mockFn, expectSuccess, expectError } from "./_helpers.js";
+import {
+  createMockServer,
+  createMockClient,
+  mockFn,
+  expectSuccess,
+  expectError,
+  parseInputSchema,
+} from "./_helpers.js";
 import { registerArmProfileTools } from "../../src/tools/arm-profiles.js";
 
 describe("arm profile tools", () => {
@@ -119,7 +126,7 @@ describe("arm profile tools", () => {
       mockFn(client, "patch").mockRejectedValue(new Error("fail"));
       const result = await handlers.get("protect_update_arm_profile")!({
         id: "p1",
-        settings: {},
+        settings: { name: "Renamed" },
       });
       expectError(result);
     });
@@ -135,6 +142,74 @@ describe("arm profile tools", () => {
       expect(data.dryRun).toBe(true);
       expect(data.path).toBe("/arm-profiles/p1");
       expect(mockFn(client, "patch")).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("protect_update_arm_profile input validation", () => {
+    const schema = parseInputSchema(configs, "protect_update_arm_profile");
+    const parse = (settings: unknown) => schema.safeParse({ id: "p1", settings });
+
+    it("accepts a valid partial", () => {
+      expect(parse({ name: "Away" }).success).toBe(true);
+      expect(parse({ activationDelay: 60000, recordEverything: false }).success).toBe(true);
+      expect(
+        parse({ automations: ["a1"], schedules: [{ start: "0 22 * * *", end: "0 6 * * *" }] })
+          .success
+      ).toBe(true);
+    });
+
+    it("accepts every documented activationDelay", () => {
+      for (const activationDelay of [0, 60000, 300000, 600000]) {
+        expect(parse({ activationDelay }).success).toBe(true);
+      }
+    });
+
+    it("rejects an undocumented activationDelay", () => {
+      expect(parse({ activationDelay: 1234 }).success).toBe(false);
+    });
+
+    it("rejects an empty or overlong name", () => {
+      expect(parse({ name: "" }).success).toBe(false);
+      expect(parse({ name: "x".repeat(256) }).success).toBe(false);
+    });
+
+    it("rejects wrongly typed known fields", () => {
+      expect(parse({ automations: "a1" }).success).toBe(false);
+      expect(parse({ recordEverything: "yes" }).success).toBe(false);
+    });
+
+    it("rejects an empty settings object", () => {
+      expect(parse({}).success).toBe(false);
+    });
+
+    it("passes unknown keys through", () => {
+      const parsed = parse({ name: "Away", futureField: 1 });
+      expect(parsed.success).toBe(true);
+      expect(parsed.data!.settings).toEqual({ name: "Away", futureField: 1 });
+    });
+  });
+
+  describe("protect_create_arm_profile input validation", () => {
+    const schema = parseInputSchema(configs, "protect_create_arm_profile");
+    const valid = {
+      name: "Home",
+      automations: [],
+      schedules: [],
+      recordEverything: true,
+      activationDelay: 0,
+    };
+
+    it("accepts a complete profile", () => {
+      expect(schema.safeParse(valid).success).toBe(true);
+    });
+
+    it("rejects an undocumented activationDelay", () => {
+      expect(schema.safeParse({ ...valid, activationDelay: 1234 }).success).toBe(false);
+    });
+
+    it("rejects a missing required field", () => {
+      const rest = Object.fromEntries(Object.entries(valid).filter(([k]) => k !== "name"));
+      expect(schema.safeParse(rest).success).toBe(false);
     });
   });
 

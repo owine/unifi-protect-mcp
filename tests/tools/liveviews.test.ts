@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createMockServer, createMockClient, mockFn, expectSuccess, expectError } from "./_helpers.js";
+import {
+  createMockServer,
+  createMockClient,
+  mockFn,
+  expectSuccess,
+  expectError,
+  parseInputSchema,
+} from "./_helpers.js";
 import { registerLiveviewTools } from "../../src/tools/liveviews.js";
 
 describe("liveview tools", () => {
@@ -44,22 +51,34 @@ describe("liveview tools", () => {
     });
   });
 
+  // Full liveview body — every field is required by the 7.3.70 docs.
+  const fullBody = {
+    id: "lv1",
+    modelKey: "liveview" as const,
+    name: "All Cams",
+    isDefault: false,
+    isGlobal: true,
+    owner: "user1",
+    layout: 4,
+    slots: [
+      { cameras: ["6805169300863503e4032252"], cycleMode: "time", cycleInterval: 10 },
+    ],
+  };
+
   describe("protect_create_liveview", () => {
-    it("creates a new liveview", async () => {
-      mockFn(client, "post").mockResolvedValue({ id: "lv2", name: "New View" });
+    it("creates a new liveview, sending the body unchanged", async () => {
+      mockFn(client, "post").mockResolvedValue({ ...fullBody, id: "lv2" });
       const result = await handlers.get("protect_create_liveview")!({
-        settings: { name: "New View" },
+        settings: fullBody,
       });
-      expectSuccess(result, "New View");
-      expect(mockFn(client, "post")).toHaveBeenCalledWith("/liveviews", {
-        name: "New View",
-      });
+      expectSuccess(result, "All Cams");
+      expect(mockFn(client, "post")).toHaveBeenCalledWith("/liveviews", fullBody);
     });
 
     it("returns error on failure", async () => {
       mockFn(client, "post").mockRejectedValue(new Error("bad request"));
       const result = await handlers.get("protect_create_liveview")!({
-        settings: {},
+        settings: fullBody,
       });
       expectError(result);
     });
@@ -67,35 +86,35 @@ describe("liveview tools", () => {
     it("supports dry-run", async () => {
       mockFn(client, "post").mockClear();
       const result = await handlers.get("protect_create_liveview")!({
-        settings: { name: "Test" },
+        settings: fullBody,
         dryRun: true,
       });
       const data = JSON.parse(result.content[0].text);
       expect(data.dryRun).toBe(true);
       expect(data.action).toBe("POST");
       expect(data.path).toBe("/liveviews");
+      expect(data.body).toEqual(fullBody);
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
     });
   });
 
   describe("protect_update_liveview", () => {
-    it("updates liveview settings", async () => {
-      mockFn(client, "patch").mockResolvedValue({ id: "lv1", name: "Renamed" });
+    it("updates liveview settings, sending the body unchanged", async () => {
+      const renamed = { ...fullBody, name: "Renamed" };
+      mockFn(client, "patch").mockResolvedValue(renamed);
       const result = await handlers.get("protect_update_liveview")!({
         id: "lv1",
-        settings: { name: "Renamed" },
+        settings: renamed,
       });
       expectSuccess(result, "Renamed");
-      expect(mockFn(client, "patch")).toHaveBeenCalledWith("/liveviews/lv1", {
-        name: "Renamed",
-      });
+      expect(mockFn(client, "patch")).toHaveBeenCalledWith("/liveviews/lv1", renamed);
     });
 
     it("returns error on failure", async () => {
       mockFn(client, "patch").mockRejectedValue(new Error("forbidden"));
       const result = await handlers.get("protect_update_liveview")!({
         id: "lv1",
-        settings: {},
+        settings: fullBody,
       });
       expectError(result);
     });
@@ -104,7 +123,7 @@ describe("liveview tools", () => {
       mockFn(client, "patch").mockClear();
       const result = await handlers.get("protect_update_liveview")!({
         id: "lv1",
-        settings: { name: "Test" },
+        settings: fullBody,
         dryRun: true,
       });
       const data = JSON.parse(result.content[0].text);
@@ -114,6 +133,60 @@ describe("liveview tools", () => {
       expect(mockFn(client, "patch")).not.toHaveBeenCalled();
     });
   });
+
+  for (const tool of ["protect_create_liveview", "protect_update_liveview"]) {
+    describe(`${tool} input validation`, () => {
+      const schema = parseInputSchema(configs, tool);
+      const withSettings = (settings: unknown) =>
+        tool === "protect_update_liveview" ? { id: "lv1", settings } : { settings };
+
+      it("accepts a full body and leaves it unchanged", () => {
+        const parsed = schema.safeParse(withSettings(fullBody));
+        expect(parsed.success).toBe(true);
+        expect(parsed.data!.settings).toEqual(fullBody);
+      });
+
+      it.each(Object.keys(fullBody))("rejects a body missing %s", (key) => {
+        const partial = Object.fromEntries(
+          Object.entries(fullBody).filter(([k]) => k !== key)
+        );
+        expect(schema.safeParse(withSettings(partial)).success).toBe(false);
+      });
+
+      it("rejects a body with only a name", () => {
+        expect(schema.safeParse(withSettings({ name: "New View" })).success).toBe(false);
+      });
+
+      it('rejects modelKey other than "liveview"', () => {
+        expect(
+          schema.safeParse(withSettings({ ...fullBody, modelKey: "camera" })).success
+        ).toBe(false);
+      });
+
+      it("rejects layout outside 1-26", () => {
+        expect(schema.safeParse(withSettings({ ...fullBody, layout: 0 })).success).toBe(false);
+        expect(schema.safeParse(withSettings({ ...fullBody, layout: 27 })).success).toBe(false);
+        expect(schema.safeParse(withSettings({ ...fullBody, layout: 1 })).success).toBe(true);
+        expect(schema.safeParse(withSettings({ ...fullBody, layout: 26 })).success).toBe(true);
+      });
+
+      it("rejects a slot missing cameras", () => {
+        const slots = [{ cycleMode: "time", cycleInterval: 10 }];
+        expect(schema.safeParse(withSettings({ ...fullBody, slots })).success).toBe(false);
+      });
+
+      it("passes unknown keys through on the body and slots", () => {
+        const body = {
+          ...fullBody,
+          futureField: "x",
+          slots: [{ ...fullBody.slots[0], extraSlotKey: 1 }],
+        };
+        const parsed = schema.safeParse(withSettings(body));
+        expect(parsed.success).toBe(true);
+        expect(parsed.data!.settings).toEqual(body);
+      });
+    });
+  }
 });
 
 describe("liveview tools - read-only mode", () => {

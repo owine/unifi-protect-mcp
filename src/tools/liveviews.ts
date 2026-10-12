@@ -9,6 +9,30 @@ import {
   liveviewOutputSchema,
 } from "../schemas/misc.js";
 
+// POST and PATCH both take the full liveview object; every field is required
+// (7.3.70 docs). Slot item schema is not rendered in the docs, so slots pass
+// through beyond the observed { cameras, cycleMode, cycleInterval }.
+const liveviewSlotInput = z
+  .object({
+    cameras: z.array(z.string()).describe("Camera IDs shown in this slot"),
+    cycleMode: z.string().describe('Cycle mode, e.g. "time" or "motion"'),
+    cycleInterval: z.number().describe("Cycle interval in seconds"),
+  })
+  .passthrough();
+
+const liveviewBody = z
+  .object({
+    id: z.string().describe("Liveview ID"),
+    modelKey: z.literal("liveview").describe('Must be "liveview"'),
+    name: z.string().describe("Liveview name"),
+    isDefault: z.boolean().describe("Whether this is the default liveview for all viewers"),
+    isGlobal: z.boolean().describe("Whether this liveview is available to all users"),
+    owner: z.string().describe("Owning user ID"),
+    layout: z.number().min(1).max(26).describe("Number of slots (1-26)"),
+    slots: z.array(liveviewSlotInput).describe("Per-slot cameras and cycling settings"),
+  })
+  .passthrough();
+
 export function registerLiveviewTools(
   server: McpServer,
   client: ProtectClient,
@@ -58,9 +82,7 @@ export function registerLiveviewTools(
     {
       description: "Create a new live view",
       inputSchema: {
-        settings: z
-          .record(z.string(), z.unknown())
-          .describe("Liveview configuration. Required fields: id (string), modelKey (string, must be 'liveview'), owner (string, user ID), name (string), layout (number of slots), slots (array of {cameras: string[], cycleMode: string, cycleInterval: number}), isDefault (boolean), isGlobal (boolean)"),
+        settings: liveviewBody.describe("Full liveview object (all fields required)"),
         dryRun: z
           .boolean()
           .optional()
@@ -88,9 +110,9 @@ export function registerLiveviewTools(
       description: "Update an existing live view (full replacement via PUT-style PATCH — include all fields)",
       inputSchema: {
         id: z.string().describe("Liveview ID"),
-        settings: z
-          .record(z.string(), z.unknown())
-          .describe("Full liveview object for update (all fields required). Known fields: id (string), modelKey (string, must be 'liveview'), owner (string, user ID), name (string), layout (number), slots (array of {cameras: string[], cycleMode: string, cycleInterval: number}), isDefault (boolean), isGlobal (boolean)"),
+        settings: liveviewBody.describe(
+          "Full liveview object (all fields required — fetch it with protect_get_liveview first)"
+        ),
         dryRun: z
           .boolean()
           .optional()
