@@ -382,6 +382,29 @@ describe("ProtectClient", () => {
         expect.objectContaining({ redirect: "error" })
       );
     });
+
+    it("treats 204 No Content as an empty success even with a JSON content-type", async () => {
+      vi.stubGlobal("fetch", mockFetch("", { status: 204, contentType: "application/json" }));
+      await expect(client.post("/sirens/s1/play")).resolves.toBe("");
+    });
+
+    it("does not read the body of a 204 response", async () => {
+      const text = vi.fn(async () => "");
+      const json = vi.fn(async () => ({}));
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: true,
+          status: 204,
+          headers: new Headers({ "content-type": "application/json" }),
+          text,
+          json,
+        } as unknown as Response)
+      );
+      await expect(client.post("/relays/r1/activate")).resolves.toBe("");
+      expect(text).not.toHaveBeenCalled();
+      expect(json).not.toHaveBeenCalled();
+    });
   });
 
   describe("Cloud Connector", () => {

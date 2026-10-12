@@ -99,6 +99,13 @@ export class ProtectClient {
       );
     }
 
+    // 204 No Content (action endpoints: siren/relay/speaker triggers, arm
+    // profile enable/disable, PTZ, …) has no body by definition — don't let a
+    // stray JSON content-type turn a success into an "empty body" error.
+    if (response.status === 204) {
+      return "";
+    }
+
     enforceSizeLimit(response, MAX_JSON_BYTES);
 
     const contentType = response.headers.get("content-type") ?? "";
