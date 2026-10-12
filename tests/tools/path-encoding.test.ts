@@ -30,7 +30,7 @@ beforeEach(() => {
     data: Buffer.from("img"),
     mimeType: "image/jpeg",
   });
-  mockFn(client, "postBinary").mockResolvedValue({ id: "ok" });
+  mockFn(client, "postFile").mockResolvedValue({ id: "ok" });
 
   registerCameraTools(mock.server, client, false);
   registerDeviceTools(mock.server, client, false);
@@ -164,9 +164,9 @@ describe("path encoding in file tools", () => {
     await handlers.get("protect_upload_file")!({
       fileType: MALICIOUS_ID,
       base64Data: "dGVzdA==",
-      contentType: "video/mp4",
+      contentType: "image/gif",
     });
-    assertPathContains("postBinary", ENCODED_ID);
+    assertPathContains("postFile", ENCODED_ID);
   });
 });
 
@@ -201,7 +201,7 @@ describe("dryRun paths are also encoded", () => {
     const result = await handlers.get("protect_upload_file")!({
       fileType: MALICIOUS_ID,
       base64Data: "dGVzdA==",
-      contentType: "video/mp4",
+      contentType: "image/gif",
       dryRun: true,
     });
     const data = JSON.parse(result.content[0].text);

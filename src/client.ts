@@ -162,19 +162,24 @@ export class ProtectClient {
     return { data: Buffer.from(arrayBuffer), mimeType };
   }
 
-  async postBinary(
+  /**
+   * Upload a file as multipart/form-data (the documented encoding for
+   * POST /files/{fileType}). fetch sets the Content-Type with its boundary, so
+   * none is set here. The part name `file` is not named in the published docs.
+   */
+  async postFile(
     path: string,
     data: Buffer,
-    contentType: string
+    contentType: string,
+    fileName: string
   ): Promise<unknown> {
     const url = `${this.baseUrl}${path}`;
+    const form = new FormData();
+    form.append("file", new Blob([new Uint8Array(data)], { type: contentType }), fileName);
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "X-API-KEY": this.headers["X-API-KEY"],
-        "Content-Type": contentType,
-      },
-      body: new Uint8Array(data),
+      headers: { "X-API-KEY": this.headers["X-API-KEY"] },
+      body: form,
       redirect: "error",
       signal: AbortSignal.timeout(BINARY_TIMEOUT_MS),
     });

@@ -94,50 +94,75 @@ describe("file tools", () => {
   });
 
   describe("protect_upload_file", () => {
-    it("uploads base64-encoded file", async () => {
-      mockFn(client, "postBinary").mockResolvedValue({ id: "f2" });
+    it("uploads base64-encoded file as multipart", async () => {
+      mockFn(client, "postFile").mockResolvedValue({ name: "f2" });
       const base64 = Buffer.from("hello").toString("base64");
       const result = await handlers.get("protect_upload_file")!({
-        fileType: "video",
+        fileType: "animations",
         base64Data: base64,
-        contentType: "video/mp4",
+        contentType: "image/gif",
       });
       expectSuccess(result, "f2");
-      expect(mockFn(client, "postBinary")).toHaveBeenCalledWith(
-        "/files/video",
+      expect(mockFn(client, "postFile")).toHaveBeenCalledWith(
+        "/files/animations",
         expect.any(Buffer),
-        "video/mp4"
+        "image/gif",
+        "upload.gif"
       );
+      const buffer = mockFn(client, "postFile").mock.calls.at(-1)![1] as Buffer;
+      expect(buffer.toString()).toBe("hello");
+    });
+
+    it("derives upload.jpg for image/jpeg", async () => {
+      mockFn(client, "postFile").mockClear().mockResolvedValue({ name: "f3" });
+      await handlers.get("protect_upload_file")!({
+        fileType: "animations",
+        base64Data: "abc",
+        contentType: "image/jpeg",
+      });
+      expect(mockFn(client, "postFile").mock.calls[0][3]).toBe("upload.jpg");
+    });
+
+    it("derives upload.wav for audio/wave", async () => {
+      mockFn(client, "postFile").mockClear().mockResolvedValue({ name: "f4" });
+      await handlers.get("protect_upload_file")!({
+        fileType: "animations",
+        base64Data: "abc",
+        contentType: "audio/wave",
+      });
+      expect(mockFn(client, "postFile").mock.calls[0][3]).toBe("upload.wav");
     });
 
     it("returns error on failure", async () => {
-      mockFn(client, "postBinary").mockRejectedValue(new Error("too large"));
+      mockFn(client, "postFile").mockRejectedValue(new Error("too large"));
       const result = await handlers.get("protect_upload_file")!({
-        fileType: "video",
+        fileType: "animations",
         base64Data: "abc",
-        contentType: "video/mp4",
+        contentType: "image/gif",
       });
       expectError(result);
       expect(result.content[0].text).toContain("too large");
     });
 
     it("returns dry-run preview without calling client", async () => {
-      mockFn(client, "postBinary").mockClear();
+      mockFn(client, "postFile").mockClear();
       const base64 = Buffer.from("hello").toString("base64");
       const result = await handlers.get("protect_upload_file")!({
-        fileType: "video",
+        fileType: "animations",
         base64Data: base64,
-        contentType: "video/mp4",
+        contentType: "image/gif",
         dryRun: true,
       });
       const data = JSON.parse(result.content[0].text);
       expect(data.dryRun).toBe(true);
       expect(data.action).toBe("POST");
-      expect(data.path).toBe("/files/video");
-      expect(data.body.contentType).toBe("video/mp4");
+      expect(data.path).toBe("/files/animations");
+      expect(data.body.contentType).toBe("image/gif");
+      expect(data.body.fileName).toBe("upload.gif");
       expect(data.body.dataLength).toBe(base64.length);
-      expect(mockFn(client, "postBinary")).not.toHaveBeenCalled();
+      expect(mockFn(client, "postFile")).not.toHaveBeenCalled();
     });
+
 
     describe("input schema", () => {
       const schema = parseInputSchema(configs, "protect_upload_file");

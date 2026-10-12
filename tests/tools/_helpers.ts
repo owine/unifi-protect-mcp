@@ -44,7 +44,7 @@ export function createMockClient() {
     patch: vi.fn(),
     delete: vi.fn(),
     getBinary: vi.fn(),
-    postBinary: vi.fn(),
+    postFile: vi.fn(),
     connectWebSocket: vi.fn(),
   } as unknown as ProtectClient;
 }

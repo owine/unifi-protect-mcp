@@ -78,7 +78,7 @@ export function registerFileTools(
   server.registerTool(
     "protect_upload_file",
     {
-      description: "Upload a base64-encoded file to UniFi Protect",
+      description: "Upload a base64-encoded device asset file (sent as multipart/form-data)",
       inputSchema: {
         fileType: FILE_TYPE,
         base64Data: z.string().describe("Base64-encoded file content"),
@@ -95,17 +95,20 @@ export function registerFileTools(
     },
     async ({ fileType, base64Data, contentType, dryRun }) => {
       try {
+        const name = defaultFileName(contentType);
         if (dryRun) {
           return formatDryRun("POST", safePath`/files/${fileType}`, {
             contentType,
+            fileName: name,
             dataLength: base64Data.length,
           });
         }
         const buffer = Buffer.from(base64Data, "base64");
-        const data = await client.postBinary(
+        const data = await client.postFile(
           safePath`/files/${fileType}`,
           buffer,
-          contentType
+          contentType,
+          name
         );
         return formatSuccess(data);
       } catch (err) {
@@ -113,4 +116,18 @@ export function registerFileTools(
       }
     }
   );
+}
+
+const EXTENSIONS: Record<(typeof UPLOAD_CONTENT_TYPES)[number], string> = {
+  "image/gif": "gif",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "audio/mpeg": "mp3",
+  "audio/mp4": "m4a",
+  "audio/wave": "wav",
+  "audio/x-caf": "caf",
+};
+
+function defaultFileName(contentType: (typeof UPLOAD_CONTENT_TYPES)[number]): string {
+  return `upload.${EXTENSIONS[contentType]}`;
 }
