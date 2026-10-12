@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createMockServer, createMockClient, mockFn, expectSuccess, expectError } from "./_helpers.js";
+import {
+  createMockServer,
+  createMockClient,
+  mockFn,
+  expectSuccess,
+  expectError,
+  parseInputSchema,
+} from "./_helpers.js";
 import { registerCameraTools } from "../../src/tools/cameras.js";
 
 describe("camera tools", () => {
@@ -377,6 +384,21 @@ describe("camera tools", () => {
       expect(data.action).toBe("POST");
       expect(data.path).toBe("/cameras/cam1/ptz/goto/3");
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
+    it("moves to the home position with slot -1", async () => {
+      mockFn(client, "post").mockResolvedValue({ moved: true });
+      await handlers.get("protect_goto_ptz_preset")!({ id: "cam1", slot: -1 });
+      expect(mockFn(client, "post")).toHaveBeenCalledWith("/cameras/cam1/ptz/goto/-1");
+    });
+
+
+    it("accepts -1 and slots above 4, rejects below -1 and non-integers", () => {
+      const schema = parseInputSchema(configs, "protect_goto_ptz_preset");
+      expect(schema.safeParse({ id: "cam1", slot: -1 }).success).toBe(true);
+      expect(schema.safeParse({ id: "cam1", slot: 8 }).success).toBe(true);
+      expect(schema.safeParse({ id: "cam1", slot: -2 }).success).toBe(false);
+      expect(schema.safeParse({ id: "cam1", slot: 1.5 }).success).toBe(false);
     });
   });
 });

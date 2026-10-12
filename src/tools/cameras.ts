@@ -337,7 +337,11 @@ export function registerCameraTools(
       description: "Move camera PTZ to a preset position",
       inputSchema: {
         id: z.string().describe("Camera ID"),
-        slot: z.number().int().min(-1).max(4).describe("PTZ preset slot number (0-4, or -1 for home position)"),
+        slot: z
+          .number()
+          .int()
+          .min(-1)
+          .describe("PTZ preset slot: -1 for the home position, 0 or higher for saved presets"),
         dryRun: z
           .boolean()
           .optional()
