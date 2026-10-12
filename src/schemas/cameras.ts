@@ -8,7 +8,8 @@ import {
 } from "./common.js";
 
 /**
- * Verified against live UniFi Protect Integration API 7.3.47 (2026-09-14).
+ * Verified against live UniFi Protect Integration API 7.3.47 (2026-09-14) and
+ * re-verified against live 7.3.70 (2026-10-12).
  * The Integration API camera object is far smaller than the internal Protect
  * app's camera model — no isRecording/lastMotion/channels/firmwareVersion/etc.
  * `list` and `get-by-id` return the same field set (confirmed live).

@@ -32,7 +32,7 @@ export function registerArmProfileTools(
     "protect_list_arm_profiles",
     {
       description:
-        "List all arm profiles (only available when using the local alarm manager — the standalone NVR alarm system, not Protect cloud alerts). Returns array; each profile (7.1.83 docs): id, name, automations[], creator, schedules[], recordEverything, activationDelay (0 | 60000 | 300000 | 600000), createdAt, updatedAt.",
+        "List all arm profiles (only available when using the local alarm manager — the standalone NVR alarm system, not Protect cloud alerts). Returns array; each profile (7.3.70 docs): id, name, automations[], creator, schedules[], recordEverything, activationDelay (0 | 60000 | 300000 | 600000), createdAt, updatedAt.",
       outputSchema: armProfileListOutputSchema,
       annotations: READ_ONLY,
     },

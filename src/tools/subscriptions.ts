@@ -60,7 +60,7 @@ export function registerSubscriptionTools(
     "protect_subscribe_devices",
     {
       description:
-        "Connect to the device update WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?}; each message has {type: 'add'|'update'|'remove', modelKey: 'camera'|'light'|'sensor'|..., id, payload: partial device fields that changed}. Use to detect state changes like isRecording flipping, battery drops, or new devices being adopted — fields delivered are only those that changed, not the full device object.",
+        "Connect to the device update WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?}; each message is an envelope {type, item} where item is a device resource carrying id and modelKey (camera, light, sensor, nvr, …). The 7.3.70 docs show type 'add' with the full device object as item; other message types and whether updates carry only changed fields are not documented — inspect the captured messages. Use to detect device state changes or newly adopted devices.",
       inputSchema: { duration: durationSchema },
       outputSchema: subscriptionOutputSchema,
       annotations: READ_ONLY,
@@ -83,7 +83,7 @@ export function registerSubscriptionTools(
     "protect_subscribe_events",
     {
       description:
-        "Connect to the Protect event WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?}; each event message includes: id, type ('motion' | 'ring' | 'smartDetectZone' | 'smartDetectLine' | 'sensorMotion' | 'sensorAlarm' | 'fingerprint' | 'nfcCard' | ...), start, end (null while ongoing), camera/sensor id, score, smartDetectTypes (['person','vehicle','animal','package','license_plate','face']), metadata (e.g. detected license plate text, NFC card id, fingerprint id, ULP user match).",
+        "Connect to the Protect event WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?}; each message is an envelope {type: 'add' | 'update', item: {id, modelKey: 'event', type (event kind, e.g. 'ring'), start, end (epoch ms), device (ID of the camera/sensor that raised it)}} (7.3.70 docs). The full set of event kinds and any further event fields are not documented — inspect the captured messages.",
       inputSchema: { duration: durationSchema },
       outputSchema: subscriptionOutputSchema,
       annotations: READ_ONLY,

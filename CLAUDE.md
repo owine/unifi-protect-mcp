@@ -2,7 +2,7 @@
 
 ## Project overview
 
-MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.3.47** (74 tools across 10 domains).
+MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.3.70** (74 tools across 11 domains).
 
 ## Local dev setup
 
@@ -56,7 +56,8 @@ src/
     users.ts          # Read-only Protect users + UniFi Identity (ULP) users
     pos.ts            # Point-of-sale transaction ingestion (overlays POS data on footage)
     liveviews.ts      # Live view CRUD
-    files.ts          # File listing, upload
+    files.ts          # Device asset file listing, multipart upload
+    alarm-manager.ts  # Alarm manager webhook trigger
     system.ts         # NVR info, protect system info
     subscriptions.ts  # WebSocket subscriptions for devices and events
   schemas/            # Zod output schemas for tools/list metadata + runtime validation

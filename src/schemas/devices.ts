@@ -10,11 +10,11 @@ import {
 /**
  * Device schemas for the config-driven Protect device types.
  *
- * Field sets are derived from the UniFi Protect Integration API 7.3.47 docs
+ * Field sets are derived from the UniFi Protect Integration API 7.3.70 docs
  * (per-type response samples). Chimes were additionally verified against live
- * console responses (2026-09-14); the rest have no instances on the available
- * console, so their TOP-LEVEL fields are typed from the published docs while
- * every nested object/array is left as `unknownField()` (z.unknown()) — naming
+ * console responses (7.3.47 on 2026-09-14, 7.3.70 on 2026-10-12); the rest
+ * have no instances on the available console, so their TOP-LEVEL fields are
+ * typed from the published docs while every nested object/array is left as `unknownField()` (z.unknown()) — naming
  * the field for the LLM without risking SDK output-validation failures on a
  * shape we have not observed live. `.passthrough()` lets any extra field flow.
  *
@@ -55,16 +55,28 @@ export const sensorSchema = passthroughObject({
       "light, motion, waterLeak, open, tamper, smoke — each { channelCount })"
   ),
   batteryStatus: unknownField("Battery status (object: percentage, isLow)"),
-  stats: unknownField("Environmental stats (object: light, humidity, temperature)"),
-  lightSettings: unknownField("Light threshold settings (object)"),
-  humiditySettings: unknownField("Humidity threshold settings (object)"),
-  temperatureSettings: unknownField("Temperature threshold settings (object)"),
+  stats: unknownField(
+    "Environmental stats (object: light, humidity, temperature — each { value, status })"
+  ),
+  lightSettings: unknownField(
+    "Light threshold settings (object: isEnabled, margin, lowThreshold, highThreshold)"
+  ),
+  humiditySettings: unknownField(
+    "Humidity threshold settings (object: isEnabled, margin, lowThreshold, highThreshold)"
+  ),
+  temperatureSettings: unknownField(
+    "Temperature threshold settings (object: isEnabled, margin, lowThreshold, highThreshold)"
+  ),
   isOpened: unknownField("Open/close contact state (boolean)"),
   openStatusChangedAt: unknownField("Open-status change timestamp in epoch ms (number)"),
   isMotionDetected: unknownField("Motion currently detected (boolean)"),
   motionDetectedAt: unknownField("Last motion timestamp in epoch ms (number)"),
-  motionSettings: unknownField("Motion detection settings (object)"),
-  glassBreakSettings: unknownField("Glass-break detection settings (object)"),
+  motionSettings: unknownField(
+    "Motion detection settings (object: isEnabled, sensitivity, sensitivityWhenArmed)"
+  ),
+  glassBreakSettings: unknownField(
+    "Glass-break detection settings (object: isEnabled, sensitivity, sensitivityWhenArmed)"
+  ),
   scheduleMode: nullableString('Schedule mode: "always" | "when_armed"'),
   armProfileIds: unknownField("Arm profile IDs this sensor belongs to (array of strings)"),
   hasCustomSensitivityWhenArmed: unknownField("Custom armed sensitivity enabled (boolean)"),
@@ -72,15 +84,18 @@ export const sensorSchema = passthroughObject({
   alarmSettings: unknownField("Alarm settings (object: isEnabled)"),
   leakDetectedAt: unknownField("Last leak timestamp in epoch ms (number)"),
   externalLeakDetectedAt: unknownField("Last external-leak timestamp in epoch ms (number)"),
-  leakSettings: unknownField("Leak detection settings (object)"),
+  leakSettings: unknownField(
+    "Leak detection settings, read-only (object: isInternalEnabled, isExternalEnabled)"
+  ),
   tamperingDetectedAt: unknownField("Last tampering timestamp in epoch ms (number)"),
   wirelessConnectionState: unknownField(
-    "Wireless link state (object: signalState, batteryStatus, bridge)"
+    "Wireless link state (object: signalState { signalQuality, signalStrength }, " +
+      "batteryStatus { percentage, isLow }, bridge)"
   ),
 });
 
-// Verified live (7.1.83): chimes return cameraIds[] and ringSettings[] whose
-// items are { cameraId, volume, ringtoneId, repeatTimes }.
+// Verified live (7.1.83, re-verified 7.3.70): chimes return cameraIds[] and
+// ringSettings[] whose items are { cameraId, volume, ringtoneId, repeatTimes }.
 export const chimeSchema = passthroughObject({
   ...deviceIdentity(),
   cameraIds: unknownField("Paired camera IDs (array of strings)"),
@@ -101,31 +116,47 @@ export const sirenSchema = passthroughObject({
   ledSettings: unknownField("LED settings (object: isEnabled)"),
   sirenStatus: unknownField("Current siren status (object: isActive, activatedAt, duration)"),
   connectionType: nullableString('Connection type, e.g. "lora"'),
-  wirelessConnectionState: unknownField("Wireless link state (object)"),
+  wirelessConnectionState: unknownField(
+    "Wireless link state (object: signalState { signalQuality, signalStrength }, " +
+      "batteryStatus { percentage, isLow }, bridge)"
+  ),
 });
 
 export const fobSchema = passthroughObject({
   ...deviceIdentity(),
   awayState: nullableString('Away state, e.g. "ONLINE"'),
   buttonLabels: nullableString('Button label preset, e.g. "securityActions"'),
-  featureFlags: unknownField("Feature flags (object: buttons[])"),
-  hasKeypad: unknownField("Whether this fob has a keypad, added in 7.3.x (boolean)"),
+  featureFlags: unknownField(
+    "Feature flags (object: buttons[], hasKeypad — hasKeypad added in 7.3.x)"
+  ),
   armControlSettings: unknownField(
     "Arm-control config, added in 7.3.x (object: enabled, armProfileId, nightProfileId)"
   ),
   keypadSettings: unknownField(
-    "Keypad config, added in 7.3.x (object: beepEnabled, beepVolume, " +
-      "backlightEnabled, backlightBrightness)"
+    "Keypad config, added in 7.3.x (object: beepEnabled, beepVolume). The " +
+      "backlightEnabled/backlightBrightness fields were dropped in 7.3.70."
   ),
-  wirelessConnectionState: unknownField("Wireless link state (object)"),
+  wirelessConnectionState: unknownField(
+    "Wireless link state (object: signalState { signalQuality, signalStrength }, " +
+      "batteryStatus { percentage, isLow }, bridge)"
+  ),
 });
 
 export const relaySchema = passthroughObject({
   ...deviceIdentity(),
   ledSettings: unknownField("LED settings (object: isEnabled)"),
-  outputs: unknownField("Output channels (array of objects)"),
-  inputs: unknownField("Input channels (array of objects)"),
-  wirelessConnectionState: unknownField("Wireless link state (object)"),
+  outputs: unknownField(
+    "Output channels (array of objects: id, name, type, delay, pulseDuration, " +
+      "state, rebootState). `id` is the outputId for protect_activate_relay_output"
+  ),
+  inputs: unknownField(
+    "Input channels (array of objects: id, name, state, actionTrigger, " +
+      "actionType, actionOutputId)"
+  ),
+  wirelessConnectionState: unknownField(
+    "Wireless link state (object: signalState { signalQuality, signalStrength }, " +
+      "batteryStatus { percentage, isLow }, bridge)"
+  ),
 });
 
 export const speakerSchema = passthroughObject({
@@ -153,10 +184,12 @@ const linkStationLikeSchema = () =>
     ledSettings: unknownField("LED settings (object: isEnabled)"),
     lastEvent: unknownField("Last event timestamp in epoch ms (number)"),
     alarmHub: unknownField(
-      "Alarm hub status (object: armed, battery, connector, cover, output, input, …)"
-    ),
-    deviceTamperStatus: nullableString(
-      'Tamper status, added in 7.3.x, e.g. "tampered"'
+      "Alarm hub status (object: armed, battery, buckboost, connector, cover, " +
+        'deviceTamperStatus (e.g. "tampered", added in 7.3.x), ' +
+        "currentMeterChannelStatus, currentMeterStatus, inputPower, poeout, " +
+        "powerMeter, output and input (maps keyed by channel), " +
+        "inputTerminalStatus, outputTerminalStatus, emergencyTerminalStatus, " +
+        "auxiliaryPowerTerminalStatus)"
     ),
     threadState: unknownField(
       "Thread radio state, added in 7.3.x (object: network — status, role, " +

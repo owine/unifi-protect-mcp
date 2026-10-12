@@ -396,6 +396,11 @@ describe("camera tools", () => {
       expectError(result);
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
     });
+
+    it("declares an outputSchema", () => {
+      const config = configs.get("protect_disable_mic") as Record<string, unknown>;
+      expect(config.outputSchema).toBeDefined();
+    });
   });
 
   describe("protect_start_ptz_patrol", () => {

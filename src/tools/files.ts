@@ -4,7 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
-import { fileListOutputSchema } from "../schemas/misc.js";
+import { fileListOutputSchema, fileOutputSchema } from "../schemas/misc.js";
 
 // The only asset file type the API accepts (path param `assetFileType`).
 const FILE_TYPE = z
@@ -30,7 +30,7 @@ export function registerFileTools(
     "protect_list_files",
     {
       description:
-        "List files of a given type (only 'animations' is currently supported — clips uploadable to G4 Doorbell screens). Returns array; each record (7.1.83 docs): name (server-generated), type, originalName, path.",
+        "List device asset files (only 'animations' is supported — clips uploadable to G4 Doorbell screens). Returns array; each record (7.3.70 docs): name (server-generated), type, originalName, path.",
       inputSchema: { fileType: FILE_TYPE },
       outputSchema: fileListOutputSchema,
       annotations: READ_ONLY,
@@ -50,7 +50,8 @@ export function registerFileTools(
   server.registerTool(
     "protect_upload_file",
     {
-      description: "Upload a base64-encoded device asset file (sent as multipart/form-data)",
+      description:
+        "Upload a base64-encoded device asset file (sent as multipart/form-data). Returns: name (server-generated), type, originalName, path.",
       inputSchema: {
         fileType: FILE_TYPE,
         base64Data: z.string().describe("Base64-encoded file content"),
@@ -68,6 +69,7 @@ export function registerFileTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
+      outputSchema: fileOutputSchema,
       annotations: WRITE,
     },
     async ({ fileType, base64Data, contentType, fileName, dryRun }) => {

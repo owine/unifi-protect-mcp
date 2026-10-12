@@ -10,9 +10,9 @@ import {
 
 /**
  * Schemas below are verified against live UniFi Protect Integration API 7.3.47
- * responses (Melrose NVR Pro console, 2026-09-14) where instances exist, and
- * against the 7.3.47 published docs otherwise (arm profiles, files — no
- * instances on the console). The Integration API surface is much thinner than
+ * responses (Melrose NVR Pro console, 2026-09-14) where instances exist —
+ * re-verified live on 7.3.70 (2026-10-12) — and against the 7.3.70 published
+ * docs otherwise (arm profiles, files — no instances on the console). The Integration API surface is much thinner than
  * the internal Protect app API — only observed/documented fields are typed;
  * `.passthrough()` still allows anything extra a firmware/hardware mix adds.
  */
@@ -39,7 +39,7 @@ const doorbellSettingsSchema = passthroughObject({
   defaultMessageText: nullableString("Default doorbell LCD message"),
   defaultMessageResetTimeoutMs: unknownField("Reset timeout in ms (number)"),
   customMessages: unknownField("Configured custom LCD messages (array of strings)"),
-  customImages: unknownField("Configured custom LCD images (array)"),
+  customImages: unknownField("Configured custom LCD images (array of objects: preview, sprite)"),
 });
 
 export const nvrSchema = passthroughObject({
@@ -48,8 +48,8 @@ export const nvrSchema = passthroughObject({
   name: nullableString("NVR name"),
   ...hardwareModelFields(),
   mac: nullableString("MAC address, added in 7.3.x"),
-  doorbellSettings: doorbellSettingsSchema.optional(),
-  armMode: armModeSchema.optional(),
+  doorbellSettings: doorbellSettingsSchema.nullable().optional(),
+  armMode: armModeSchema.nullable().optional(),
 });
 
 // Single object — use the shape directly, NOT a list wrapper.
@@ -78,7 +78,7 @@ export const ulpUserSchema = passthroughObject({
   fullName: nullableString("Full name"),
   email: nullableString(
     "Email address, added in 7.3.x. Empty string for service accounts " +
-      "(verified live 7.3.47)"
+      "(verified live 7.3.70)"
   ),
   status: nullableString("Account status, e.g. ACTIVE"),
 });
@@ -102,14 +102,14 @@ export const liveviewSchema = passthroughObject({
   isGlobal: unknownField("Whether shared across all users (boolean)"),
   layout: unknownField("Grid layout / slot count (number)"),
   owner: nullableString("Owning user ID"),
-  slots: z.array(liveviewSlotSchema).optional().describe("Camera slots"),
+  slots: z.array(liveviewSlotSchema).nullable().optional().describe("Camera slots"),
 });
 
 export const liveviewOutputSchema = { ...liveviewSchema.shape };
 export const liveviewListOutputSchema = listResultSchema(liveviewSchema);
 
 // --- Arm profiles ---
-// Fields from the 7.1.83 docs (no instances on the console to verify live).
+// Fields from the 7.3.70 docs (no instances on the console to verify live).
 // Arm profiles carry no `modelKey`. Nested arrays stay unknownField.
 
 export const armProfileSchema = passthroughObject({
@@ -128,7 +128,7 @@ export const armProfileListOutputSchema = listResultSchema(armProfileSchema);
 export const armProfileOutputSchema = { ...armProfileSchema.shape };
 
 // --- Files ---
-// Device asset files (only fileType=animations supported). Shape from 7.1.83
+// Device asset files (only fileType=animations supported). Shape from 7.3.70
 // docs: { name, type, originalName, path } — no id/modelKey.
 
 export const fileSchema = passthroughObject({
@@ -139,6 +139,7 @@ export const fileSchema = passthroughObject({
 });
 
 export const fileListOutputSchema = listResultSchema(fileSchema);
+export const fileOutputSchema = { ...fileSchema.shape };
 
 // --- Subscriptions ---
 
