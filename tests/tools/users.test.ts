@@ -36,6 +36,12 @@ describe("user tools", () => {
     });
   }
 
+  it("ULP list description reflects 7.3.70 docs", () => {
+    const description = configs.get("protect_list_ulp_users")!.description!;
+    expect(description).toContain("enrolled credentials");
+    expect(description).toContain("7.3.70-verified");
+  });
+
   const getCases: { tool: string; path: string }[] = [
     { tool: "protect_get_user", path: "/users/u1" },
     { tool: "protect_get_ulp_user", path: "/ulp-users/u1" },

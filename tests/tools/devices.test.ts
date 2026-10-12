@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { z } from "zod";
 import {
   createMockServer,
   createMockClient,
@@ -7,7 +8,7 @@ import {
   expectError,
   parseInputSchema,
 } from "./_helpers.js";
-import { registerDeviceTools } from "../../src/tools/devices.js";
+import { registerDeviceTools, _DEVICE_CONFIGS } from "../../src/tools/devices.js";
 
 interface Device {
   urlPath: string;  // URL path segment
@@ -103,7 +104,7 @@ describe("device tools", () => {
           mockFn(client, "patch").mockRejectedValue(new Error("forbidden"));
           const result = await handlers.get(`protect_update_${dev.singular}`)!({
             id: `${dev.singular}1`,
-            settings: {},
+            settings: { name: "x" },
           });
           expectError(result);
         });
@@ -122,13 +123,6 @@ describe("device tools", () => {
           expect(mockFn(client, "patch")).not.toHaveBeenCalled();
         });
 
-        it("has write annotations", () => {
-          expect(configs.get(`protect_update_${dev.singular}`)!.annotations).toEqual({
-            readOnlyHint: false,
-            destructiveHint: false,
-          });
-        });
-
         it("rejects empty settings object", () => {
           const schema = parseInputSchema(configs, `protect_update_${dev.singular}`);
           const res = schema.safeParse({ id: `${dev.singular}1`, settings: {} });
@@ -143,6 +137,13 @@ describe("device tools", () => {
           expect(
             schema.safeParse({ id: `${dev.singular}1`, settings: { name: "x" } }).success
           ).toBe(true);
+        });
+
+        it("has write annotations", () => {
+          expect(configs.get(`protect_update_${dev.singular}`)!.annotations).toEqual({
+            readOnlyHint: false,
+            destructiveHint: false,
+          });
         });
       });
     });
@@ -164,4 +165,92 @@ describe("device tools - read-only mode", () => {
       expect(handlers.has(`protect_update_${dev.singular}`)).toBe(false);
     });
   }
+});
+
+describe("device tools - descriptions (7.3.70)", () => {
+  const { server, configs } = createMockServer();
+  const client = createMockClient();
+  registerDeviceTools(server, client, false);
+
+  const desc = (name: string) => configs.get(name)!.description!;
+  const settingsDesc = (singular: string) => {
+    const shape = configs.get(`protect_update_${singular}`)!.inputSchema as Record<string, z.ZodType>;
+    return shape.settings.description!;
+  };
+
+  it("test DEVICES table matches _DEVICE_CONFIGS", () => {
+    expect(_DEVICE_CONFIGS.map((c) => c.singular)).toEqual(DEVICES.map((d) => d.singular));
+  });
+
+  for (const cfg of _DEVICE_CONFIGS) {
+    it(`${cfg.singular} returns text references 7.3.70, not 7.3.47`, () => {
+      expect(cfg.returns).toContain("7.3.70");
+      expect(cfg.returns).not.toContain("7.3.47");
+      expect(desc(`protect_list_${cfg.plural}`)).toContain("7.3.70");
+      expect(desc(`protect_get_${cfg.singular}`)).toContain("7.3.70");
+    });
+  }
+
+  it("only link_station has a note", () => {
+    const withNote = _DEVICE_CONFIGS.filter((c) => c.note !== undefined).map((c) => c.singular);
+    expect(withNote).toEqual(["link_station"]);
+  });
+
+  it("link_station list/get descriptions include the non-alarm-hub gateway note", () => {
+    expect(desc("protect_list_link_stations")).toContain("non-alarm-hub gateways");
+    expect(desc("protect_get_link_station")).toContain("non-alarm-hub gateways");
+    expect(desc("protect_list_link_stations")).toContain("protect_list_alarm_hubs");
+  });
+
+  it("other device descriptions do not include the gateway note", () => {
+    for (const cfg of _DEVICE_CONFIGS.filter((c) => c.singular !== "link_station")) {
+      expect(desc(`protect_list_${cfg.plural}`)).not.toContain("non-alarm-hub gateways");
+      expect(desc(`protect_get_${cfg.singular}`)).not.toContain("non-alarm-hub gateways");
+    }
+  });
+
+  it("descriptions without a note have no double space", () => {
+    expect(desc("protect_list_lights")).toContain("UniFi Protect. Returns array;");
+    expect(desc("protect_get_light")).toContain("by ID. Returns:");
+  });
+
+  it("sensor update hint marks leakSettings read-only and armProfileIds nullable", () => {
+    const hint = settingsDesc("sensor");
+    expect(hint).toContain("leakSettings is read-only");
+    expect(hint).not.toMatch(/leakSettings \(object\)/);
+    expect(hint).toContain("armProfileIds (array of up to 32 strings, or null)");
+    expect(hint).toContain("409");
+  });
+
+  it("fob get description lists hasKeypad inside featureFlags and drops backlight fields", () => {
+    const d = desc("protect_get_fob");
+    expect(d).toContain("featureFlags (buttons[], hasKeypad)");
+    expect(d).not.toContain("backlightEnabled");
+    expect(d).not.toContain("backlightBrightness");
+    expect(d).toContain("keypadSettings (beepEnabled, beepVolume)");
+  });
+
+  for (const singular of ["link_station", "alarm_hub"]) {
+    it(`${singular} description nests deviceTamperStatus inside alarmHub`, () => {
+      const d = desc(`protect_get_${singular}`);
+      expect(d).toMatch(/alarmHub \([^]*deviceTamperStatus/);
+      expect(d).not.toMatch(/lastEvent, alarmHub \(object\), deviceTamperStatus/);
+      // deviceTamperStatus appears exactly once (inside alarmHub)
+      expect(d.match(/deviceTamperStatus/g)).toHaveLength(1);
+      const alarmHubStart = d.indexOf("alarmHub (");
+      const threadStateStart = d.indexOf("threadState (");
+      const tamperIdx = d.indexOf("deviceTamperStatus");
+      expect(tamperIdx).toBeGreaterThan(alarmHubStart);
+      expect(tamperIdx).toBeLessThan(threadStateStart);
+    });
+  }
+
+  it("relay description lists outputs item keys including pulseDuration", () => {
+    const d = desc("protect_get_relay");
+    expect(d).toContain(
+      "outputs (array of objects: id, name, type, delay, pulseDuration, state, rebootState"
+    );
+    expect(d).toContain("protect_activate_relay_output");
+    expect(d).toContain("inputs (array of objects: id, name, state, actionTrigger, actionType, actionOutputId)");
+  });
 });

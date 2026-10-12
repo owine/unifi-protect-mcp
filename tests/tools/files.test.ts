@@ -154,6 +154,12 @@ describe("file tools", () => {
         destructiveHint: false,
       });
     });
+
+    it("declares an outputSchema", () => {
+      const config = configs.get("protect_upload_file") as { outputSchema?: unknown };
+      expect(config.outputSchema).toBeDefined();
+    });
+
     describe("input schema", () => {
       const schema = parseInputSchema(configs, "protect_upload_file");
 

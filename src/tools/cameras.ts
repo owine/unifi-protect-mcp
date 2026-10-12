@@ -22,7 +22,7 @@ export function registerCameraTools(
     "protect_list_cameras",
     {
       description:
-        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.3.47-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), type (hardware model name, e.g. UVC G6 Turret), guid (hardware MODEL GUID — every camera of the same model returns the same value, so it is NOT a per-camera identifier; use id), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage (type, resetAt, text), ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config.",
+        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.3.70-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), type (hardware model name, e.g. UVC G6 Turret), guid (hardware MODEL GUID — every camera of the same model returns the same value, so it is NOT a per-camera identifier; use id), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage (type, resetAt, text), ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config.",
       outputSchema: cameraListOutputSchema,
       annotations: READ_ONLY,
     },
@@ -40,7 +40,7 @@ export function registerCameraTools(
     "protect_get_camera",
     {
       description:
-        "Get details for a specific camera by ID. The Protect Integration API returns the SAME field set as protect_list_cameras entries (id, mac, name, modelKey, state, type, guid, activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags, lcdMessage, ledSettings, osdSettings, smartDetectSettings) — there is no extended/by-id-only payload (confirmed live on 7.3.47). Recording state, motion events, zones, and channel/RTSP config are NOT exposed by this API surface.",
+        "Get details for a specific camera by ID. The Protect Integration API returns the SAME field set as protect_list_cameras entries (id, mac, name, modelKey, state, type, guid, activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags, lcdMessage, ledSettings, osdSettings, smartDetectSettings) — there is no extended/by-id-only payload (confirmed live on 7.3.70). Recording state, motion events, zones, and channel/RTSP config are NOT exposed by this API surface.",
       inputSchema: { id: z.string().describe("Camera ID") },
       outputSchema: cameraOutputSchema,
       annotations: READ_ONLY,
@@ -59,13 +59,13 @@ export function registerCameraTools(
     "protect_get_snapshot",
     {
       description:
-        "Get a JPEG snapshot from a camera. Returns a base64-encoded image/jpeg (rendered directly by MCP clients). Use highQuality=true for full-resolution capture; set channel=package to capture from the secondary package camera on doorbells with hasPackageCamera=true.",
+        "Get a JPEG snapshot from a camera. Returns a base64-encoded image/jpeg (rendered directly by MCP clients). Use highQuality=true to force a 1080p-or-higher capture; set channel=package to capture from the secondary package camera on doorbells with hasPackageCamera=true. Fails with HTTP 503 when the camera is offline or unreachable.",
       inputSchema: {
         id: z.string().describe("Camera ID"),
         highQuality: z
           .boolean()
           .optional()
-          .describe("If true, request a high-quality snapshot"),
+          .describe("If true, force a 1080p-or-higher resolution snapshot"),
         channel: z
           .enum(["main", "package"])
           .optional()
@@ -102,7 +102,7 @@ export function registerCameraTools(
     "protect_get_rtsp_streams",
     {
       description:
-        "Get active RTSPS stream sessions for a camera. Returns the per-quality stream URLs currently published (keys typically: high, medium, low, package). Empty/missing keys mean no session is currently active at that quality — use protect_create_rtsp_stream to start one.",
+        "Get active RTSPS stream sessions for a camera. Returns: high, medium, low, package — each an rtsps:// URL, or null (or absent) when no session is active at that quality. Use protect_create_rtsp_stream to start one.",
       inputSchema: { id: z.string().describe("Camera ID") },
       outputSchema: rtspStreamOutputSchema,
       annotations: READ_ONLY,
@@ -124,7 +124,8 @@ export function registerCameraTools(
   server.registerTool(
     "protect_update_camera",
     {
-      description: "Update camera settings (partial update via PATCH)",
+      description:
+        "Update camera settings (partial update via PATCH). Returns: the full updated camera (same fields as protect_get_camera).",
       inputSchema: {
         id: z.string().describe("Camera ID"),
         settings: z
@@ -180,7 +181,8 @@ export function registerCameraTools(
   server.registerTool(
     "protect_create_rtsp_stream",
     {
-      description: "Create an RTSPS stream session for a camera",
+      description:
+        "Create an RTSPS stream session for a camera. Returns: one key per requested quality (high, medium, low, package), each an rtsps:// URL. The package quality is only available on cameras with hasPackageCamera=true.",
       inputSchema: {
         id: z.string().describe("Camera ID"),
         qualities: z
@@ -281,7 +283,7 @@ export function registerCameraTools(
     "protect_disable_mic",
     {
       description:
-        "IRREVERSIBLE: Permanently disable the microphone on a camera. Can only be re-enabled by factory resetting the camera.",
+        "IRREVERSIBLE: Permanently disable the microphone on a camera. Can only be re-enabled by factory resetting the camera. Returns: the full updated camera (same fields as protect_get_camera).",
       inputSchema: {
         id: z.string().describe("Camera ID"),
         confirm: z
@@ -292,6 +294,7 @@ export function registerCameraTools(
           .optional()
           .describe("If true, return what would happen without making changes"),
       },
+      outputSchema: cameraOutputSchema,
       annotations: DESTRUCTIVE,
     },
     async ({ id, confirm, dryRun }) => {

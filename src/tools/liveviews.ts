@@ -42,7 +42,7 @@ export function registerLiveviewTools(
     "protect_list_liveviews",
     {
       description:
-        "List all live views (camera grid layouts shown on viewers / in the Protect UI). Returns array; each liveview includes (Integration API 7.1.83-verified): id, modelKey, name, isDefault, isGlobal, layout (number, slot count), owner (user ID), slots (array of {cameras: string[], cycleMode, cycleInterval}). NOTE: slots use a `cameras` string-array, not a single `cameraId`.",
+        "List all live views (camera grid layouts shown on viewers / in the Protect UI). Returns array; each liveview includes (Integration API 7.3.70-verified): id, modelKey, name, isDefault, isGlobal, layout (number, slot count), owner (user ID), slots (array of {cameras: string[], cycleMode, cycleInterval}). NOTE: slots use a `cameras` string-array, not a single `cameraId`.",
       outputSchema: liveviewListOutputSchema,
       annotations: READ_ONLY,
     },
@@ -80,7 +80,8 @@ export function registerLiveviewTools(
   server.registerTool(
     "protect_create_liveview",
     {
-      description: "Create a new live view",
+      description:
+        "Create a new live view. Returns: the created liveview (same fields as protect_get_liveview).",
       inputSchema: {
         settings: liveviewBody.describe("Full liveview object (all fields required)"),
         dryRun: z
@@ -107,7 +108,8 @@ export function registerLiveviewTools(
   server.registerTool(
     "protect_update_liveview",
     {
-      description: "Update an existing live view (full replacement via PUT-style PATCH — include all fields)",
+      description:
+        "Update an existing live view (full replacement via PUT-style PATCH — include all fields). Returns: the updated liveview.",
       inputSchema: {
         id: z.string().describe("Liveview ID"),
         settings: liveviewBody.describe(

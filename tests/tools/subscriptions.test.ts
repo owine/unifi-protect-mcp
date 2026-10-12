@@ -123,6 +123,12 @@ describe("subscription tools", () => {
       expect(parsed.messages[0]).toBe("not valid json");
     });
 
+    it("describes the {type, item} envelope", () => {
+      const description = configs.get("protect_subscribe_devices")!.description!;
+      expect(description).toContain("{type, item}");
+      expect(description).toContain("modelKey");
+    });
+
     it("has read-only annotations", () => {
       expect(configs.get("protect_subscribe_devices")!.annotations).toEqual({
         readOnlyHint: true,
@@ -157,6 +163,17 @@ describe("subscription tools", () => {
       expect(mockFn(client, "connectWebSocket")).toHaveBeenCalledWith(
         "/subscribe/events"
       );
+    });
+
+    it("describes the event envelope without undocumented fields", () => {
+      const description = configs.get("protect_subscribe_events")!.description!;
+      expect(description).toContain("item:");
+      for (const field of ["device", "start", "end"]) {
+        expect(description).toContain(field);
+      }
+      for (const stale of ["score", "smartDetectTypes", "metadata"]) {
+        expect(description).not.toContain(stale);
+      }
     });
 
     it("has read-only annotations", () => {

@@ -1,6 +1,6 @@
 # UniFi Protect MCP Server
 
-An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.3.47** — 74 tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, point-of-sale events, NVR status, and WebSocket subscriptions.
+An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.3.70** — 74 tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, point-of-sale events, NVR status, and WebSocket subscriptions.
 
 ## Prerequisites
 
@@ -243,8 +243,8 @@ server logs a warning and talks to that host directly.
 | Tool | Description |
 |---|---|
 | `protect_trigger_alarm_webhook` | Trigger an alarm webhook (fires external alarm action) |
-| `protect_list_files` | List files by type |
-| `protect_upload_file` | Upload a file (base64-encoded) |
+| `protect_list_files` | List device asset files (`animations`) |
+| `protect_upload_file` | Upload a device asset file (base64 in, sent as multipart/form-data) |
 
 ### Users (4)
 | Tool | Description |
