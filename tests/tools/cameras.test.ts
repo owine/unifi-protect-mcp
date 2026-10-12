@@ -67,30 +67,9 @@ describe("camera tools", () => {
       mockFn(client, "patch").mockRejectedValue(new Error("forbidden"));
       const result = await handlers.get("protect_update_camera")!({
         id: "cam1",
-        settings: {},
+        settings: { name: "x" },
       });
       expectError(result);
-    });
-
-    it("returns dry-run preview without calling client", async () => {
-      mockFn(client, "patch").mockClear();
-      const result = await handlers.get("protect_update_camera")!({
-        id: "cam1",
-        settings: { name: "Test" },
-        dryRun: true,
-      });
-      const data = JSON.parse(result.content[0].text);
-      expect(data.dryRun).toBe(true);
-      expect(data.action).toBe("PATCH");
-      expect(data.path).toBe("/cameras/cam1");
-      expect(mockFn(client, "patch")).not.toHaveBeenCalled();
-    });
-
-    it("has write annotations", () => {
-      expect(configs.get("protect_update_camera")!.annotations).toEqual({
-        readOnlyHint: false,
-        destructiveHint: false,
-      });
     });
 
     it("passes unknown extra settings keys through to client.patch unchanged", async () => {
@@ -146,6 +125,27 @@ describe("camera tools", () => {
         expect(schema.safeParse({ id: "cam1", settings: {} }).success).toBe(false);
       });
     });
+
+    it("returns dry-run preview without calling client", async () => {
+      mockFn(client, "patch").mockClear();
+      const result = await handlers.get("protect_update_camera")!({
+        id: "cam1",
+        settings: { name: "Test" },
+        dryRun: true,
+      });
+      const data = JSON.parse(result.content[0].text);
+      expect(data.dryRun).toBe(true);
+      expect(data.action).toBe("PATCH");
+      expect(data.path).toBe("/cameras/cam1");
+      expect(mockFn(client, "patch")).not.toHaveBeenCalled();
+    });
+
+    it("has write annotations", () => {
+      expect(configs.get("protect_update_camera")!.annotations).toEqual({
+        readOnlyHint: false,
+        destructiveHint: false,
+      });
+    });
   });
 
   describe("protect_get_snapshot", () => {
@@ -180,6 +180,32 @@ describe("camera tools", () => {
       expect(result.content[0].type).toBe("image");
       expect(mockFn(client, "getBinary")).toHaveBeenCalledWith(
         "/cameras/cam1/snapshot?highQuality=true"
+      );
+    });
+
+    it("appends channel=package parameter", async () => {
+      mockFn(client, "getBinary").mockResolvedValue({
+        data: Buffer.from([0xff, 0xd8]),
+        mimeType: "image/jpeg",
+      });
+      await handlers.get("protect_get_snapshot")!({ id: "cam1", channel: "package" });
+      expect(mockFn(client, "getBinary")).toHaveBeenCalledWith(
+        "/cameras/cam1/snapshot?channel=package"
+      );
+    });
+
+    it("combines highQuality and channel parameters", async () => {
+      mockFn(client, "getBinary").mockResolvedValue({
+        data: Buffer.from([0xff, 0xd8]),
+        mimeType: "image/jpeg",
+      });
+      await handlers.get("protect_get_snapshot")!({
+        id: "cam1",
+        highQuality: true,
+        channel: "package",
+      });
+      expect(mockFn(client, "getBinary")).toHaveBeenCalledWith(
+        "/cameras/cam1/snapshot?highQuality=true&channel=package"
       );
     });
   });
@@ -234,6 +260,12 @@ describe("camera tools", () => {
       expectSuccess(result, "s1");
       expect(mockFn(client, "get")).toHaveBeenCalledWith("/cameras/cam1/rtsps-stream");
     });
+
+    it("returns error on failure", async () => {
+      mockFn(client, "get").mockRejectedValue(new Error("fail"));
+      const result = await handlers.get("protect_get_rtsp_streams")!({ id: "cam1" });
+      expectError(result);
+    });
   });
 
   describe("protect_delete_rtsp_stream", () => {
@@ -266,6 +298,7 @@ describe("camera tools", () => {
       const data = JSON.parse(result.content[0].text);
       expect(data.dryRun).toBe(true);
       expect(data.action).toBe("DELETE");
+      expect(data.path).toBe("/cameras/cam1/rtsps-stream?qualities=high");
       expect(mockFn(client, "delete")).not.toHaveBeenCalled();
     });
 
@@ -344,6 +377,19 @@ describe("camera tools", () => {
       expect(data.path).toBe("/cameras/cam1/talkback-session");
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
     });
+
+    it("returns error on failure", async () => {
+      mockFn(client, "post").mockRejectedValue(new Error("fail"));
+      const result = await handlers.get("protect_create_talkback")!({ id: "cam1" });
+      expectError(result);
+    });
+
+    it("has write annotations", () => {
+      expect(configs.get("protect_create_talkback")!.annotations).toEqual({
+        readOnlyHint: false,
+        destructiveHint: false,
+      });
+    });
   });
 
   describe("protect_disable_mic", () => {
@@ -372,6 +418,25 @@ describe("camera tools", () => {
       );
     });
 
+    it("returns error on failure", async () => {
+      mockFn(client, "post").mockRejectedValue(new Error("fail"));
+      const result = await handlers.get("protect_disable_mic")!({
+        id: "cam1",
+        confirm: true,
+      });
+      expectError(result);
+    });
+
+    it("refuses without confirm and does not call client", async () => {
+      mockFn(client, "post").mockClear();
+      const result = await handlers.get("protect_disable_mic")!({
+        id: "cam1",
+        confirm: false,
+      });
+      expectError(result);
+      expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
     it("returns dry-run preview without calling client", async () => {
       mockFn(client, "post").mockClear();
       const result = await handlers.get("protect_disable_mic")!({
@@ -395,6 +460,13 @@ describe("camera tools", () => {
       });
       expectError(result);
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
+    it("rejects confirm other than literal true in the input schema", () => {
+      const schema = parseInputSchema(configs, "protect_disable_mic");
+      expect(schema.safeParse({ id: "cam1", confirm: false }).success).toBe(false);
+      expect(schema.safeParse({ id: "cam1", dryRun: true }).success).toBe(false);
+      expect(schema.safeParse({ id: "cam1", confirm: true, dryRun: true }).success).toBe(true);
     });
 
     it("declares an outputSchema", () => {
@@ -429,6 +501,30 @@ describe("camera tools", () => {
       expect(data.path).toBe("/cameras/cam1/ptz/patrol/start/2");
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
     });
+
+    it("returns error on failure", async () => {
+      mockFn(client, "post").mockRejectedValue(new Error("fail"));
+      const result = await handlers.get("protect_start_ptz_patrol")!({
+        id: "cam1",
+        slot: 2,
+      });
+      expectError(result);
+    });
+
+    it("has write annotations", () => {
+      expect(configs.get("protect_start_ptz_patrol")!.annotations).toEqual({
+        readOnlyHint: false,
+        destructiveHint: false,
+      });
+    });
+
+    it("accepts slots 0-4 and rejects slots outside that range", () => {
+      const schema = parseInputSchema(configs, "protect_start_ptz_patrol");
+      expect(schema.safeParse({ id: "cam1", slot: 0 }).success).toBe(true);
+      expect(schema.safeParse({ id: "cam1", slot: 4 }).success).toBe(true);
+      expect(schema.safeParse({ id: "cam1", slot: 5 }).success).toBe(false);
+      expect(schema.safeParse({ id: "cam1", slot: -1 }).success).toBe(false);
+    });
   });
 
   describe("protect_stop_ptz_patrol", () => {
@@ -452,6 +548,19 @@ describe("camera tools", () => {
       expect(data.action).toBe("POST");
       expect(data.path).toBe("/cameras/cam1/ptz/patrol/stop");
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
+    it("returns error on failure", async () => {
+      mockFn(client, "post").mockRejectedValue(new Error("fail"));
+      const result = await handlers.get("protect_stop_ptz_patrol")!({ id: "cam1" });
+      expectError(result);
+    });
+
+    it("has write annotations", () => {
+      expect(configs.get("protect_stop_ptz_patrol")!.annotations).toEqual({
+        readOnlyHint: false,
+        destructiveHint: false,
+      });
     });
   });
 
@@ -488,6 +597,21 @@ describe("camera tools", () => {
       expect(mockFn(client, "post")).toHaveBeenCalledWith("/cameras/cam1/ptz/goto/-1");
     });
 
+    it("returns error on failure", async () => {
+      mockFn(client, "post").mockRejectedValue(new Error("fail"));
+      const result = await handlers.get("protect_goto_ptz_preset")!({
+        id: "cam1",
+        slot: 3,
+      });
+      expectError(result);
+    });
+
+    it("has write annotations", () => {
+      expect(configs.get("protect_goto_ptz_preset")!.annotations).toEqual({
+        readOnlyHint: false,
+        destructiveHint: false,
+      });
+    });
 
     it("accepts -1 and slots above 4, rejects below -1 and non-integers", () => {
       const schema = parseInputSchema(configs, "protect_goto_ptz_preset");
