@@ -6,6 +6,7 @@ import { registerDeviceTools } from "./devices.js";
 import { registerDeviceActionTools } from "./device-actions.js";
 import { registerLiveviewTools } from "./liveviews.js";
 import { registerFileTools } from "./files.js";
+import { registerAlarmManagerTools } from "./alarm-manager.js";
 import { registerSubscriptionTools } from "./subscriptions.js";
 import { registerArmProfileTools } from "./arm-profiles.js";
 import { registerUserTools } from "./users.js";
@@ -23,6 +24,7 @@ export function registerAllTools(
   registerDeviceActionTools(server, client, readOnly);
   registerLiveviewTools(server, client, readOnly);
   registerFileTools(server, client, readOnly);
+  registerAlarmManagerTools(server, client, readOnly);
   registerArmProfileTools(server, client, readOnly);
   registerUserTools(server, client);
   registerPosTools(server, client, readOnly);

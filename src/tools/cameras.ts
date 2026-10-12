@@ -287,13 +287,20 @@ export function registerCameraTools(
         confirm: z
           .literal(true)
           .describe("Must be true to confirm this irreversible action"),
+        dryRun: z
+          .boolean()
+          .optional()
+          .describe("If true, return what would happen without making changes"),
       },
       annotations: DESTRUCTIVE,
     },
-    async ({ id, confirm }) => {
+    async ({ id, confirm, dryRun }) => {
       const denied = requireConfirmation(confirm, "permanently disable the microphone");
       if (denied) return denied;
       try {
+        if (dryRun) {
+          return formatDryRun("POST", safePath`/cameras/${id}/disable-mic-permanently`);
+        }
         const data = await client.post(
           safePath`/cameras/${id}/disable-mic-permanently`
         );
