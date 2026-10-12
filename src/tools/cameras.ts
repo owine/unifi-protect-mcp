@@ -205,15 +205,15 @@ export function registerCameraTools(
     },
     async ({ id, qualities, dryRun }) => {
       try {
+        // Protect expects repeated keys (qualities=high&qualities=medium), not
+        // a comma-joined value — safePath would encode the comma as %2C.
+        const params = new URLSearchParams();
+        for (const quality of qualities) params.append("qualities", quality);
+        const url = safePath`/cameras/${id}/rtsps-stream` + `?${params.toString()}`;
         if (dryRun) {
-          return formatDryRun(
-            "DELETE",
-            safePath`/cameras/${id}/rtsps-stream?qualities=${qualities.join(",")}`
-          );
+          return formatDryRun("DELETE", url);
         }
-        const data = await client.delete(
-          safePath`/cameras/${id}/rtsps-stream?qualities=${qualities.join(",")}`
-        );
+        const data = await client.delete(url);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
