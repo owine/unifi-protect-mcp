@@ -176,19 +176,42 @@ describe("ProtectClient", () => {
     });
   });
 
-  describe("postBinary", () => {
-    it("sends binary data with correct content type", async () => {
-      vi.stubGlobal("fetch", mockFetch({ uploaded: true }));
-      const buf = Buffer.from("file-data");
-      const result = await client.postBinary("/files/video", buf, "video/mp4");
-      expect(result).toEqual({ uploaded: true });
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/files/video"),
-        expect.objectContaining({
-          method: "POST",
-          headers: expect.objectContaining({ "Content-Type": "video/mp4" }),
-        })
+  describe("postFile", () => {
+    function lastInit() {
+      return (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+    }
+
+    it("sends the file as multipart/form-data under the 'file' part", async () => {
+      vi.stubGlobal("fetch", mockFetch({ name: "abc", type: "animations" }));
+      const buf = Buffer.from("GIF89a-bytes");
+      const result = await client.postFile(
+        "/files/animations",
+        buf,
+        "image/gif",
+        "welcome.gif"
       );
+      expect(result).toEqual({ name: "abc", type: "animations" });
+      expect(fetch).toHaveBeenCalledWith(
+        "https://192.168.1.1/proxy/protect/integration/v1/files/animations",
+        expect.objectContaining({ method: "POST" })
+      );
+
+      const body = lastInit().body;
+      expect(body).toBeInstanceOf(FormData);
+      const part = (body as FormData).get("file");
+      expect(part).toBeInstanceOf(Blob);
+      const file = part as File;
+      expect(file.type).toBe("image/gif");
+      expect(file.name).toBe("welcome.gif");
+      expect(Buffer.from(await file.arrayBuffer()).toString()).toBe("GIF89a-bytes");
+    });
+
+    it("sends only the API key header and lets fetch set the multipart Content-Type", async () => {
+      vi.stubGlobal("fetch", mockFetch({ ok: true }));
+      await client.postFile("/files/animations", Buffer.from("x"), "audio/mpeg", "a.mp3");
+      const headers = lastInit().headers as Record<string, string>;
+      expect(headers["X-API-KEY"]).toBe("test-key");
+      expect(Object.keys(headers).map((k) => k.toLowerCase())).not.toContain("content-type");
     });
 
     it("returns text for non-JSON responses", async () => {
@@ -196,10 +219,11 @@ describe("ProtectClient", () => {
         "fetch",
         mockFetch("upload ok", { contentType: "text/plain" })
       );
-      const result = await client.postBinary(
-        "/files/video",
+      const result = await client.postFile(
+        "/files/animations",
         Buffer.from("data"),
-        "video/mp4"
+        "image/gif",
+        "upload.gif"
       );
       expect(result).toBe("upload ok");
     });
@@ -210,7 +234,7 @@ describe("ProtectClient", () => {
         mockFetch("Bad Request", { status: 400, contentType: "text/plain" })
       );
       await expect(
-        client.postBinary("/files/video", Buffer.from("data"), "video/mp4")
+        client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
       ).rejects.toThrow("HTTP 400: Bad Request");
     });
   });
@@ -233,10 +257,10 @@ describe("ProtectClient", () => {
       await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow("fetch failed");
     });
 
-    it("propagates fetch TypeError for postBinary", async () => {
+    it("propagates fetch TypeError for postFile", async () => {
       vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
       await expect(
-        client.postBinary("/files/video", Buffer.from("data"), "video/mp4")
+        client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
       ).rejects.toThrow("fetch failed");
     });
   });
@@ -296,6 +320,29 @@ describe("ProtectClient", () => {
     it("reports an empty JSON body distinctly from a parse failure", async () => {
       vi.stubGlobal("fetch", mockFetch("", { contentType: "application/json" }));
       await expect(client.get("/nvrs")).rejects.toThrow(/empty body/i);
+    });
+
+    it("treats 204 No Content as an empty success even with a JSON content-type", async () => {
+      vi.stubGlobal("fetch", mockFetch("", { status: 204, contentType: "application/json" }));
+      await expect(client.post("/sirens/s1/play")).resolves.toBe("");
+    });
+
+    it("does not read the body of a 204 response", async () => {
+      const text = vi.fn(async () => "");
+      const json = vi.fn(async () => ({}));
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: true,
+          status: 204,
+          headers: new Headers({ "content-type": "application/json" }),
+          text,
+          json,
+        } as unknown as Response)
+      );
+      await expect(client.post("/relays/r1/activate")).resolves.toBe("");
+      expect(text).not.toHaveBeenCalled();
+      expect(json).not.toHaveBeenCalled();
     });
 
     it("rejects redirects on binary downloads", async () => {
@@ -361,7 +408,7 @@ describe("ProtectClient", () => {
       const text = vi.fn(async () => "never read");
       vi.stubGlobal("fetch", failingFetch({ "content-length": "999999999" }, text));
       await expect(
-        client.postBinary("/files/video", Buffer.from("data"), "video/mp4")
+        client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
       ).rejects.toThrow(/HTTP 500.*exceeds/s);
       expect(text).not.toHaveBeenCalled();
     });
@@ -376,34 +423,18 @@ describe("ProtectClient", () => {
 
     it("rejects redirects on binary uploads", async () => {
       vi.stubGlobal("fetch", mockFetch({ ok: true }));
-      await client.postBinary("/files/video", Buffer.from("data"), "video/mp4");
+      await client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif");
       expect(fetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ redirect: "error" })
       );
     });
 
-    it("treats 204 No Content as an empty success even with a JSON content-type", async () => {
-      vi.stubGlobal("fetch", mockFetch("", { status: 204, contentType: "application/json" }));
-      await expect(client.post("/sirens/s1/play")).resolves.toBe("");
-    });
-
-    it("does not read the body of a 204 response", async () => {
-      const text = vi.fn(async () => "");
-      const json = vi.fn(async () => ({}));
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          status: 204,
-          headers: new Headers({ "content-type": "application/json" }),
-          text,
-          json,
-        } as unknown as Response)
-      );
-      await expect(client.post("/relays/r1/activate")).resolves.toBe("");
-      expect(text).not.toHaveBeenCalled();
-      expect(json).not.toHaveBeenCalled();
+    it("applies an abort signal to binary uploads", async () => {
+      vi.stubGlobal("fetch", mockFetch({ ok: true }));
+      await client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif");
+      const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      expect(init.signal).toBeInstanceOf(AbortSignal);
     });
   });
 
