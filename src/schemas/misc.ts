@@ -128,14 +128,22 @@ export const armProfileListOutputSchema = listResultSchema(armProfileSchema);
 export const armProfileOutputSchema = { ...armProfileSchema.shape };
 
 // --- Files ---
-// Device asset files (only fileType=animations supported). Shape from 7.3.70
-// docs: { name, type, originalName, path } — no id/modelKey.
+// Device asset files (only fileType=animations supported). The 7.3.70 docs show
+// { name, type, originalName, path }; live 7.3.70 records (2026-10-12) also
+// carry id (equal to name), size, createdAt, updatedAt and metadata. No modelKey.
 
 export const fileSchema = passthroughObject({
+  id: idField("File ID (same value as name)"),
   name: nullableString("Stored file name (server-generated)"),
   type: nullableString('Asset file type, e.g. "animations"'),
-  originalName: nullableString("Original uploaded file name"),
+  originalName: nullableString(
+    'Uploaded file name; Protect appends the stored extension, e.g. "welcome.gif.png"'
+  ),
   path: nullableString("Server-side storage path"),
+  size: unknownField("File size in bytes (number)"),
+  createdAt: nullableString("Creation time (ISO 8601)"),
+  updatedAt: nullableString("Last update time (ISO 8601)"),
+  metadata: unknownField("Asset metadata (object, empty in observed records)"),
 });
 
 export const fileListOutputSchema = listResultSchema(fileSchema);

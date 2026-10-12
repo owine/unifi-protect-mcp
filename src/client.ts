@@ -165,7 +165,8 @@ export class ProtectClient {
   /**
    * Upload a file as multipart/form-data (the documented encoding for
    * POST /files/{fileType}). fetch sets the Content-Type with its boundary, so
-   * none is set here. The part name `file` is not named in the published docs.
+   * none is set here. The part name `file` is not in the published docs but
+   * was verified against a live 7.3.70 console.
    */
   async postFile(
     path: string,
