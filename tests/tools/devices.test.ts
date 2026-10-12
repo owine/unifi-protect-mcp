@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createMockServer, createMockClient, mockFn, expectSuccess, expectError } from "./_helpers.js";
+import {
+  createMockServer,
+  createMockClient,
+  mockFn,
+  expectSuccess,
+  expectError,
+  parseInputSchema,
+} from "./_helpers.js";
 import { registerDeviceTools } from "../../src/tools/devices.js";
 
 interface Device {
@@ -120,6 +127,22 @@ describe("device tools", () => {
             readOnlyHint: false,
             destructiveHint: false,
           });
+        });
+
+        it("rejects empty settings object", () => {
+          const schema = parseInputSchema(configs, `protect_update_${dev.singular}`);
+          const res = schema.safeParse({ id: `${dev.singular}1`, settings: {} });
+          expect(res.success).toBe(false);
+          expect(JSON.stringify(res.error?.issues)).toContain(
+            "settings must include at least one field"
+          );
+        });
+
+        it("accepts non-empty settings object", () => {
+          const schema = parseInputSchema(configs, `protect_update_${dev.singular}`);
+          expect(
+            schema.safeParse({ id: `${dev.singular}1`, settings: { name: "x" } }).success
+          ).toBe(true);
         });
       });
     });

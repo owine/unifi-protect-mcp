@@ -131,6 +131,15 @@ describe("POS tools", () => {
       ).toBe(false);
     });
 
+    it("accepts fractional line-item quantities but rejects zero or negative", () => {
+      const withQty = (quantity: number) =>
+        schema.safeParse({ ...minimal, lineItems: [{ title: "Bananas", quantity }] }).success;
+      expect(withQty(0.5)).toBe(true);
+      expect(withQty(1)).toBe(true);
+      expect(withQty(0)).toBe(false);
+      expect(withQty(-1)).toBe(false);
+    });
+
     it("keeps undocumented line-item fields instead of stripping them", () => {
       const parsed = schema.parse({
         ...minimal,

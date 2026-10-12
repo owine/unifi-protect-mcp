@@ -128,8 +128,34 @@ export function registerCameraTools(
       inputSchema: {
         id: z.string().describe("Camera ID"),
         settings: z
-          .record(z.string(), z.unknown())
-          .describe("Partial camera settings to update. Known fields: name (string), osdSettings (object), ledSettings (object), lcdMessage (object: type, resetAt, text), videoMode (string: \"default\" | \"highFps\" | \"sport\" | \"slowShutter\" | \"lprReflex\" | \"lprNoneReflex\"), hdrType (string: \"auto\" | \"on\" | \"off\"), micVolume (number 0-100), smartDetectSettings (object)"),
+          .object({
+            name: z.string().optional().describe("Camera name"),
+            osdSettings: z
+              .record(z.string(), z.unknown())
+              .optional()
+              .describe("On-screen display (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation)"),
+            ledSettings: z
+              .record(z.string(), z.unknown())
+              .optional()
+              .describe("LED settings (isEnabled, welcomeLed, floodLed)"),
+            lcdMessage: z
+              .record(z.string(), z.unknown())
+              .optional()
+              .describe('Doorbell LCD message (type, resetAt, text), e.g. { type: "DO_NOT_DISTURB", resetAt: 0 }'),
+            micVolume: z.number().min(0).max(100).optional().describe("Mic volume (0-100)"),
+            videoMode: z
+              .enum(["default", "highFps", "sport", "slowShutter", "lprReflex", "lprNoneReflex"])
+              .optional()
+              .describe("Video mode"),
+            hdrType: z.enum(["auto", "on", "off"]).optional().describe("HDR mode"),
+            smartDetectSettings: z
+              .record(z.string(), z.unknown())
+              .optional()
+              .describe("Smart detection (objectTypes[], audioTypes[])"),
+          })
+          .passthrough()
+          .refine((o) => Object.keys(o).length > 0, "settings must include at least one field")
+          .describe("Partial camera settings to update"),
         dryRun: z
           .boolean()
           .optional()
@@ -159,7 +185,8 @@ export function registerCameraTools(
         id: z.string().describe("Camera ID"),
         qualities: z
           .array(z.enum(["high", "medium", "low", "package"]))
-          .describe("Quality levels to include in the RTSPS stream"),
+          .min(1)
+          .describe("Quality levels to include in the RTSPS stream (at least one)"),
         dryRun: z
           .boolean()
           .optional()
@@ -195,7 +222,8 @@ export function registerCameraTools(
         id: z.string().describe("Camera ID"),
         qualities: z
           .array(z.enum(["high", "medium", "low", "package"]))
-          .describe("Quality levels to remove from the RTSPS stream"),
+          .min(1)
+          .describe("Quality levels to remove from the RTSPS stream (at least one)"),
         dryRun: z
           .boolean()
           .optional()

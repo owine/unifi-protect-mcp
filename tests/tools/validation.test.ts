@@ -195,7 +195,7 @@ describe("record fields (settings)", () => {
 
       it("accepts an object for settings", () => {
         const base = buildMinimalInput(toolName);
-        const result = schema.safeParse({ ...base, settings: { name: "test" } });
+        const result = schema.safeParse({ ...base, settings: validSettings(toolName) });
         expect(result.success).toBe(true);
       });
 
@@ -214,13 +214,36 @@ describe("record fields (settings)", () => {
   }
 });
 
+/** Liveview create/update require the full liveview object (7.3.70 docs). */
+const VALID_LIVEVIEW = {
+  id: "lv1",
+  modelKey: "liveview",
+  name: "test",
+  isDefault: false,
+  isGlobal: false,
+  owner: "user1",
+  layout: 1,
+  slots: [{ cameras: ["cam1"], cycleMode: "time", cycleInterval: 10 }],
+};
+
+/** A settings object the tool's schema accepts */
+function validSettings(toolName: string): Record<string, unknown> {
+  return toolName.endsWith("_liveview") ? VALID_LIVEVIEW : { name: "test" };
+}
+
 /** Build minimal valid input for a tool (without dryRun) */
 function buildMinimalInput(toolName: string): Record<string, unknown> {
   if (toolName === "protect_create_liveview") {
-    return { settings: { name: "test" } };
+    return { settings: VALID_LIVEVIEW };
+  }
+  if (toolName === "protect_update_liveview") {
+    return { id: "lv1", settings: VALID_LIVEVIEW };
+  }
+  if (toolName === "protect_trigger_alarm_webhook") {
+    return { id: "wh1", confirm: true };
   }
   if (toolName === "protect_upload_file") {
-    return { fileType: "video", base64Data: "abc", contentType: "video/mp4" };
+    return { fileType: "animations", base64Data: "abc", contentType: "image/gif" };
   }
   if (
     toolName === "protect_start_ptz_patrol" ||

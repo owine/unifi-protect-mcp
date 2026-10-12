@@ -9,7 +9,19 @@ import {
   armProfileOutputSchema,
 } from "../schemas/misc.js";
 
-const ACTIVATION_DELAY_VALUES = [0, 60000, 300000, 600000] as const;
+const activationDelay = z
+  .union([z.literal(0), z.literal(60000), z.literal(300000), z.literal(600000)])
+  .describe("Activation delay in milliseconds. Allowed: 0 (none), 60000 (1m), 300000 (5m), 600000 (10m).");
+
+const armProfileFields = {
+  name: z.string().min(1).max(255).describe("Name of the arm profile"),
+  automations: z.array(z.string()).describe("List of automation IDs associated with this arm profile"),
+  schedules: z
+    .array(z.record(z.string(), z.unknown()))
+    .describe('List of arm schedules, e.g. [{ start: "0 22 * * *", end: "0 6 * * *" }] (cron strings)'),
+  recordEverything: z.boolean().describe("Whether to record everything when this arm profile is active"),
+  activationDelay,
+};
 
 export function registerArmProfileTools(
   server: McpServer,
@@ -41,13 +53,7 @@ export function registerArmProfileTools(
     {
       description: "Create a new arm profile. Only available when using local alarm manager.",
       inputSchema: {
-        name: z.string().min(1).max(255).describe("Name of the arm profile"),
-        automations: z.array(z.string()).describe("List of automation IDs associated with this arm profile"),
-        schedules: z.array(z.record(z.string(), z.unknown())).describe("List of arm schedules"),
-        recordEverything: z.boolean().describe("Whether to record everything when this arm profile is active"),
-        activationDelay: z
-          .union([z.literal(0), z.literal(60000), z.literal(300000), z.literal(600000)])
-          .describe("Activation delay in milliseconds. Allowed: 0 (none), 60000 (1m), 300000 (5m), 600000 (10m)."),
+        ...armProfileFields,
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
       outputSchema: armProfileOutputSchema,
@@ -98,8 +104,11 @@ export function registerArmProfileTools(
       inputSchema: {
         id: z.string().describe("Arm profile ID"),
         settings: z
-          .record(z.string(), z.unknown())
-          .describe(`Partial arm profile settings. Known fields: name (string 1-255 chars), automations (array of strings), schedules (array of objects), recordEverything (boolean), activationDelay (number, allowed: ${ACTIVATION_DELAY_VALUES.join(", ")})`),
+          .object(armProfileFields)
+          .partial()
+          .passthrough()
+          .refine((o) => Object.keys(o).length > 0, "settings must include at least one field")
+          .describe("Partial arm profile settings to update"),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
       outputSchema: armProfileOutputSchema,

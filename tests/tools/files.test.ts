@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createMockServer, createMockClient, mockFn, expectSuccess, expectError } from "./_helpers.js";
+import {
+  createMockServer,
+  createMockClient,
+  mockFn,
+  expectSuccess,
+  expectError,
+  parseInputSchema,
+} from "./_helpers.js";
 import { registerFileTools } from "../../src/tools/files.js";
 
 describe("file tools", () => {
@@ -42,6 +49,12 @@ describe("file tools", () => {
         "external alarm"
       );
     });
+
+    it("rejects an empty webhook id", () => {
+      const schema = parseInputSchema(configs, "protect_trigger_alarm_webhook");
+      expect(schema.safeParse({ id: "", confirm: true }).success).toBe(false);
+      expect(schema.safeParse({ id: "wh1", confirm: true }).success).toBe(true);
+    });
   });
 
   describe("protect_list_files", () => {
@@ -67,6 +80,16 @@ describe("file tools", () => {
         readOnlyHint: true,
         destructiveHint: false,
       });
+    });
+
+    it("accepts fileType 'animations'", () => {
+      const schema = parseInputSchema(configs, "protect_list_files");
+      expect(schema.safeParse({ fileType: "animations" }).success).toBe(true);
+    });
+
+    it("rejects undocumented fileType 'video'", () => {
+      const schema = parseInputSchema(configs, "protect_list_files");
+      expect(schema.safeParse({ fileType: "video" }).success).toBe(false);
     });
   });
 
@@ -114,6 +137,51 @@ describe("file tools", () => {
       expect(data.body.contentType).toBe("video/mp4");
       expect(data.body.dataLength).toBe(base64.length);
       expect(mockFn(client, "postBinary")).not.toHaveBeenCalled();
+    });
+
+    describe("input schema", () => {
+      const schema = parseInputSchema(configs, "protect_upload_file");
+
+      it("accepts a documented upload", () => {
+        expect(
+          schema.safeParse({ fileType: "animations", base64Data: "abc", contentType: "image/gif" })
+            .success
+        ).toBe(true);
+      });
+
+      it("defaults contentType to image/gif", () => {
+        const result = schema.safeParse({ fileType: "animations", base64Data: "abc" });
+        expect(result.success).toBe(true);
+        expect(result.data?.contentType).toBe("image/gif");
+      });
+
+      it.each([
+        "image/gif",
+        "image/jpeg",
+        "image/png",
+        "audio/mpeg",
+        "audio/mp4",
+        "audio/wave",
+        "audio/x-caf",
+      ])("accepts contentType %s", (contentType) => {
+        expect(
+          schema.safeParse({ fileType: "animations", base64Data: "abc", contentType }).success
+        ).toBe(true);
+      });
+
+      it("rejects undocumented contentType video/mp4", () => {
+        expect(
+          schema.safeParse({ fileType: "animations", base64Data: "abc", contentType: "video/mp4" })
+            .success
+        ).toBe(false);
+      });
+
+      it("rejects undocumented fileType 'video'", () => {
+        expect(
+          schema.safeParse({ fileType: "video", base64Data: "abc", contentType: "image/gif" })
+            .success
+        ).toBe(false);
+      });
     });
   });
 });

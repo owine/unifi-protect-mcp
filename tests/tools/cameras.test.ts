@@ -92,6 +92,60 @@ describe("camera tools", () => {
         destructiveHint: false,
       });
     });
+
+    it("passes unknown extra settings keys through to client.patch unchanged", async () => {
+      mockFn(client, "patch").mockResolvedValue({ id: "cam1" });
+      const settings = {
+        name: "Front",
+        hdrType: "on",
+        futureField: { nested: [1, 2] },
+      };
+      const parsed = parseInputSchema(configs, "protect_update_camera").parse({
+        id: "cam1",
+        settings,
+      });
+      expect(parsed.settings).toEqual(settings);
+      await handlers.get("protect_update_camera")!(parsed);
+      expect(mockFn(client, "patch")).toHaveBeenCalledWith("/cameras/cam1", settings);
+    });
+
+    describe("input validation", () => {
+      const schema = parseInputSchema(configs, "protect_update_camera");
+
+      it("accepts known typed fields", () => {
+        expect(
+          schema.safeParse({
+            id: "cam1",
+            settings: { videoMode: "highFps", hdrType: "auto", micVolume: 50 },
+          }).success
+        ).toBe(true);
+      });
+
+      it("rejects an unknown videoMode", () => {
+        expect(
+          schema.safeParse({ id: "cam1", settings: { videoMode: "bogus" } }).success
+        ).toBe(false);
+      });
+
+      it("rejects an unknown hdrType", () => {
+        expect(
+          schema.safeParse({ id: "cam1", settings: { hdrType: "bogus" } }).success
+        ).toBe(false);
+      });
+
+      it("rejects micVolume outside 0-100", () => {
+        expect(
+          schema.safeParse({ id: "cam1", settings: { micVolume: 101 } }).success
+        ).toBe(false);
+        expect(
+          schema.safeParse({ id: "cam1", settings: { micVolume: -1 } }).success
+        ).toBe(false);
+      });
+
+      it("rejects empty settings", () => {
+        expect(schema.safeParse({ id: "cam1", settings: {} }).success).toBe(false);
+      });
+    });
   });
 
   describe("protect_get_snapshot", () => {
@@ -164,6 +218,12 @@ describe("camera tools", () => {
       expect(data.dryRun).toBe(true);
       expect(data.action).toBe("POST");
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
+    it("rejects an empty qualities array", () => {
+      const schema = parseInputSchema(configs, "protect_create_rtsp_stream");
+      expect(schema.safeParse({ id: "cam1", qualities: [] }).success).toBe(false);
+      expect(schema.safeParse({ id: "cam1", qualities: ["high"] }).success).toBe(true);
     });
   });
 
@@ -253,6 +313,12 @@ describe("camera tools", () => {
         qualities: ["high"],
       });
       expectError(result);
+    });
+
+    it("rejects an empty qualities array", () => {
+      const schema = parseInputSchema(configs, "protect_delete_rtsp_stream");
+      expect(schema.safeParse({ id: "cam1", qualities: [] }).success).toBe(false);
+      expect(schema.safeParse({ id: "cam1", qualities: ["high"] }).success).toBe(true);
     });
   });
 

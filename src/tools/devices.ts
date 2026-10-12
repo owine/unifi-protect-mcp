@@ -178,6 +178,7 @@ function registerDeviceCrud(
           id: z.string().describe(`${cfg.label} ID`),
           settings: z
             .record(z.string(), z.unknown())
+            .refine((o) => Object.keys(o).length > 0, "settings must include at least one field")
             .describe(`Partial ${cfg.label.toLowerCase()} settings to update. ${cfg.hint}`),
           dryRun: z
             .boolean()
