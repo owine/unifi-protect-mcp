@@ -301,6 +301,11 @@ describe("device action tools - annotations", () => {
     "protect_stop_siren",
   ]);
 
+  // They take an explicit state, never a toggle, so a retried call is safe.
+  it.each(["protect_activate_relay_output", "protect_trigger_alarm_hub_output"])("%s is idempotent", (name) => {
+    expect(configs.get(name)!.annotations).toMatchObject({ idempotentHint: true });
+  });
+
   for (const name of tools) {
     const kind = destructive.has(name) ? "DESTRUCTIVE" : "WRITE";
     it(`${name} has ${kind} annotations`, () => {

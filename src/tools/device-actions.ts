@@ -124,7 +124,8 @@ export function registerDeviceActionTools(
         confirm: SWITCH_RELAY.input,
         dryRun: dryRunInput(),
       },
-      annotations: DESTRUCTIVE,
+      // An explicit state, never a toggle: repeating a call has no further effect.
+      annotations: { ...DESTRUCTIVE, idempotentHint: true },
     },
     async ({ id, outputId, state, pulseDuration, confirm, dryRun }) => {
       const body: Record<string, unknown> = { state };
@@ -155,7 +156,8 @@ export function registerDeviceActionTools(
         confirm: TRIGGER_HUB_OUTPUT.input,
         dryRun: dryRunInput(),
       },
-      annotations: DESTRUCTIVE,
+      // An explicit state, never a toggle: repeating a call has no further effect.
+      annotations: { ...DESTRUCTIVE, idempotentHint: true },
     },
     async ({ id, outputId, enable, delay, duration, confirm, dryRun }) => {
       const body: Record<string, unknown> = { enable };
