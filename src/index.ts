@@ -25,7 +25,12 @@ async function main() {
     maxBufferSize: SERVER_READ_BUFFER_BYTES,
   });
   await server.connect(transport);
-  console.error("UniFi Protect MCP server running on stdio");
+  // UNIFI_PROTECT_READ_ONLY accepts several spellings, so say which mode won.
+  console.error(
+    config.readOnly
+      ? "UniFi Protect MCP server running on stdio (read-only: write tools are not registered)"
+      : "UniFi Protect MCP server running on stdio (read-write: write tools are registered)"
+  );
 }
 
 main().catch((err) => {
