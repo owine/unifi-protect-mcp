@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
-import { formatSuccess, formatError } from "../utils/responses.js";
+import { formatSuccess } from "../utils/responses.js";
 import { DESTRUCTIVE, formatDryRun, requireConfirmation, confirmInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { webhookId } from "../utils/params.js";
@@ -30,17 +30,13 @@ export function registerAlarmManagerTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, confirm, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/alarm-manager/webhook/${id}`);
-        }
-        const denied = requireConfirmation(confirm, "trigger the alarm webhook");
-        if (denied) return denied;
-        await client.post(safePath`/alarm-manager/webhook/${id}`);
-        return formatSuccess({ triggered: true, webhookId: id });
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/alarm-manager/webhook/${id}`);
       }
+      const denied = requireConfirmation(confirm, "trigger the alarm webhook");
+      if (denied) return denied;
+      await client.post(safePath`/alarm-manager/webhook/${id}`);
+      return formatSuccess({ triggered: true, webhookId: id });
     }
   );
 }

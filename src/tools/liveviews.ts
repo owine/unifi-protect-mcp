@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
-import { formatSuccess, formatError } from "../utils/responses.js";
+import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
@@ -48,12 +48,8 @@ export function registerLiveviewTools(
       annotations: READ_ONLY,
     },
     async () => {
-      try {
-        const data = await client.get("/liveviews");
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get("/liveviews");
+      return formatSuccess(data);
     }
   );
 
@@ -67,12 +63,8 @@ export function registerLiveviewTools(
       annotations: READ_ONLY,
     },
     async ({ id }) => {
-      try {
-        const data = await client.get(safePath`/liveviews/${id}`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get(safePath`/liveviews/${id}`);
+      return formatSuccess(data);
     }
   );
 
@@ -94,15 +86,11 @@ export function registerLiveviewTools(
       annotations: WRITE,
     },
     async ({ settings, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("POST", "/liveviews", settings);
-        }
-        const data = await client.post("/liveviews", settings);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("POST", "/liveviews", settings);
       }
+      const data = await client.post("/liveviews", settings);
+      return formatSuccess(data);
     }
   );
 
@@ -125,22 +113,18 @@ export function registerLiveviewTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, settings, dryRun }) => {
-      try {
-        // The body is a full liveview object, so it carries its own id. A
-        // mismatch means the caller copied the wrong liveview's body.
-        if (settings.id !== id) {
-          throw new Error(
-            `settings.id (${settings.id}) does not match the liveview being updated (${id})`
-          );
-        }
-        if (dryRun) {
-          return formatDryRun("PATCH", safePath`/liveviews/${id}`, settings);
-        }
-        const data = await client.patch(safePath`/liveviews/${id}`, settings);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      // The body is a full liveview object, so it carries its own id. A
+      // mismatch means the caller copied the wrong liveview's body.
+      if (settings.id !== id) {
+        throw new Error(
+          `settings.id (${settings.id}) does not match the liveview being updated (${id})`
+        );
       }
+      if (dryRun) {
+        return formatDryRun("PATCH", safePath`/liveviews/${id}`, settings);
+      }
+      const data = await client.patch(safePath`/liveviews/${id}`, settings);
+      return formatSuccess(data);
     }
   );
 }

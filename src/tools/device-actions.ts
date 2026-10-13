@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
-import { formatSuccess, formatError } from "../utils/responses.js";
+import { formatSuccess } from "../utils/responses.js";
 import { WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation, confirmInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
@@ -30,16 +30,12 @@ export function registerDeviceActionTools(
       annotations: WRITE,
     },
     async ({ id, duration, dryRun }) => {
-      try {
-        const body = duration !== undefined ? { duration } : undefined;
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/sirens/${id}/play`, body);
-        }
-        const data = await client.post(safePath`/sirens/${id}/play`, body);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      const body = duration !== undefined ? { duration } : undefined;
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/sirens/${id}/play`, body);
       }
+      const data = await client.post(safePath`/sirens/${id}/play`, body);
+      return formatSuccess(data);
     }
   );
 
@@ -55,17 +51,13 @@ export function registerDeviceActionTools(
       annotations: WRITE,
     },
     async ({ id, confirm, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/sirens/${id}/stop`);
-        }
-        const denied = requireConfirmation(confirm, "silence the siren");
-        if (denied) return denied;
-        const data = await client.post(safePath`/sirens/${id}/stop`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/sirens/${id}/stop`);
       }
+      const denied = requireConfirmation(confirm, "silence the siren");
+      if (denied) return denied;
+      const data = await client.post(safePath`/sirens/${id}/stop`);
+      return formatSuccess(data);
     }
   );
 
@@ -81,16 +73,12 @@ export function registerDeviceActionTools(
       annotations: WRITE,
     },
     async ({ id, volume, dryRun }) => {
-      try {
-        const body = volume !== undefined ? { volume } : undefined;
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/sirens/${id}/test-sound`, body);
-        }
-        const data = await client.post(safePath`/sirens/${id}/test-sound`, body);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      const body = volume !== undefined ? { volume } : undefined;
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/sirens/${id}/test-sound`, body);
       }
+      const data = await client.post(safePath`/sirens/${id}/test-sound`, body);
+      return formatSuccess(data);
     }
   );
 
@@ -108,16 +96,12 @@ export function registerDeviceActionTools(
       annotations: WRITE,
     },
     async ({ id, volume, dryRun }) => {
-      try {
-        const body = volume !== undefined ? { volume } : undefined;
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/speakers/${id}/test-sound`, body);
-        }
-        const data = await client.post(safePath`/speakers/${id}/test-sound`, body);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      const body = volume !== undefined ? { volume } : undefined;
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/speakers/${id}/test-sound`, body);
       }
+      const data = await client.post(safePath`/speakers/${id}/test-sound`, body);
+      return formatSuccess(data);
     }
   );
 
@@ -138,20 +122,16 @@ export function registerDeviceActionTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, outputId, state, pulseDuration, confirm, dryRun }) => {
-      try {
-        const body: Record<string, unknown> = { state };
-        if (pulseDuration !== undefined) body.pulseDuration = pulseDuration;
-        const path = safePath`/relays/${id}/outputs/${outputId}/activate`;
-        if (dryRun) {
-          return formatDryRun("POST", path, body);
-        }
-        const denied = requireConfirmation(confirm, "switch the relay output");
-        if (denied) return denied;
-        const data = await client.post(path, body);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      const body: Record<string, unknown> = { state };
+      if (pulseDuration !== undefined) body.pulseDuration = pulseDuration;
+      const path = safePath`/relays/${id}/outputs/${outputId}/activate`;
+      if (dryRun) {
+        return formatDryRun("POST", path, body);
       }
+      const denied = requireConfirmation(confirm, "switch the relay output");
+      if (denied) return denied;
+      const data = await client.post(path, body);
+      return formatSuccess(data);
     }
   );
 
@@ -173,21 +153,17 @@ export function registerDeviceActionTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, outputId, enable, delay, duration, confirm, dryRun }) => {
-      try {
-        const body: Record<string, unknown> = { enable };
-        if (delay !== undefined) body.delay = delay;
-        if (duration !== undefined) body.duration = duration;
-        const path = safePath`/alarm-hubs/${id}/outputs/${outputId}/trigger`;
-        if (dryRun) {
-          return formatDryRun("POST", path, body);
-        }
-        const denied = requireConfirmation(confirm, "trigger the alarm hub output");
-        if (denied) return denied;
-        const data = await client.post(path, body);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      const body: Record<string, unknown> = { enable };
+      if (delay !== undefined) body.delay = delay;
+      if (duration !== undefined) body.duration = duration;
+      const path = safePath`/alarm-hubs/${id}/outputs/${outputId}/trigger`;
+      if (dryRun) {
+        return formatDryRun("POST", path, body);
       }
+      const denied = requireConfirmation(confirm, "trigger the alarm hub output");
+      if (denied) return denied;
+      const data = await client.post(path, body);
+      return formatSuccess(data);
     }
   );
 }

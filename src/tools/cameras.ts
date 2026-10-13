@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
-import { formatSuccess, formatError } from "../utils/responses.js";
+import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation, confirmInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
@@ -28,12 +28,8 @@ export function registerCameraTools(
       annotations: READ_ONLY,
     },
     async () => {
-      try {
-        const data = await client.get("/cameras");
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get("/cameras");
+      return formatSuccess(data);
     }
   );
 
@@ -47,12 +43,8 @@ export function registerCameraTools(
       annotations: READ_ONLY,
     },
     async ({ id }) => {
-      try {
-        const data = await client.get(safePath`/cameras/${id}`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get(safePath`/cameras/${id}`);
+      return formatSuccess(data);
     }
   );
 
@@ -75,27 +67,23 @@ export function registerCameraTools(
       annotations: READ_ONLY,
     },
     async ({ id, highQuality, channel }) => {
-      try {
-        const params = new URLSearchParams();
-        if (highQuality) params.set("highQuality", "true");
-        if (channel) params.set("channel", channel);
-        const query = params.toString();
-        const url = query
-          ? safePath`/cameras/${id}/snapshot` + `?${query}`
-          : safePath`/cameras/${id}/snapshot`;
-        const { data, mimeType } = await client.getBinary(url);
-        return {
-          content: [
-            {
-              type: "image" as const,
-              data: data.toString("base64"),
-              mimeType,
-            },
-          ],
-        };
-      } catch (err) {
-        return formatError(err);
-      }
+      const params = new URLSearchParams();
+      if (highQuality) params.set("highQuality", "true");
+      if (channel) params.set("channel", channel);
+      const query = params.toString();
+      const url = query
+        ? safePath`/cameras/${id}/snapshot` + `?${query}`
+        : safePath`/cameras/${id}/snapshot`;
+      const { data, mimeType } = await client.getBinary(url);
+      return {
+        content: [
+          {
+            type: "image" as const,
+            data: data.toString("base64"),
+            mimeType,
+          },
+        ],
+      };
     }
   );
 
@@ -109,12 +97,8 @@ export function registerCameraTools(
       annotations: READ_ONLY,
     },
     async ({ id }) => {
-      try {
-        const data = await client.get(safePath`/cameras/${id}/rtsps-stream`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get(safePath`/cameras/${id}/rtsps-stream`);
+      return formatSuccess(data);
     }
   );
 
@@ -167,15 +151,11 @@ export function registerCameraTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, settings, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("PATCH", safePath`/cameras/${id}`, settings);
-        }
-        const data = await client.patch(safePath`/cameras/${id}`, settings);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("PATCH", safePath`/cameras/${id}`, settings);
       }
+      const data = await client.patch(safePath`/cameras/${id}`, settings);
+      return formatSuccess(data);
     }
   );
 
@@ -200,23 +180,19 @@ export function registerCameraTools(
       annotations: WRITE,
     },
     async ({ id, qualities, confirm, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun(
-            "POST",
-            safePath`/cameras/${id}/rtsps-stream`,
-            { qualities }
-          );
-        }
-        const denied = requireConfirmation(confirm, "open an RTSPS stream (its URL is a credential for live video)");
-        if (denied) return denied;
-        const data = await client.post(safePath`/cameras/${id}/rtsps-stream`, {
-          qualities,
-        });
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun(
+          "POST",
+          safePath`/cameras/${id}/rtsps-stream`,
+          { qualities }
+        );
       }
+      const denied = requireConfirmation(confirm, "open an RTSPS stream (its URL is a credential for live video)");
+      if (denied) return denied;
+      const data = await client.post(safePath`/cameras/${id}/rtsps-stream`, {
+        qualities,
+      });
+      return formatSuccess(data);
     }
   );
 
@@ -238,20 +214,16 @@ export function registerCameraTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, qualities, dryRun }) => {
-      try {
-        // Protect expects repeated keys (qualities=high&qualities=medium), not
-        // a comma-joined value — safePath would encode the comma as %2C.
-        const params = new URLSearchParams();
-        for (const quality of qualities) params.append("qualities", quality);
-        const url = safePath`/cameras/${id}/rtsps-stream` + `?${params.toString()}`;
-        if (dryRun) {
-          return formatDryRun("DELETE", url);
-        }
-        const data = await client.delete(url);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      // Protect expects repeated keys (qualities=high&qualities=medium), not
+      // a comma-joined value — safePath would encode the comma as %2C.
+      const params = new URLSearchParams();
+      for (const quality of qualities) params.append("qualities", quality);
+      const url = safePath`/cameras/${id}/rtsps-stream` + `?${params.toString()}`;
+      if (dryRun) {
+        return formatDryRun("DELETE", url);
       }
+      const data = await client.delete(url);
+      return formatSuccess(data);
     }
   );
 
@@ -272,17 +244,13 @@ export function registerCameraTools(
       annotations: WRITE,
     },
     async ({ id, confirm, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/cameras/${id}/talkback-session`);
-        }
-        const denied = requireConfirmation(confirm, "open a two-way audio session");
-        if (denied) return denied;
-        const data = await client.post(safePath`/cameras/${id}/talkback-session`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/cameras/${id}/talkback-session`);
       }
+      const denied = requireConfirmation(confirm, "open a two-way audio session");
+      if (denied) return denied;
+      const data = await client.post(safePath`/cameras/${id}/talkback-session`);
+      return formatSuccess(data);
     }
   );
 
@@ -303,19 +271,15 @@ export function registerCameraTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, confirm, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/cameras/${id}/disable-mic-permanently`);
-        }
-        const denied = requireConfirmation(confirm, "permanently disable the microphone");
-        if (denied) return denied;
-        const data = await client.post(
-          safePath`/cameras/${id}/disable-mic-permanently`
-        );
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/cameras/${id}/disable-mic-permanently`);
       }
+      const denied = requireConfirmation(confirm, "permanently disable the microphone");
+      if (denied) return denied;
+      const data = await client.post(
+        safePath`/cameras/${id}/disable-mic-permanently`
+      );
+      return formatSuccess(data);
     }
   );
 
@@ -334,17 +298,13 @@ export function registerCameraTools(
       annotations: WRITE,
     },
     async ({ id, slot, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/cameras/${id}/ptz/patrol/start/${slot}`);
-        }
-        const data = await client.post(
-          safePath`/cameras/${id}/ptz/patrol/start/${slot}`
-        );
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/cameras/${id}/ptz/patrol/start/${slot}`);
       }
+      const data = await client.post(
+        safePath`/cameras/${id}/ptz/patrol/start/${slot}`
+      );
+      return formatSuccess(data);
     }
   );
 
@@ -362,15 +322,11 @@ export function registerCameraTools(
       annotations: WRITE,
     },
     async ({ id, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/cameras/${id}/ptz/patrol/stop`);
-        }
-        const data = await client.post(safePath`/cameras/${id}/ptz/patrol/stop`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/cameras/${id}/ptz/patrol/stop`);
       }
+      const data = await client.post(safePath`/cameras/${id}/ptz/patrol/stop`);
+      return formatSuccess(data);
     }
   );
 
@@ -393,15 +349,11 @@ export function registerCameraTools(
       annotations: WRITE,
     },
     async ({ id, slot, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/cameras/${id}/ptz/goto/${slot}`);
-        }
-        const data = await client.post(safePath`/cameras/${id}/ptz/goto/${slot}`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/cameras/${id}/ptz/goto/${slot}`);
       }
+      const data = await client.post(safePath`/cameras/${id}/ptz/goto/${slot}`);
+      return formatSuccess(data);
     }
   );
 }

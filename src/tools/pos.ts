@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
-import { formatSuccess, formatError } from "../utils/responses.js";
+import { formatSuccess } from "../utils/responses.js";
 import { WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
@@ -102,16 +102,12 @@ export function registerPosTools(
       annotations: WRITE,
     },
     async ({ id, dryRun, ...transaction }) => {
-      try {
-        const path = safePath`/pos/cameras/${id}/transactions`;
-        if (dryRun) {
-          return formatDryRun("POST", path, transaction);
-        }
-        const data = await client.post(path, transaction);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      const path = safePath`/pos/cameras/${id}/transactions`;
+      if (dryRun) {
+        return formatDryRun("POST", path, transaction);
       }
+      const data = await client.post(path, transaction);
+      return formatSuccess(data);
     }
   );
 }
