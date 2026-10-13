@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import WebSocket from "ws";
 import { Config } from "./config.js";
+import { MAX_BINARY_BYTES, MAX_ERROR_BODY_BYTES, MAX_JSON_BYTES } from "./utils/limits.js";
 
 /**
  * The abort signal of the MCP tool call a request is made for. Without it a
@@ -30,39 +31,59 @@ function requestSignal(timeoutMs: number): AbortSignal {
 const REQUEST_TIMEOUT_MS = 25_000;
 /** Snapshots and file uploads are larger, so they get a longer budget. */
 const BINARY_TIMEOUT_MS = 60_000;
-const MAX_JSON_BYTES = 10_000_000;
-const MAX_BINARY_BYTES = 100_000_000;
 /** Error text is forwarded to the MCP client, so keep it context-sized. */
 const MAX_ERROR_BODY_CHARS = 2_000;
 
 /**
- * Best-effort size guard. Protect sets content-length on the responses that
- * can actually get large (snapshots, exports); a chunked response without the
- * header is not caught here.
+ * Read a response body, stopping at limit bytes. content-length is checked
+ * first, but it is optional (a chunked body has none), so the limit is also
+ * enforced while reading; either way at most limit bytes are buffered. With
+ * `truncate`, an over-limit body yields its first limit bytes instead of an
+ * error.
  */
-function enforceSizeLimit(response: Response, limit: number): void {
+async function readBounded(
+  response: Response,
+  limit: number,
+  what: string,
+  truncate = false
+): Promise<{ data: Buffer; truncated: boolean }> {
   const declared = Number(response.headers.get("content-length"));
-  if (Number.isFinite(declared) && declared > limit) {
-    throw new Error(
-      `Response exceeds the ${limit.toString()}-byte limit (content-length ${declared.toString()})`
-    );
+  if (!truncate && Number.isFinite(declared) && declared > limit) {
+    await response.body?.cancel();
+    throw new Error(`${what} is ${declared.toString()} bytes, which exceeds the ${limit.toString()}-byte limit`);
+  }
+  if (response.body === null) return { data: Buffer.alloc(0), truncated: false };
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return { data: Buffer.concat(chunks), truncated: false };
+      if (bytes + value.byteLength > limit) {
+        await reader.cancel();
+        if (!truncate) {
+          throw new Error(`${what} exceeds the ${limit.toString()}-byte limit`);
+        }
+        chunks.push(value.subarray(0, limit - bytes));
+        return { data: Buffer.concat(chunks), truncated: true };
+      }
+      bytes += value.byteLength;
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
   }
 }
 
 /**
- * Read an error body for inclusion in a thrown message. Error responses bypass
- * the caller's size check, so bound them here too: an oversized body is left
- * unread, and a merely long one is truncated before it reaches an MCP client's
- * context window.
+ * Read an error body for inclusion in a thrown message: only its start, both
+ * in memory and in the text that reaches the MCP client's context window.
  */
-async function readErrorBody(response: Response, limit: number): Promise<string> {
-  const declared = Number(response.headers.get("content-length"));
-  if (Number.isFinite(declared) && declared > limit) {
-    await response.body?.cancel();
-    return `<error body exceeds the ${limit.toString()}-byte limit and was not read>`;
-  }
-  const text = await response.text();
-  return text.length > MAX_ERROR_BODY_CHARS
+async function readErrorBody(response: Response): Promise<string> {
+  const { data, truncated } = await readBounded(response, MAX_ERROR_BODY_BYTES, "Error body", true);
+  const text = data.toString("utf8");
+  return truncated || text.length > MAX_ERROR_BODY_CHARS
     ? `${text.slice(0, MAX_ERROR_BODY_CHARS)}… (truncated)`
     : text;
 }
@@ -107,10 +128,9 @@ async function parseBody(
   method: string,
   path: string
 ): Promise<unknown> {
-  enforceSizeLimit(response, MAX_JSON_BYTES);
-
   const contentType = response.headers.get("content-type") ?? "";
-  const text = await response.text();
+  const { data } = await readBounded(response, MAX_JSON_BYTES, `${method} ${path} response`);
+  const text = data.toString("utf8");
   if (contentType.includes("application/json")) {
     if (text.trim() === "") {
       // A bare JSON.parse would report "Unexpected end of JSON input", which
@@ -182,7 +202,7 @@ export class ProtectClient {
   private async send(
     method: string,
     path: string,
-    init: { body?: BodyInit; headers: Record<string, string>; timeoutMs: number; errorLimit: number }
+    init: { body?: BodyInit; headers: Record<string, string>; timeoutMs: number }
   ): Promise<Response> {
     const response = await fetchWithCause(this.resolve(path), {
       method,
@@ -193,7 +213,7 @@ export class ProtectClient {
     });
     if (!response.ok) {
       throw new Error(
-        `HTTP ${response.status}: ${await readErrorBody(response, init.errorLimit)}`
+        `HTTP ${response.status}: ${await readErrorBody(response)}`
       );
     }
     return response;
@@ -208,7 +228,6 @@ export class ProtectClient {
       headers: this.headers,
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       timeoutMs: REQUEST_TIMEOUT_MS,
-      errorLimit: MAX_JSON_BYTES,
     });
 
     // 204 No Content (action endpoints: siren/relay/speaker triggers, arm
@@ -237,19 +256,19 @@ export class ProtectClient {
     return this.request("DELETE", path);
   }
 
-  async getBinary(path: string): Promise<{ data: Buffer; mimeType: string }> {
+  async getBinary(
+    path: string,
+    maxBytes: number = MAX_BINARY_BYTES
+  ): Promise<{ data: Buffer; mimeType: string }> {
     const response = await this.send("GET", path, {
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
       timeoutMs: BINARY_TIMEOUT_MS,
-      errorLimit: MAX_BINARY_BYTES,
     });
-
-    enforceSizeLimit(response, MAX_BINARY_BYTES);
 
     const mimeType =
       response.headers.get("content-type") ?? "application/octet-stream";
-    const arrayBuffer = await response.arrayBuffer();
-    return { data: Buffer.from(arrayBuffer), mimeType };
+    const { data } = await readBounded(response, maxBytes, `GET ${path} response`);
+    return { data, mimeType };
   }
 
   /**
@@ -270,7 +289,6 @@ export class ProtectClient {
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
       body: form,
       timeoutMs: BINARY_TIMEOUT_MS,
-      errorLimit: MAX_BINARY_BYTES,
     });
     return parseBody(response, "POST", path);
   }

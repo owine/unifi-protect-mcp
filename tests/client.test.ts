@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ProtectClient } from "../src/client.js";
 import type { Config } from "../src/config.js";
+import { MAX_ERROR_BODY_BYTES, MAX_JSON_BYTES } from "../src/utils/limits.js";
 
 const { wsUrls } = vi.hoisted(() => ({ wsUrls: [] as string[] }));
 vi.mock("ws", () => ({
@@ -13,17 +14,29 @@ vi.mock("ws", () => ({
 function mockFetch(body: unknown, options?: { status?: number; contentType?: string }) {
   const status = options?.status ?? 200;
   const contentType = options?.contentType ?? "application/json";
-  return vi.fn().mockResolvedValue({
-    ok: status >= 200 && status < 300,
-    status,
-    text: async () => (typeof body === "string" ? body : JSON.stringify(body)),
-    json: async () => body,
-    arrayBuffer: async () => {
-      const buf = Buffer.from(typeof body === "string" ? body : JSON.stringify(body));
-      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  // A fresh real Response per call: a body can be read only once.
+  return vi.fn().mockImplementation(async () => new Response(
+    status === 204 ? null : typeof body === "string" ? body : JSON.stringify(body),
+    { status, headers: { "content-type": contentType } }
+  ));
+}
+
+const MiB = 1024 * 1024;
+
+/**
+ * A body that arrives in 1 MiB chunks with no content-length, as a chunked
+ * response does. `pulled()` says how many chunks the reader consumed.
+ */
+function chunkedResponse(totalBytes: number, init: ResponseInit = {}, fill = "x") {
+  const chunk = new TextEncoder().encode(fill.padEnd(MiB, " "));
+  const chunks = Math.ceil(totalBytes / MiB);
+  let sent = 0;
+  const stream = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      if (sent < chunks) { sent++; controller.enqueue(chunk); } else controller.close();
     },
-    headers: new Headers({ "content-type": contentType }),
-  } as unknown as Response);
+  });
+  return { response: new Response(stream, init), pulled: () => sent, chunks };
 }
 
 const baseConfig: Config = {
@@ -130,46 +143,25 @@ describe("ProtectClient", () => {
   describe("getBinary", () => {
     it("returns Buffer and mimeType", async () => {
       const imageBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          headers: new Headers({ "content-type": "image/jpeg" }),
-          arrayBuffer: async () =>
-            imageBytes.buffer.slice(
-              imageBytes.byteOffset,
-              imageBytes.byteOffset + imageBytes.byteLength
-            ),
-        })
-      );
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+        new Response(imageBytes, { headers: { "content-type": "image/jpeg" } })
+      ));
       const result = await client.getBinary("/cameras/1/snapshot");
       expect(result.mimeType).toBe("image/jpeg");
       expect(Buffer.isBuffer(result.data)).toBe(true);
+      expect(result.data).toEqual(imageBytes);
     });
 
     it("defaults mimeType when content-type is missing", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          headers: new Headers(),
-          arrayBuffer: async () => new ArrayBuffer(0),
-        })
-      );
+      const response = new Response(new Uint8Array(0));
+      response.headers.delete("content-type");
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
       const result = await client.getBinary("/cameras/1/snapshot");
       expect(result.mimeType).toBe("application/octet-stream");
     });
 
     it("throws on HTTP errors", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: false,
-          status: 500,
-          headers: new Headers(),
-          text: async () => "Server Error",
-        })
-      );
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("Server Error", { status: 500 })));
       await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(
         "HTTP 500: Server Error"
       );
@@ -248,13 +240,9 @@ describe("ProtectClient", () => {
     it("rejects a response whose content-length exceeds the JSON limit", async () => {
       vi.stubGlobal(
         "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          status: 200,
-          headers: new Headers({ "content-type": "application/json", "content-length": "99999999" }),
-          text: async () => "{}",
-          json: async () => ({}),
-        } as unknown as Response)
+        vi.fn().mockResolvedValue(new Response("{}", {
+          headers: { "content-type": "application/json", "content-length": "99999999" },
+        }))
       );
       await expect(
         client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
@@ -266,6 +254,31 @@ describe("ProtectClient", () => {
     it("disables TLS verification when verifySsl is false", () => {
       new ProtectClient({ ...baseConfig, verifySsl: false });
       expect(process.env.NODE_TLS_REJECT_UNAUTHORIZED).toBe("0");
+    });
+  });
+
+  describe("bounded body reads", () => {
+    // content-length is optional: a chunked body has none, so the size limit
+    // has to be enforced while reading, not only from the header.
+    it("stops reading a chunked JSON body at the limit", async () => {
+      const body = chunkedResponse(MAX_JSON_BYTES + 4 * MiB, { headers: { "content-type": "application/json" } });
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(body.response));
+      await expect(client.get("/nvrs")).rejects.toThrow(/exceeds the .*-byte limit/);
+      expect(body.pulled()).toBeLessThan(body.chunks);
+    });
+
+    it("stops reading a chunked binary body at the caller's limit", async () => {
+      const body = chunkedResponse(6 * MiB, { headers: { "content-type": "image/jpeg" } });
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(body.response));
+      await expect(client.getBinary("/cameras/1/snapshot", 2 * MiB)).rejects.toThrow(/exceeds the .*-byte limit/);
+      expect(body.pulled()).toBeLessThan(body.chunks);
+    });
+
+    it("reads only the start of a chunked error body", async () => {
+      const body = chunkedResponse(MAX_ERROR_BODY_BYTES + 4 * MiB, { status: 502 }, "<html>gateway error</html>");
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(body.response));
+      await expect(client.get("/nvrs")).rejects.toThrow(/^HTTP 502: <html>gateway error<\/html>/);
+      expect(body.pulled()).toBeLessThan(body.chunks);
     });
   });
 
@@ -366,13 +379,8 @@ describe("ProtectClient", () => {
   });
 
   describe("transport hardening", () => {
-    function rawFetch(headers: Record<string, string>, body: Record<string, unknown>) {
-      return vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers(headers),
-        ...body,
-      } as unknown as Response);
+    function rawFetch(headers: Record<string, string>, body: BodyInit = "{}") {
+      return vi.fn().mockImplementation(async () => new Response(body, { headers }));
     }
 
     it("rejects redirects on JSON requests", async () => {
@@ -394,10 +402,7 @@ describe("ProtectClient", () => {
     it("rejects a JSON response whose content-length exceeds the limit", async () => {
       vi.stubGlobal(
         "fetch",
-        rawFetch(
-          { "content-type": "application/json", "content-length": "99999999" },
-          { text: async () => "{}", json: async () => ({}) }
-        )
+        rawFetch({ "content-type": "application/json", "content-length": "99999999" })
       );
       await expect(client.get("/nvrs")).rejects.toThrow(/exceeds/i);
     });
@@ -413,27 +418,16 @@ describe("ProtectClient", () => {
     });
 
     it("does not read the body of a 204 response", async () => {
-      const text = vi.fn(async () => "");
-      const json = vi.fn(async () => ({}));
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          status: 204,
-          headers: new Headers({ "content-type": "application/json" }),
-          text,
-          json,
-        } as unknown as Response)
-      );
+      const response = new Response(null, { status: 204, headers: { "content-type": "application/json" } });
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
       await expect(client.post("/relays/r1/activate")).resolves.toBe("");
-      expect(text).not.toHaveBeenCalled();
-      expect(json).not.toHaveBeenCalled();
+      expect(response.bodyUsed).toBe(false);
     });
 
     it("rejects redirects on binary downloads", async () => {
       vi.stubGlobal(
         "fetch",
-        rawFetch({ "content-type": "image/jpeg" }, { arrayBuffer: async () => new ArrayBuffer(4) })
+        rawFetch({ "content-type": "image/jpeg" }, new Uint8Array(4))
       );
       await client.getBinary("/cameras/1/snapshot");
       expect(fetch).toHaveBeenCalledWith(
@@ -445,7 +439,7 @@ describe("ProtectClient", () => {
     it("applies an abort signal to binary downloads", async () => {
       vi.stubGlobal(
         "fetch",
-        rawFetch({ "content-type": "image/jpeg" }, { arrayBuffer: async () => new ArrayBuffer(4) })
+        rawFetch({ "content-type": "image/jpeg" }, new Uint8Array(4))
       );
       await client.getBinary("/cameras/1/snapshot");
       const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
@@ -455,52 +449,28 @@ describe("ProtectClient", () => {
     it("rejects a binary download whose content-length exceeds the limit", async () => {
       vi.stubGlobal(
         "fetch",
-        rawFetch(
-          { "content-type": "video/mp4", "content-length": "999999999" },
-          { arrayBuffer: async () => new ArrayBuffer(4) }
-        )
+        rawFetch({ "content-type": "video/mp4", "content-length": "999999999" }, new Uint8Array(4))
       );
       await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(/exceeds/i);
     });
 
-    function failingFetch(headers: Record<string, string>, text: () => Promise<string>) {
-      return vi.fn().mockResolvedValue({
-        ok: false,
+    it.each([
+      ["JSON request", () => client.get("/nvrs")],
+      ["binary download", () => client.getBinary("/cameras/1/snapshot")],
+      ["binary upload", () => client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")],
+    ])("reports only the start of a huge error body on a %s", async (_label, call) => {
+      const body = chunkedResponse(MAX_ERROR_BODY_BYTES + 4 * MiB, {
         status: 500,
-        headers: new Headers(headers),
-        text,
-        body: { cancel: async () => undefined },
-      } as unknown as Response);
-    }
-
-    it("does not read an oversized JSON error body", async () => {
-      const text = vi.fn(async () => "never read");
-      vi.stubGlobal("fetch", failingFetch({ "content-length": "99999999" }, text));
-      await expect(client.get("/nvrs")).rejects.toThrow(/HTTP 500.*exceeds/s);
-      expect(text).not.toHaveBeenCalled();
-    });
-
-    it("does not read an oversized binary error body", async () => {
-      const text = vi.fn(async () => "never read");
-      vi.stubGlobal("fetch", failingFetch({ "content-length": "999999999" }, text));
-      await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(
-        /HTTP 500.*exceeds/s
-      );
-      expect(text).not.toHaveBeenCalled();
-    });
-
-    it("does not read an oversized error body on binary upload", async () => {
-      const text = vi.fn(async () => "never read");
-      vi.stubGlobal("fetch", failingFetch({ "content-length": "999999999" }, text));
-      await expect(
-        client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
-      ).rejects.toThrow(/HTTP 500.*exceeds/s);
-      expect(text).not.toHaveBeenCalled();
+        headers: { "content-length": "999999999" },
+      }, "upstream failure");
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(body.response));
+      await expect(call()).rejects.toThrow(/^HTTP 500: upstream failure.*\(truncated\)$/s);
+      expect(body.pulled()).toBeLessThan(body.chunks);
     });
 
     it("truncates a long error body in the thrown message", async () => {
       const long = "x".repeat(50_000);
-      vi.stubGlobal("fetch", failingFetch({}, async () => long));
+      vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(long, { status: 500 })));
       await expect(client.get("/nvrs")).rejects.toThrow(/truncated/);
       const err = await client.get("/nvrs").catch((e: Error) => e);
       expect((err as Error).message.length).toBeLessThan(3000);
@@ -541,12 +511,7 @@ describe("ProtectClient", () => {
     it("prefixes binary downloads with the console path", async () => {
       vi.stubGlobal(
         "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          status: 200,
-          headers: new Headers({ "content-type": "image/jpeg" }),
-          arrayBuffer: async () => new ArrayBuffer(4),
-        } as unknown as Response)
+        vi.fn().mockResolvedValue(new Response(new Uint8Array(4), { headers: { "content-type": "image/jpeg" } }))
       );
       await new ProtectClient(connectorConfig).getBinary("/cameras/1/snapshot");
       expect(fetch).toHaveBeenCalledWith(
