@@ -254,6 +254,18 @@ describe("field-level confirm leaves routine updates alone", () => {
   });
 });
 
+describe("annotations through the SDK", () => {
+  // The MCP spec reserves destructiveHint: false for additive-only updates; an
+  // update changes existing settings, so clients should be able to prompt.
+  it("marks every update tool destructive", async () => {
+    const mcpClient = await connect(createMockClient());
+    const updates = (await mcpClient.listTools()).tools.filter((tool) => tool.name.startsWith("protect_update_"));
+    await mcpClient.close();
+    expect(updates.length).toBeGreaterThan(0);
+    expect(updates.filter((tool) => tool.annotations?.destructiveHint !== true).map((tool) => tool.name)).toEqual([]);
+  });
+});
+
 describe("hostile IDs through the SDK", () => {
   afterEach(() => {
     vi.unstubAllGlobals();

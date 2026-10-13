@@ -140,10 +140,10 @@ describe("camera tools", () => {
       expect(mockFn(client, "patch")).not.toHaveBeenCalled();
     });
 
-    it("has write annotations", () => {
+    it("has destructive annotations", () => {
       expect(configs.get("protect_update_camera")!.annotations).toEqual({
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
       });
     });
   });

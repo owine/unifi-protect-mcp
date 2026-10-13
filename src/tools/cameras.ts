@@ -164,7 +164,7 @@ export function registerCameraTools(
           .describe("If true, return what would happen without making changes"),
       },
       outputSchema: cameraOutputSchema,
-      annotations: WRITE,
+      annotations: DESTRUCTIVE,
     },
     async ({ id, settings, dryRun }) => {
       try {

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
+import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
 import {
@@ -122,7 +122,7 @@ export function registerLiveviewTools(
           .describe("If true, return what would happen without making changes"),
       },
       outputSchema: liveviewOutputSchema,
-      annotations: WRITE,
+      annotations: DESTRUCTIVE,
     },
     async ({ id, settings, dryRun }) => {
       try {

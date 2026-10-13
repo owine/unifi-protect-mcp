@@ -139,10 +139,10 @@ describe("device tools", () => {
           ).toBe(true);
         });
 
-        it("has write annotations", () => {
+        it("has destructive annotations", () => {
           expect(configs.get(`protect_update_${dev.singular}`)!.annotations).toEqual({
             readOnlyHint: false,
-            destructiveHint: false,
+            destructiveHint: true,
           });
         });
       });
