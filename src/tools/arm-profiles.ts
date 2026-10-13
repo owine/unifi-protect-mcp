@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
-import { formatSuccess, formatError } from "../utils/responses.js";
+import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation, requireConfirmationForFields, confirmInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { armProfileId } from "../utils/params.js";
@@ -41,12 +41,8 @@ export function registerArmProfileTools(
       annotations: READ_ONLY,
     },
     async () => {
-      try {
-        const data = await client.get("/arm-profiles");
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get("/arm-profiles");
+      return formatSuccess(data);
     }
   );
 
@@ -64,16 +60,12 @@ export function registerArmProfileTools(
       annotations: WRITE,
     },
     async ({ name, automations, schedules, recordEverything, activationDelay, dryRun }) => {
-      try {
-        const body = { name, automations, schedules, recordEverything, activationDelay };
-        if (dryRun) {
-          return formatDryRun("POST", "/arm-profiles", body);
-        }
-        const data = await client.post("/arm-profiles", body);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      const body = { name, automations, schedules, recordEverything, activationDelay };
+      if (dryRun) {
+        return formatDryRun("POST", "/arm-profiles", body);
       }
+      const data = await client.post("/arm-profiles", body);
+      return formatSuccess(data);
     }
   );
 
@@ -89,18 +81,14 @@ export function registerArmProfileTools(
       annotations: WRITE,
     },
     async ({ armProfileId, confirm, dryRun }) => {
-      try {
-        const body = { armProfileId };
-        if (dryRun) {
-          return formatDryRun("PATCH", "/arm-profiles/settings", body);
-        }
-        const denied = requireConfirmation(confirm, "change which arm profile the alarm uses");
-        if (denied) return denied;
-        const data = await client.patch("/arm-profiles/settings", body);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      const body = { armProfileId };
+      if (dryRun) {
+        return formatDryRun("PATCH", "/arm-profiles/settings", body);
       }
+      const denied = requireConfirmation(confirm, "change which arm profile the alarm uses");
+      if (denied) return denied;
+      const data = await client.patch("/arm-profiles/settings", body);
+      return formatSuccess(data);
     }
   );
 
@@ -123,17 +111,13 @@ export function registerArmProfileTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, settings, confirm, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("PATCH", safePath`/arm-profiles/${id}`, settings);
-        }
-        const denied = requireConfirmationForFields(settings, ARM_PROFILE_CONFIRM_FIELDS, confirm, dryRun);
-        if (denied) return denied;
-        const data = await client.patch(safePath`/arm-profiles/${id}`, settings);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("PATCH", safePath`/arm-profiles/${id}`, settings);
       }
+      const denied = requireConfirmationForFields(settings, ARM_PROFILE_CONFIRM_FIELDS, confirm, dryRun);
+      if (denied) return denied;
+      const data = await client.patch(safePath`/arm-profiles/${id}`, settings);
+      return formatSuccess(data);
     }
   );
 
@@ -149,17 +133,13 @@ export function registerArmProfileTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, confirm, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("DELETE", safePath`/arm-profiles/${id}`);
-        }
-        const denied = requireConfirmation(confirm, "delete the arm profile");
-        if (denied) return denied;
-        const data = await client.delete(safePath`/arm-profiles/${id}`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("DELETE", safePath`/arm-profiles/${id}`);
       }
+      const denied = requireConfirmation(confirm, "delete the arm profile");
+      if (denied) return denied;
+      const data = await client.delete(safePath`/arm-profiles/${id}`);
+      return formatSuccess(data);
     }
   );
 
@@ -173,15 +153,11 @@ export function registerArmProfileTools(
       annotations: WRITE,
     },
     async ({ dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("POST", "/arm-profiles/enable");
-        }
-        const data = await client.post("/arm-profiles/enable");
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("POST", "/arm-profiles/enable");
       }
+      const data = await client.post("/arm-profiles/enable");
+      return formatSuccess(data);
     }
   );
 
@@ -196,17 +172,13 @@ export function registerArmProfileTools(
       annotations: DESTRUCTIVE,
     },
     async ({ confirm, dryRun }) => {
-      try {
-        if (dryRun) {
-          return formatDryRun("POST", "/arm-profiles/disable");
-        }
-        const denied = requireConfirmation(confirm, "disarm the alarm");
-        if (denied) return denied;
-        const data = await client.post("/arm-profiles/disable");
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+      if (dryRun) {
+        return formatDryRun("POST", "/arm-profiles/disable");
       }
+      const denied = requireConfirmation(confirm, "disarm the alarm");
+      if (denied) return denied;
+      const data = await client.post("/arm-profiles/disable");
+      return formatSuccess(data);
     }
   );
 }

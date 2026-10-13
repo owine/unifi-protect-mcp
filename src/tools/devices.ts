@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
-import { formatSuccess, formatError } from "../utils/responses.js";
+import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY, DESTRUCTIVE, formatDryRun, confirmInput, requireConfirmationForFields } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
@@ -154,12 +154,8 @@ function registerDeviceCrud(
       annotations: READ_ONLY,
     },
     async () => {
-      try {
-        const data = await client.get(`/${cfg.urlPath}`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get(`/${cfg.urlPath}`);
+      return formatSuccess(data);
     }
   );
 
@@ -172,12 +168,8 @@ function registerDeviceCrud(
       annotations: READ_ONLY,
     },
     async ({ id }) => {
-      try {
-        const data = await client.get(safePath`/${cfg.urlPath}/${id}`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get(safePath`/${cfg.urlPath}/${id}`);
+      return formatSuccess(data);
     }
   );
 
@@ -206,17 +198,13 @@ function registerDeviceCrud(
         annotations: DESTRUCTIVE,
       },
       async ({ id, settings, dryRun, confirm }) => {
-        try {
-          if (dryRun) {
-            return formatDryRun("PATCH", safePath`/${cfg.urlPath}/${id}`, settings);
-          }
-          const denied = requireConfirmationForFields(settings, cfg.confirmFields ?? [], confirm, dryRun);
-          if (denied) return denied;
-          const data = await client.patch(safePath`/${cfg.urlPath}/${id}`, settings);
-          return formatSuccess(data);
-        } catch (err) {
-          return formatError(err);
+        if (dryRun) {
+          return formatDryRun("PATCH", safePath`/${cfg.urlPath}/${id}`, settings);
         }
+        const denied = requireConfirmationForFields(settings, cfg.confirmFields ?? [], confirm, dryRun);
+        if (denied) return denied;
+        const data = await client.patch(safePath`/${cfg.urlPath}/${id}`, settings);
+        return formatSuccess(data);
       }
     );
   }

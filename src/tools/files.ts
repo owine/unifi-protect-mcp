@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
-import { formatSuccess, formatError } from "../utils/responses.js";
+import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { MAX_UPLOAD_BASE64_CHARS } from "../utils/limits.js";
@@ -37,12 +37,8 @@ export function registerFileTools(
       annotations: READ_ONLY,
     },
     async ({ fileType }) => {
-      try {
-        const data = await client.get(safePath`/files/${fileType}`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get(safePath`/files/${fileType}`);
+      return formatSuccess(data);
     }
   );
 
@@ -80,26 +76,22 @@ export function registerFileTools(
       annotations: WRITE,
     },
     async ({ fileType, base64Data, contentType, fileName, dryRun }) => {
-      try {
-        const name = fileName ?? defaultFileName(contentType);
-        const base64 = normalizeBase64(base64Data);
-        if (dryRun) {
-          return formatDryRun("POST", safePath`/files/${fileType}`, {
-            contentType,
-            fileName: name,
-            byteLength: Buffer.byteLength(base64, "base64"),
-          });
-        }
-        const data = await client.postFile(
-          safePath`/files/${fileType}`,
-          Buffer.from(base64, "base64"),
+      const name = fileName ?? defaultFileName(contentType);
+      const base64 = normalizeBase64(base64Data);
+      if (dryRun) {
+        return formatDryRun("POST", safePath`/files/${fileType}`, {
           contentType,
-          name
-        );
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
+          fileName: name,
+          byteLength: Buffer.byteLength(base64, "base64"),
+        });
       }
+      const data = await client.postFile(
+        safePath`/files/${fileType}`,
+        Buffer.from(base64, "base64"),
+        contentType,
+        name
+      );
+      return formatSuccess(data);
     }
   );
 }

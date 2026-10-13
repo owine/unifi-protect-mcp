@@ -163,16 +163,12 @@ export function registerSubscriptionTools(
       annotations: READ_ONLY,
     },
     async ({ duration }) => {
-      try {
-        const data = await collectMessages(
-          client,
-          "/subscribe/devices",
-          duration
-        );
-        return listenResult(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await collectMessages(
+        client,
+        "/subscribe/devices",
+        duration
+      );
+      return listenResult(data);
     }
   );
 
@@ -186,16 +182,12 @@ export function registerSubscriptionTools(
       annotations: READ_ONLY,
     },
     async ({ duration }) => {
-      try {
-        const data = await collectMessages(
-          client,
-          "/subscribe/events",
-          duration
-        );
-        return listenResult(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await collectMessages(
+        client,
+        "/subscribe/events",
+        duration
+      );
+      return listenResult(data);
     }
   );
 }

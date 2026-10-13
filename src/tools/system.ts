@@ -1,6 +1,6 @@
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
-import { formatSuccess, formatError } from "../utils/responses.js";
+import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY } from "../utils/safety.js";
 import { infoOutputSchema, nvrOutputSchema } from "../schemas/misc.js";
 
@@ -17,12 +17,8 @@ export function registerSystemTools(
       annotations: READ_ONLY,
     },
     async () => {
-      try {
-        const data = await client.get("/meta/info");
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get("/meta/info");
+      return formatSuccess(data);
     }
   );
 
@@ -35,12 +31,8 @@ export function registerSystemTools(
       annotations: READ_ONLY,
     },
     async () => {
-      try {
-        const data = await client.get("/nvrs");
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get("/nvrs");
+      return formatSuccess(data);
     }
   );
 }

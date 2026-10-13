@@ -1,6 +1,6 @@
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
-import { formatSuccess, formatError } from "../utils/responses.js";
+import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
@@ -21,12 +21,8 @@ export function registerUserTools(server: ToolRegistrar, client: ProtectClient) 
       annotations: READ_ONLY,
     },
     async () => {
-      try {
-        const data = await client.get("/users");
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get("/users");
+      return formatSuccess(data);
     }
   );
 
@@ -40,12 +36,8 @@ export function registerUserTools(server: ToolRegistrar, client: ProtectClient) 
       annotations: READ_ONLY,
     },
     async ({ id }) => {
-      try {
-        const data = await client.get(safePath`/users/${id}`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get(safePath`/users/${id}`);
+      return formatSuccess(data);
     }
   );
 
@@ -58,12 +50,8 @@ export function registerUserTools(server: ToolRegistrar, client: ProtectClient) 
       annotations: READ_ONLY,
     },
     async () => {
-      try {
-        const data = await client.get("/ulp-users");
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get("/ulp-users");
+      return formatSuccess(data);
     }
   );
 
@@ -77,12 +65,8 @@ export function registerUserTools(server: ToolRegistrar, client: ProtectClient) 
       annotations: READ_ONLY,
     },
     async ({ id }) => {
-      try {
-        const data = await client.get(safePath`/ulp-users/${id}`);
-        return formatSuccess(data);
-      } catch (err) {
-        return formatError(err);
-      }
+      const data = await client.get(safePath`/ulp-users/${id}`);
+      return formatSuccess(data);
     }
   );
 }

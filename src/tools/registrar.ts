@@ -30,6 +30,8 @@ type ToolHandler = (...args: unknown[]) => CallToolResult | Promise<CallToolResu
  * - Handlers run with their call's abort signal in scope, so ProtectClient
  *   aborts the Protect request (and subscriptions close their WebSocket) when
  *   the MCP client cancels the call.
+ * - A handler that throws returns an error result (formatError), so tool
+ *   modules need no try/catch of their own.
  * - A result too large for one stdio message becomes an error, instead of a
  *   message the client cannot read (which ends its session).
  * - Each tool gets a human-readable title derived from its name, and
@@ -47,7 +49,12 @@ export function instrumentTools(server: McpServer): ToolRegistrar {
     const bound = async (...args: unknown[]): Promise<CallToolResult> => {
       // The SDK passes the call's `extra` (with its abort signal) last.
       const extra = args.at(-1) as Partial<ToolExtra> | undefined;
-      const result = await withCallSignal(extra?.signal, () => (handler as ToolHandler)(...args));
+      let result: CallToolResult;
+      try {
+        result = await withCallSignal(extra?.signal, () => (handler as ToolHandler)(...args));
+      } catch (err) {
+        return formatError(err);
+      }
       return fitsOneMessage(result);
     };
     return server.registerTool(name, {
