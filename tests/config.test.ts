@@ -199,6 +199,26 @@ describe("loadConfig", () => {
     }
   );
 
+  // A key pasted with its trailing newline used to be sent as-is: fetch
+  // rejects the header and the error, echoed into every tool result,
+  // carried the whole key.
+  it("trims whitespace around the API key", () => {
+    process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+    process.env.UNIFI_PROTECT_API_KEY = "  test-api-key\n";
+    expect(loadConfig().apiKey).toBe("test-api-key");
+  });
+
+  it.each(["key\r\nX-Injected: 1", "key\u0000rest"])("calls process.exit(1) for an API key with control characters (%j)", (key) => {
+    process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+    process.env.UNIFI_PROTECT_API_KEY = key;
+    const errors: string[] = [];
+    vi.spyOn(console, "error").mockImplementation((msg: string) => { errors.push(msg); });
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    loadConfig();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errors.join(" ")).not.toContain("X-Injected");
+  });
+
   describe("UNIFI_PROTECT_CA_CERT", () => {
     let dir: string;
     let certPath: string;

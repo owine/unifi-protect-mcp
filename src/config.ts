@@ -44,7 +44,16 @@ const ConfigSchema = z.object({
       }
       return url.host;
     }),
-  apiKey: z.string().min(1, "UNIFI_PROTECT_API_KEY is required"),
+  // Trimmed, because a key pasted with its trailing newline is common; any
+  // control character left inside is refused, since fetch would reject the
+  // header and echo the whole key into every tool error. The message never
+  // repeats the value.
+  apiKey: z
+    .string()
+    .trim()
+    .min(1, "UNIFI_PROTECT_API_KEY is required")
+    // eslint-disable-next-line no-control-regex -- matching control characters is the point
+    .refine((key) => !/[\u0000-\u001f\u007f]/.test(key), "UNIFI_PROTECT_API_KEY contains a control character (a line break or similar); paste the key again"),
   // Console IDs are hex, UUID- or colon-shaped depending on vintage. The
   // charset excludes anything that could escape the URL path segment it is
   // interpolated into.
