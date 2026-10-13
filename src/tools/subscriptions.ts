@@ -18,6 +18,10 @@ const durationSchema = z
  */
 export const MAX_SUBSCRIPTION_MESSAGES = 200;
 
+const MS_PER_SECOND = 1000;
+/** The reported listen time is rounded to this many decimal places (0.1s). */
+const ELAPSED_DECIMALS = 1;
+
 interface CollectResult {
   messages: unknown[];
   duration: number;
@@ -40,7 +44,7 @@ function collectMessages(
 
     const timeout = setTimeout(() => {
       ws.close();
-    }, duration * 1000);
+    }, duration * MS_PER_SECOND);
 
     ws.on("message", (data: unknown) => {
       if (truncated) return;
@@ -67,7 +71,9 @@ function collectMessages(
       clearTimeout(timeout);
       // Elapsed time, not the requested duration: the cap or an error can end
       // the listen early.
-      const elapsed = Math.round((Date.now() - startedAt) / 100) / 10;
+      const elapsed = Number(
+        ((Date.now() - startedAt) / MS_PER_SECOND).toFixed(ELAPSED_DECIMALS)
+      );
       const result: CollectResult = { messages, duration: elapsed };
       if (error) result.error = error;
       if (truncated) result.truncated = true;
