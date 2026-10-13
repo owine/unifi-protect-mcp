@@ -145,7 +145,7 @@ describe("POS tools", () => {
         ...minimal,
         lineItems: [{ title: "x", quantity: 1, sku: "abc" }],
       });
-      expect(parsed.lineItems![0]).toHaveProperty("sku", "abc");
+      expect((parsed.lineItems as unknown[])[0]).toHaveProperty("sku", "abc");
     });
 
     it("rejects a non-integer timestamp", () => {
