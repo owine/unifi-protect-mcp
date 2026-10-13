@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from "vitest";
+import { EventEmitter } from "node:events";
 import type { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { registerAllTools } from "../src/tools/index.js";
-import type { ProtectClient } from "../src/client.js";
+import { ProtectClient } from "../src/client.js";
 import { formatDryRun } from "../src/utils/safety.js";
 import { createMockServer, createMockClient, mockFn } from "./tools/_helpers.js";
 
@@ -113,4 +114,60 @@ describe("dry-run preview against every write tool's published outputSchema", ()
       expect(schema.safeParse(preview.structuredContent).success).toBe(true);
     });
   }
+});
+
+describe("cancellation through the SDK", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("aborts the Protect request when the MCP client cancels the call", async () => {
+    let requestSignal: AbortSignal | undefined;
+    vi.stubGlobal("fetch", (_url: string, options: RequestInit) => {
+      requestSignal = options.signal ?? undefined;
+      // A console that never answers: settle only when the request aborts.
+      return new Promise((_resolve, reject) => {
+        options.signal?.addEventListener("abort", () => { reject(options.signal?.reason as Error); });
+      });
+    });
+    const mcpClient = await connect(
+      new ProtectClient({ host: "192.168.1.1", apiKey: "k", verifySsl: true, readOnly: false })
+    );
+
+    const controller = new AbortController();
+    const call = mcpClient.callTool(
+      { name: "protect_activate_relay_output", arguments: { id: "r1", outputId: 0, state: "on", confirm: true } },
+      undefined,
+      { signal: controller.signal }
+    );
+    await vi.waitFor(() => { expect(requestSignal).toBeDefined(); });
+    controller.abort();
+
+    await expect(call).rejects.toThrow();
+    await vi.waitFor(() => { expect(requestSignal?.aborted).toBe(true); });
+    await mcpClient.close();
+  });
+
+  it("drops the subscription WebSocket when the MCP client cancels the call", async () => {
+    const ws = Object.assign(new EventEmitter(), {
+      close: vi.fn(),
+      terminate: vi.fn(function (this: EventEmitter) { this.emit("close"); }),
+    });
+    const toolClient = createMockClient();
+    mockFn(toolClient, "connectWebSocket").mockReturnValue(ws);
+    const mcpClient = await connect(toolClient, true);
+
+    const controller = new AbortController();
+    const call = mcpClient.callTool(
+      { name: "protect_subscribe_events", arguments: { duration: 30 } },
+      undefined,
+      { signal: controller.signal }
+    );
+    await vi.waitFor(() => { expect(mockFn(toolClient, "connectWebSocket")).toHaveBeenCalled(); });
+    controller.abort();
+
+    await expect(call).rejects.toThrow();
+    await vi.waitFor(() => { expect(ws.terminate).toHaveBeenCalled(); });
+    await mcpClient.close();
+  });
 });

@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { ProtectClient } from "../client.js";
+import { ProtectClient, currentCallSignal } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY } from "../utils/safety.js";
 import { subscriptionOutputSchema } from "../schemas/misc.js";
@@ -46,6 +46,15 @@ function collectMessages(
       ws.close();
     }, duration * MS_PER_SECOND);
 
+    // A cancelled call gets no result, so drop the socket at once rather than
+    // holding it open for the rest of the listen window.
+    const signal = currentCallSignal();
+    const onAbort = () => {
+      clearTimeout(timeout);
+      ws.terminate();
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+
     ws.on("message", (data: unknown) => {
       if (truncated) return;
       const text = String(data);
@@ -69,6 +78,7 @@ function collectMessages(
 
     ws.on("close", () => {
       clearTimeout(timeout);
+      signal?.removeEventListener("abort", onAbort);
       // Elapsed time, not the requested duration: the cap or an error can end
       // the listen early.
       const elapsed = Number(

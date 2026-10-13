@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ProtectClient } from "../client.js";
+import { ProtectClient, withCallSignal } from "../client.js";
 import { dryRunPreviewFields, looseOutput } from "../schemas/common.js";
 import { registerSystemTools } from "./system.js";
 import { registerCameraTools } from "./cameras.js";
@@ -47,6 +47,9 @@ interface ToolConfig {
  *   reject any field Protect adds.
  * - A write tool that takes `dryRun` also declares the preview fields in its
  *   outputSchema, so its dry-run result validates and is documented.
+ * - Handlers run with their call's abort signal in scope, so ProtectClient
+ *   aborts the Protect request (and subscriptions close their WebSocket) when
+ *   the MCP client cancels the call.
  */
 function instrumentTools(server: McpServer): McpServer {
   const registerTool = (name: string, config: ToolConfig, handler: unknown) => {
@@ -54,7 +57,13 @@ function instrumentTools(server: McpServer): McpServer {
     const published = outputSchema === undefined
       ? {}
       : { outputSchema: looseOutput(withPreview(outputSchema, inputSchema)) };
-    return server.registerTool(name, { ...config, ...published } as never, handler as never);
+    const bound = (...args: unknown[]): unknown => {
+      // The SDK passes the call's `extra` (with its abort signal) last.
+      const extra = args.at(-1) as { signal?: unknown } | undefined;
+      const signal = extra?.signal instanceof AbortSignal ? extra.signal : undefined;
+      return withCallSignal(signal, () => (handler as (...a: unknown[]) => unknown)(...args));
+    };
+    return server.registerTool(name, { ...config, ...published } as never, bound as never);
   };
   return new Proxy(server, {
     get: (target, prop, receiver) =>
