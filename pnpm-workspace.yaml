@@ -7,6 +7,16 @@ allowBuilds:
 # updates (including 0-day CVE fixes) from landing.
 preferFrozenLockfile: true
 
+# Fail the install when a package version's trust evidence (trusted publisher,
+# provenance) is weaker than its earlier releases had: the signature of a
+# hijacked maintainer token. Lock file maintenance automerges transitive
+# versions Renovate cannot soak, so this is the check that covers them.
+# trustPolicyIgnoreAfter (minutes) exempts releases over a year old, which
+# mostly predate provenance. A known-good release that trips it goes in
+# trustPolicyExclude rather than loosening the policy.
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 525600
+
 # `pnpm add` writes exact versions (caret/tilde ranges already in package.json
 # are still fine for a library — this only controls what `pnpm add` writes).
 saveExact: true
