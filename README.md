@@ -188,7 +188,7 @@ server logs a warning and talks to that host directly.
 | `protect_list_relays` | List all relays |
 | `protect_get_relay` | Get relay details by ID |
 | `protect_update_relay` | Update relay settings |
-| `protect_activate_relay_output` | Set/toggle a relay output channel, with optional pulse duration (requires `confirm: true`) |
+| `protect_activate_relay_output` | Turn a relay output channel on or off, with optional pulse duration (requires `confirm: true` and an explicit `state`) |
 
 ### Speakers (4)
 | Tool | Description |
@@ -218,7 +218,7 @@ server logs a warning and talks to that host directly.
 | `protect_list_alarm_hubs` | List all alarm hubs |
 | `protect_get_alarm_hub` | Get alarm hub details by ID |
 | `protect_update_alarm_hub` | Update alarm hub settings |
-| `protect_trigger_alarm_hub_output` | Trigger an alarm hub output channel (sirens, lights, etc.; requires `confirm: true`) |
+| `protect_trigger_alarm_hub_output` | Turn an alarm hub output channel on or off (sirens, lights, etc.; requires `confirm: true` and an explicit `enable`) |
 
 ### Arm Profiles (7) — local alarm manager
 | Tool | Description |
