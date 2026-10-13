@@ -1,5 +1,30 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import WebSocket from "ws";
 import { Config } from "./config.js";
+
+/**
+ * The abort signal of the MCP tool call a request is made for. Without it a
+ * cancelled (or abandoned) call keeps its request running, and a write such as
+ * a relay or siren lands after the host has already reported the call as
+ * cancelled.
+ */
+const callSignal = new AsyncLocalStorage<AbortSignal>();
+
+/** Run fn so that every request it makes is aborted when signal is. */
+export function withCallSignal<T>(signal: AbortSignal | undefined, fn: () => T): T {
+  return signal ? callSignal.run(signal, fn) : fn();
+}
+
+/** The abort signal of the tool call in progress, if any. */
+export function currentCallSignal(): AbortSignal | undefined {
+  return callSignal.getStore();
+}
+
+function requestSignal(timeoutMs: number): AbortSignal {
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const caller = callSignal.getStore();
+  return caller ? AbortSignal.any([caller, timeout]) : timeout;
+}
 
 /** Protect answers JSON calls quickly; a longer wait means something is wrong. */
 const REQUEST_TIMEOUT_MS = 25_000;
@@ -145,7 +170,7 @@ export class ProtectClient {
       headers: init.headers,
       ...(init.body !== undefined ? { body: init.body } : {}),
       redirect: "error",
-      signal: AbortSignal.timeout(init.timeoutMs),
+      signal: requestSignal(init.timeoutMs),
     });
     if (!response.ok) {
       throw new Error(
