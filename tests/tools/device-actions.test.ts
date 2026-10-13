@@ -165,12 +165,17 @@ describe("device action tools", () => {
       );
     });
 
-    it("toggles when state omitted", async () => {
+    it("sends only state when pulseDuration is omitted", async () => {
       mockFn(client, "post").mockResolvedValue({ ok: true });
-      await handlers.get("protect_activate_relay_output")!({ confirm: true, id: "r1", outputId: 1 });
+      await handlers.get("protect_activate_relay_output")!({
+        confirm: true,
+        id: "r1",
+        outputId: 1,
+        state: "off",
+      });
       expect(mockFn(client, "post")).toHaveBeenCalledWith(
         "/relays/r1/outputs/1/activate",
-        undefined
+        { state: "off" }
       );
     });
 
@@ -229,12 +234,17 @@ describe("device action tools", () => {
       );
     });
 
-    it("toggles when no body params", async () => {
+    it("sends only enable when delay and duration are omitted", async () => {
       mockFn(client, "post").mockResolvedValue({ ok: true });
-      await handlers.get("protect_trigger_alarm_hub_output")!({ confirm: true, id: "h1", outputId: 1 });
+      await handlers.get("protect_trigger_alarm_hub_output")!({
+        confirm: true,
+        id: "h1",
+        outputId: 1,
+        enable: true,
+      });
       expect(mockFn(client, "post")).toHaveBeenCalledWith(
         "/alarm-hubs/h1/outputs/1/trigger",
-        undefined
+        { enable: true }
       );
     });
 
@@ -378,6 +388,11 @@ describe("device action tools - input validation", () => {
       expect(schema.safeParse({ id: "r1", outputId: 0.5 }).success).toBe(false);
     });
 
+    // A toggle is not idempotent: a retried call would flip the output back.
+    it("requires an explicit state instead of toggling", () => {
+      expect(schema.safeParse({ id: "r1", outputId: 0, confirm: true }).success).toBe(false);
+    });
+
     it("rejects invalid state", () => {
       expect(schema.safeParse({ id: "r1", outputId: 0, state: "toggle" }).success).toBe(false);
     });
@@ -388,8 +403,13 @@ describe("device action tools - input validation", () => {
 
     it("accepts zero values", () => {
       expect(
-        schema.safeParse({ id: "h1", outputId: 0, delay: 0, duration: 0, confirm: true }).success
+        schema.safeParse({ id: "h1", outputId: 0, enable: true, delay: 0, duration: 0, confirm: true }).success
       ).toBe(true);
+    });
+
+    // A toggle is not idempotent: a retried call would flip the output back.
+    it("requires an explicit enable instead of toggling", () => {
+      expect(schema.safeParse({ id: "h1", outputId: 0, confirm: true }).success).toBe(false);
     });
 
     it("requires outputId", () => {

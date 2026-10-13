@@ -32,8 +32,8 @@ describe("confirm: z.literal(true) pattern", () => {
     protect_disable_mic: { id: "test-id" },
     protect_trigger_alarm_webhook: { id: "test-id" },
     protect_disable_arm_alarm: {},
-    protect_activate_relay_output: { id: "r1", outputId: 0 },
-    protect_trigger_alarm_hub_output: { id: "h1", outputId: 0 },
+    protect_activate_relay_output: { id: "r1", outputId: 0, state: "on" },
+    protect_trigger_alarm_hub_output: { id: "h1", outputId: 0, enable: true },
   };
 
   for (const [toolName, base] of Object.entries(confirmTools)) {

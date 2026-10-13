@@ -122,11 +122,11 @@ export function registerDeviceActionTools(
   server.registerTool(
     "protect_activate_relay_output",
     {
-      description: "Control a relay output. Relays commonly drive gates, door strikes and garage doors, so this requires confirm: true. Set state to \"on\"/\"off\" to set explicitly, or omit to toggle. When state is \"on\", pulseDuration auto-turns off after the given milliseconds.",
+      description: "Control a relay output. Relays commonly drive gates, door strikes and garage doors, so this requires confirm: true. state (\"on\"/\"off\") is required: the API's toggle mode is not exposed because a retried toggle would flip the output back. Read the current output state with protect_get_relay. When state is \"on\", pulseDuration auto-turns off after the given milliseconds.",
       inputSchema: {
         id: z.string().describe("Relay ID"),
         outputId: z.number().int().min(0).describe("Output channel ID (0 or 1)"),
-        state: z.enum(["on", "off"]).optional().describe("Desired output state. If omitted, toggles current state."),
+        state: z.enum(["on", "off"]).describe("Desired output state"),
         pulseDuration: z.number().int().min(0).optional().describe("Auto-off duration in milliseconds (only when state is \"on\"). 0 means stay on."),
         confirm: z.literal(true).describe("Must be true to confirm switching a physical relay output"),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
@@ -137,14 +137,13 @@ export function registerDeviceActionTools(
       const denied = requireConfirmation(confirm, "switch the relay output");
       if (denied) return denied;
       try {
-        const body: Record<string, unknown> = {};
-        if (state !== undefined) body.state = state;
+        const body: Record<string, unknown> = { state };
         if (pulseDuration !== undefined) body.pulseDuration = pulseDuration;
         const path = safePath`/relays/${id}/outputs/${outputId}/activate`;
         if (dryRun) {
-          return formatDryRun("POST", path, Object.keys(body).length > 0 ? body : undefined);
+          return formatDryRun("POST", path, body);
         }
-        const data = await client.post(path, Object.keys(body).length > 0 ? body : undefined);
+        const data = await client.post(path, body);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
@@ -157,11 +156,11 @@ export function registerDeviceActionTools(
   server.registerTool(
     "protect_trigger_alarm_hub_output",
     {
-      description: "Trigger an alarm hub output channel. Used to turn on/off connected sirens, lights, locks, or other actuators, so this requires confirm: true.",
+      description: "Trigger an alarm hub output channel. Used to turn on/off connected sirens, lights, locks, or other actuators, so this requires confirm: true. enable is required: the API's toggle mode is not exposed because a retried toggle would flip the output back.",
       inputSchema: {
         id: z.string().describe("Alarm hub (link station) ID"),
         outputId: z.number().int().min(0).describe("Output channel ID (0 or 1)"),
-        enable: z.boolean().optional().describe("True to turn on, false to turn off. If omitted, toggles current state."),
+        enable: z.boolean().describe("True to turn on, false to turn off"),
         delay: z.number().int().min(0).optional().describe("Delay in milliseconds before output activates"),
         duration: z.number().int().min(0).optional().describe("Duration in milliseconds to keep output active. 0 = indefinite."),
         confirm: z.literal(true).describe("Must be true to confirm triggering a physical alarm hub output"),
@@ -173,15 +172,14 @@ export function registerDeviceActionTools(
       const denied = requireConfirmation(confirm, "trigger the alarm hub output");
       if (denied) return denied;
       try {
-        const body: Record<string, unknown> = {};
-        if (enable !== undefined) body.enable = enable;
+        const body: Record<string, unknown> = { enable };
         if (delay !== undefined) body.delay = delay;
         if (duration !== undefined) body.duration = duration;
         const path = safePath`/alarm-hubs/${id}/outputs/${outputId}/trigger`;
         if (dryRun) {
-          return formatDryRun("POST", path, Object.keys(body).length > 0 ? body : undefined);
+          return formatDryRun("POST", path, body);
         }
-        const data = await client.post(path, Object.keys(body).length > 0 ? body : undefined);
+        const data = await client.post(path, body);
         return formatSuccess(data);
       } catch (err) {
         return formatError(err);
