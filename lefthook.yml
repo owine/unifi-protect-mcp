@@ -2,10 +2,10 @@ pre-commit:
   parallel: true
   commands:
     eslint:
-      glob: '*.{ts,js}'
+      glob: '*.{ts,mts,js,mjs}'
       run: eval "$(fnm env)" && fnm use --silent-if-unchanged && pnpm exec eslint {staged_files}
     typecheck:
-      glob: '*.ts'
+      glob: '*.{ts,mts}'
       run: eval "$(fnm env)" && fnm use --silent-if-unchanged && pnpm run typecheck
     ggshield:
       # GitGuardian secret scan on staged content. ggshield finds its token in
