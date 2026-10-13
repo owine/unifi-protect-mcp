@@ -7,9 +7,8 @@ export function formatSuccess(data: unknown) {
       ? (data as Record<string, unknown>)
       : { result: data };
   return {
-    content: [
-      { type: "text" as const, text: JSON.stringify(data, null, 2) },
-    ],
+    // Compact: indentation is whitespace the model pays for in tokens.
+    content: [{ type: "text" as const, text: JSON.stringify(data) }],
     structuredContent: structured,
   };
 }
