@@ -293,7 +293,7 @@ export class ProtectClient {
     return parseBody(response, "POST", path);
   }
 
-  connectWebSocket(path: string): WebSocket {
+  connectWebSocket(path: string, options: { maxPayload?: number } = {}): WebSocket {
     if (this.usingConnector) {
       // Verified against a live console: the connector proxies REST calls but
       // answers 404 to a WebSocket upgrade on the same path. Say so plainly
@@ -305,6 +305,7 @@ export class ProtectClient {
     const url = `wss://${this.baseUrl.replace(/^https?:\/\//, "")}${path}`;
     return new WebSocket(url, {
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
+      ...options,
       rejectUnauthorized:
         process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0",
     });

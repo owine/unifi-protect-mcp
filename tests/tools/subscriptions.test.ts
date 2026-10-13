@@ -10,6 +10,7 @@ import {
 import {
   registerSubscriptionTools,
   MAX_SUBSCRIPTION_MESSAGES,
+  MAX_SUBSCRIPTION_TEXT_CHARS,
 } from "../../src/tools/subscriptions.js";
 
 /** Minimal mock that quacks like a ws.WebSocket */
@@ -53,7 +54,8 @@ describe("subscription tools", () => {
       expectSuccess(result, "cam1");
       expectSuccess(result, "light1");
       expect(mockFn(client, "connectWebSocket")).toHaveBeenCalledWith(
-        "/subscribe/devices"
+        "/subscribe/devices",
+        expect.objectContaining({ maxPayload: expect.any(Number) })
       );
     });
 
@@ -164,7 +166,8 @@ describe("subscription tools", () => {
       expectSuccess(result, "evt1");
       expectSuccess(result, "ring");
       expect(mockFn(client, "connectWebSocket")).toHaveBeenCalledWith(
-        "/subscribe/events"
+        "/subscribe/events",
+        expect.objectContaining({ maxPayload: expect.any(Number) })
       );
     });
 
@@ -218,6 +221,71 @@ describe("subscription tools", () => {
       setTimeout(() => ws.emit("open"), 10);
       const parsed = JSON.parse((await promise).content[0].text);
       expect(parsed.truncated).toBeUndefined();
+    });
+  });
+
+  describe("listen budget and lifecycle", () => {
+    // Device envelopes carry whole device objects, so a count cap alone let
+    // one call return hundreds of thousands of tokens.
+    it("stops at the text budget and flags truncation", async () => {
+      const ws = createMockWebSocket();
+      mockFn(client, "connectWebSocket").mockReturnValue(ws);
+      const promise = handlers.get("protect_subscribe_devices")!({ duration: 30 });
+      const big = { type: "add", item: { id: "s1", modelKey: "sensor", blob: "x".repeat(5_000) } };
+      const sent = Math.ceil(MAX_SUBSCRIPTION_TEXT_CHARS / 5_000) * 2;
+      setTimeout(() => {
+        ws.emit("open");
+        for (let i = 0; i < sent; i++) ws.emit("message", JSON.stringify(big));
+      }, 10);
+      const result = await promise;
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.truncated).toBe(true);
+      expect(parsed.messages.length).toBeLessThan(sent);
+      expect(result.content[0].text.length).toBeLessThanOrEqual(MAX_SUBSCRIPTION_TEXT_CHARS);
+    });
+
+    it("caps the size of a single WebSocket frame", async () => {
+      const ws = createMockWebSocket();
+      mockFn(client, "connectWebSocket").mockReturnValue(ws);
+      const promise = handlers.get("protect_subscribe_events")!({ duration: 1 });
+      setTimeout(() => ws.emit("open"), 10);
+      await promise;
+      const options = mockFn(client, "connectWebSocket").mock.calls[0][1] as { maxPayload?: number };
+      expect(options.maxPayload).toBeGreaterThan(0);
+      expect(options.maxPayload).toBeLessThanOrEqual(MAX_SUBSCRIPTION_TEXT_CHARS);
+    });
+
+    // A peer that never answers the close handshake used to hold the call
+    // open for ws's 30 s close timeout, past the MCP client's own timeout.
+    it("returns promptly after the window even if the peer never closes", async () => {
+      const emitter = new EventEmitter();
+      const ws = Object.assign(emitter, {
+        close: vi.fn(), // a silent peer: no "close" event follows
+        terminate: vi.fn(() => emitter.emit("close")),
+      });
+      mockFn(client, "connectWebSocket").mockReturnValue(ws);
+      const started = Date.now();
+      const promise = handlers.get("protect_subscribe_events")!({ duration: 1 });
+      setTimeout(() => ws.emit("open"), 10);
+      // Arrives after the window closed: not part of the result.
+      setTimeout(() => ws.emit("message", JSON.stringify({ type: "add", item: { id: "late" } })), 1_200);
+      const result = await promise;
+      const parsed = JSON.parse(result.content[0].text);
+      expect(Date.now() - started).toBeLessThan(5_000);
+      expect(ws.terminate).toHaveBeenCalled();
+      expect(parsed.messages).toEqual([]);
+      expect(parsed.duration).toBeLessThan(1.5);
+    });
+
+    // An empty listen that failed must not read as "nothing happened".
+    it("reports a connection that failed before any message as an error", async () => {
+      const ws = createMockWebSocket();
+      mockFn(client, "connectWebSocket").mockReturnValue(ws);
+      const promise = handlers.get("protect_subscribe_devices")!({ duration: 1 });
+      setTimeout(() => { ws.emit("error", new Error("Unexpected server response: 401")); }, 10);
+      const result = await promise;
+      expectError(result);
+      expect(result.content[0].text).toContain("401");
     });
   });
 });
