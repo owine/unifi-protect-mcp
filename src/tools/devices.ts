@@ -2,7 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
+import { READ_ONLY, WRITE, formatDryRun, confirmInput, requireConfirmationForFields } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
 import {
@@ -19,6 +19,9 @@ interface DeviceConfig {
   hint: string;      // Description of patchable fields (for PATCH tools)
   returns: string;   // Description of fields returned by GET tools (for LLM context)
   note?: string;     // Extra context prepended to list/get descriptions
+  // Settings that weaken alarm coverage: an update touching any of them needs
+  // confirm: true (a dry run does not).
+  confirmFields?: readonly string[];
 }
 
 // Field lists below are from the UniFi Protect Integration API 7.3.70 docs.
@@ -42,6 +45,7 @@ const DEVICES: DeviceConfig[] = [
   {
     urlPath: "sensors",
     singular: "sensor",
+    confirmFields: ["alarmSettings", "motionSettings", "glassBreakSettings", "armProfileIds", "scheduleMode"],
     plural: "sensors",
     label: "Sensor",
     hint: "Known fields: name (string), lightSettings / humiditySettings / temperatureSettings (objects: isEnabled, margin, lowThreshold, highThreshold), motionSettings / glassBreakSettings (objects: isEnabled, sensitivity, sensitivityWhenArmed), alarmSettings (object: isEnabled), scheduleMode (\"always\" | \"when_armed\"), armProfileIds (array of up to 32 strings, or null), hasCustomSensitivityWhenArmed (boolean). leakSettings is read-only. Returns HTTP 409 if a setting is not supported by this sensor",
@@ -77,6 +81,7 @@ const DEVICES: DeviceConfig[] = [
   {
     urlPath: "fobs",
     singular: "fob",
+    confirmFields: ["armControlSettings"],
     plural: "fobs",
     label: "Fob",
     hint: "Known fields: name (string)",
@@ -178,13 +183,18 @@ function registerDeviceCrud(
     server.registerTool(
       `protect_update_${cfg.singular}`,
       {
-        description: `Update ${cfg.label.toLowerCase()} settings (partial update via PATCH)`,
+        description: `Update ${cfg.label.toLowerCase()} settings (partial update via PATCH).${
+          cfg.confirmFields ? ` Changing ${cfg.confirmFields.join(", ")} affects alarm coverage and requires confirm: true.` : ""
+        }`,
         inputSchema: {
           id: resourceId().describe(`${cfg.label} ID`),
           settings: z
             .record(z.string(), z.unknown())
             .refine((o) => Object.keys(o).length > 0, "settings must include at least one field")
             .describe(`Partial ${cfg.label.toLowerCase()} settings to update. ${cfg.hint}`),
+          ...(cfg.confirmFields
+            ? { confirm: confirmInput(`change ${cfg.confirmFields.join(", ")}`) }
+            : {}),
           dryRun: z
             .boolean()
             .optional()
@@ -193,11 +203,14 @@ function registerDeviceCrud(
         outputSchema: itemOutputShape(schemaKey),
         annotations: WRITE,
       },
-      async ({ id, settings, dryRun }) => {
+      async ({ id, settings, dryRun, ...rest }) => {
         try {
           if (dryRun) {
             return formatDryRun("PATCH", safePath`/${cfg.urlPath}/${id}`, settings);
           }
+          const confirm = (rest as { confirm?: boolean }).confirm;
+          const denied = requireConfirmationForFields(settings, cfg.confirmFields ?? [], confirm, dryRun);
+          if (denied) return denied;
           const data = await client.patch(safePath`/${cfg.urlPath}/${id}`, settings);
           return formatSuccess(data);
         } catch (err) {

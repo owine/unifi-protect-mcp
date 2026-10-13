@@ -83,7 +83,7 @@ describe("arm profile tools", () => {
   describe("protect_set_current_arm_profile", () => {
     it("sets current profile", async () => {
       mockFn(client, "patch").mockResolvedValue({ ok: true });
-      await handlers.get("protect_set_current_arm_profile")!({ armProfileId: "p1" });
+      await handlers.get("protect_set_current_arm_profile")!({ confirm: true, armProfileId: "p1" });
       expect(mockFn(client, "patch")).toHaveBeenCalledWith("/arm-profiles/settings", {
         armProfileId: "p1",
       });
@@ -216,7 +216,7 @@ describe("arm profile tools", () => {
   describe("protect_delete_arm_profile", () => {
     it("deletes profile", async () => {
       mockFn(client, "delete").mockResolvedValue({ ok: true });
-      await handlers.get("protect_delete_arm_profile")!({ id: "p1" });
+      await handlers.get("protect_delete_arm_profile")!({ confirm: true, id: "p1" });
       expect(mockFn(client, "delete")).toHaveBeenCalledWith("/arm-profiles/p1");
     });
 

@@ -213,7 +213,7 @@ describe("camera tools", () => {
   describe("protect_create_rtsp_stream", () => {
     it("creates stream session", async () => {
       mockFn(client, "post").mockResolvedValue({ streamUrl: "rtsps://..." });
-      const result = await handlers.get("protect_create_rtsp_stream")!({
+      const result = await handlers.get("protect_create_rtsp_stream")!({ confirm: true,
         id: "cam1",
         qualities: ["high"],
       });
@@ -358,7 +358,7 @@ describe("camera tools", () => {
   describe("protect_create_talkback", () => {
     it("creates talkback session", async () => {
       mockFn(client, "post").mockResolvedValue({ sessionId: "tb1" });
-      const result = await handlers.get("protect_create_talkback")!({ id: "cam1" });
+      const result = await handlers.get("protect_create_talkback")!({ confirm: true, id: "cam1" });
       expectSuccess(result, "tb1");
       expect(mockFn(client, "post")).toHaveBeenCalledWith(
         "/cameras/cam1/talkback-session"
