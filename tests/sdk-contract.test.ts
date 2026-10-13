@@ -266,6 +266,53 @@ describe("annotations through the SDK", () => {
   });
 });
 
+/** The smallest input a published JSON Schema accepts: required fields only. */
+function minimalArgs(schema: { properties?: Record<string, Record<string, unknown>>; required?: string[] }) {
+  const args: Record<string, unknown> = {};
+  for (const key of schema.required ?? []) {
+    const prop = schema.properties?.[key] ?? {};
+    if ("const" in prop) args[key] = prop.const;
+    else if (Array.isArray(prop.enum)) args[key] = prop.enum[0];
+    else if (prop.type === "number" || prop.type === "integer") args[key] = prop.minimum ?? 1;
+    else args[key] = "6805169300863503e4032252";
+  }
+  return args;
+}
+
+describe("read-only mode through the SDK", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Behaviour, not annotations: every tool the server lists in read-only mode
+  // is called, and the console must see nothing but GETs.
+  it("lists only read-only tools, and none of them sends anything but GET", async () => {
+    const methods: string[] = [];
+    vi.stubGlobal("fetch", (_url: string, init: RequestInit) => {
+      methods.push(init.method ?? "GET");
+      return Promise.resolve(new Response("{}", { headers: { "content-type": "application/json" } }));
+    });
+    const protect = new ProtectClient({ host: "192.168.1.1", apiKey: "k", verifySsl: true, readOnly: true });
+    // Subscriptions open a WebSocket, not an HTTP request: answer with a
+    // socket that closes at once, so no connection is attempted.
+    vi.spyOn(protect, "connectWebSocket").mockImplementation(() => {
+      const ws = Object.assign(new EventEmitter(), { close: vi.fn(), terminate: vi.fn() });
+      setTimeout(() => ws.emit("close"), 0);
+      return ws as never;
+    });
+    const mcpClient = await connect(protect, true);
+    const { tools } = await mcpClient.listTools();
+    expect(tools.filter((tool) => tool.annotations?.readOnlyHint !== true).map((tool) => tool.name)).toEqual([]);
+
+    for (const tool of tools) {
+      await mcpClient.callTool({ name: tool.name, arguments: minimalArgs(tool.inputSchema as never) });
+    }
+    await mcpClient.close();
+    expect(methods.length).toBeGreaterThan(0);
+    expect(methods.filter((method) => method !== "GET")).toEqual([]);
+  });
+});
+
 describe("hostile IDs through the SDK", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
