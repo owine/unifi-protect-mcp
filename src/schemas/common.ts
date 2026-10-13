@@ -71,6 +71,8 @@ export function hardwareModelFields() {
 export function listResultSchema<T extends z.ZodType>(itemSchema: T) {
   return {
     result: z.array(itemSchema).describe("Array of items returned by the list endpoint"),
+    totalCount: z.number().int().optional().describe("Paged results only: the number of items in the whole list"),
+    offset: z.number().int().optional().describe("Paged results only: the index of the first item returned"),
   };
 }
 

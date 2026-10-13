@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, dryRunInput, confirmGate } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { PAGING_NOTE, pageOf, pagingInput } from "../utils/paging.js";
 import { resourceId } from "../utils/params.js";
 import {
   cameraOutputSchema,
@@ -28,13 +29,14 @@ export function registerCameraTools(
     "protect_list_cameras",
     {
       description:
-        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.3.70-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), type (hardware model name, e.g. UVC G6 Turret), guid (hardware MODEL GUID — every camera of the same model returns the same value, so it is NOT a per-camera identifier; use id), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage (type, resetAt, text), ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config.",
+        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.3.70-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), type (hardware model name, e.g. UVC G6 Turret), guid (hardware MODEL GUID — every camera of the same model returns the same value, so it is NOT a per-camera identifier; use id), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage (type, resetAt, text), ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config." + PAGING_NOTE,
+      inputSchema: pagingInput,
       outputSchema: cameraListOutputSchema,
       annotations: READ_ONLY,
     },
-    async () => {
+    async ({ limit, offset }) => {
       const data = await client.get("/cameras");
-      return formatSuccess(data);
+      return formatSuccess(pageOf(data, limit, offset));
     }
   );
 

@@ -3,6 +3,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { PAGING_NOTE, pageOf, pagingInput } from "../utils/paging.js";
 import { resourceId } from "../utils/params.js";
 import {
   userListOutputSchema,
@@ -16,13 +17,14 @@ export function registerUserTools(server: ToolRegistrar, client: ProtectClient) 
     "protect_list_users",
     {
       description:
-        "List all Protect users (filtered by the API key's access permissions). Returns array; each user includes (Integration API 7.3.70-verified): id, modelKey, name, firstName, lastName, email, ucoreUserId. The Integration API does NOT expose roles, permissions, login history, groups, or notification settings.",
+        "List all Protect users (filtered by the API key's access permissions). Returns array; each user includes (Integration API 7.3.70-verified): id, modelKey, name, firstName, lastName, email, ucoreUserId. The Integration API does NOT expose roles, permissions, login history, groups, or notification settings." + PAGING_NOTE,
+      inputSchema: pagingInput,
       outputSchema: userListOutputSchema,
       annotations: READ_ONLY,
     },
-    async () => {
+    async ({ limit, offset }) => {
       const data = await client.get("/users");
-      return formatSuccess(data);
+      return formatSuccess(pageOf(data, limit, offset));
     }
   );
 
@@ -45,13 +47,14 @@ export function registerUserTools(server: ToolRegistrar, client: ProtectClient) 
     "protect_list_ulp_users",
     {
       description:
-        "List UniFi Identity (ULP) users — per the API docs, those with enrolled credentials (NFC cards, fingerprints). Returns array; each ULP user includes (Integration API 7.3.70-verified): id, modelKey, firstName, lastName, fullName, email (empty string for service accounts), status (e.g. ACTIVE). Enrolled-credential detail (NFC cards, fingerprints) is NOT exposed by this API surface.",
+        "List UniFi Identity (ULP) users — per the API docs, those with enrolled credentials (NFC cards, fingerprints). Returns array; each ULP user includes (Integration API 7.3.70-verified): id, modelKey, firstName, lastName, fullName, email (empty string for service accounts), status (e.g. ACTIVE). Enrolled-credential detail (NFC cards, fingerprints) is NOT exposed by this API surface." + PAGING_NOTE,
+      inputSchema: pagingInput,
       outputSchema: ulpUserListOutputSchema,
       annotations: READ_ONLY,
     },
-    async () => {
+    async ({ limit, offset }) => {
       const data = await client.get("/ulp-users");
-      return formatSuccess(data);
+      return formatSuccess(pageOf(data, limit, offset));
     }
   );
 

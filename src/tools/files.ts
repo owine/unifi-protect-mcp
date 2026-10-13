@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY, WRITE, formatDryRun, dryRunInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { PAGING_NOTE, pageOf, pagingInput } from "../utils/paging.js";
 import { MAX_UPLOAD_BASE64_CHARS } from "../utils/limits.js";
 import { fileListOutputSchema, fileOutputSchema } from "../schemas/misc.js";
 
@@ -31,14 +32,14 @@ export function registerFileTools(
     "protect_list_files",
     {
       description:
-        "List device asset files (only 'animations' is supported — clips uploadable to G4 Doorbell screens). Returns array; each record (verified live 7.3.70): id, name (server-generated), type, originalName, path, size, createdAt, updatedAt, metadata. An image upload (verified for GIF) later gains a derived <name>.gif preview record, created asynchronously, so a listing taken right after the upload may show only the stored image.",
-      inputSchema: { fileType: FILE_TYPE },
+        "List device asset files (only 'animations' is supported — clips uploadable to G4 Doorbell screens). Returns array; each record (verified live 7.3.70): id, name (server-generated), type, originalName, path, size, createdAt, updatedAt, metadata. An image upload (verified for GIF) later gains a derived <name>.gif preview record, created asynchronously, so a listing taken right after the upload may show only the stored image." + PAGING_NOTE,
+      inputSchema: { fileType: FILE_TYPE, ...pagingInput },
       outputSchema: fileListOutputSchema,
       annotations: READ_ONLY,
     },
-    async ({ fileType }) => {
+    async ({ fileType, limit, offset }) => {
       const data = await client.get(safePath`/files/${fileType}`);
-      return formatSuccess(data);
+      return formatSuccess(pageOf(data, limit, offset));
     }
   );
 

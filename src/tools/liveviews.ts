@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, dryRunInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { PAGING_NOTE, pageOf, pagingInput } from "../utils/paging.js";
 import { resourceId } from "../utils/params.js";
 import {
   liveviewListOutputSchema,
@@ -43,13 +44,14 @@ export function registerLiveviewTools(
     "protect_list_liveviews",
     {
       description:
-        "List all live views (camera grid layouts shown on viewers / in the Protect UI). Returns array; each liveview includes (Integration API 7.3.70-verified): id, modelKey, name, isDefault, isGlobal, layout (number, slot count), owner (user ID), slots (array of {cameras: string[], cycleMode, cycleInterval}). NOTE: slots use a `cameras` string-array, not a single `cameraId`.",
+        "List all live views (camera grid layouts shown on viewers / in the Protect UI). Returns array; each liveview includes (Integration API 7.3.70-verified): id, modelKey, name, isDefault, isGlobal, layout (number, slot count), owner (user ID), slots (array of {cameras: string[], cycleMode, cycleInterval}). NOTE: slots use a `cameras` string-array, not a single `cameraId`." + PAGING_NOTE,
+      inputSchema: pagingInput,
       outputSchema: liveviewListOutputSchema,
       annotations: READ_ONLY,
     },
-    async () => {
+    async ({ limit, offset }) => {
       const data = await client.get("/liveviews");
-      return formatSuccess(data);
+      return formatSuccess(pageOf(data, limit, offset));
     }
   );
 

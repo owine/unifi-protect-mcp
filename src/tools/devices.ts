@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY, DESTRUCTIVE, formatDryRun, confirmInput, requireConfirmationForFields, dryRunInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { PAGING_NOTE, pageOf, pagingInput } from "../utils/paging.js";
 import { resourceId } from "../utils/params.js";
 import {
   DEVICE_SCHEMAS,
@@ -149,13 +150,14 @@ function registerDeviceCrud(
   server.registerTool(
     `protect_list_${cfg.plural}`,
     {
-      description: `List all ${cfg.label.toLowerCase()}s managed by UniFi Protect. ${note}Returns array; each ${cfg.label.toLowerCase()} includes: ${cfg.returns}.`,
+      description: `List all ${cfg.label.toLowerCase()}s managed by UniFi Protect. ${note}Returns array; each ${cfg.label.toLowerCase()} includes: ${cfg.returns}.${PAGING_NOTE}`,
+      inputSchema: pagingInput,
       outputSchema: listOutputShape(schemaKey),
       annotations: READ_ONLY,
     },
-    async () => {
+    async ({ limit, offset }) => {
       const data = await client.get(`/${cfg.urlPath}`);
-      return formatSuccess(data);
+      return formatSuccess(pageOf(data, limit, offset));
     }
   );
 

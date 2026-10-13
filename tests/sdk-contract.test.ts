@@ -494,6 +494,50 @@ describe("request timeouts inside an MCP call", () => {
   });
 });
 
+describe("list paging through the SDK", () => {
+  let mcpClient: Client;
+  const toolClient = createMockClient();
+  const cameras = [1, 2, 3, 4, 5].map((n) => ({ id: `cam${n.toString()}` }));
+
+  beforeAll(async () => {
+    mcpClient = await connect(toolClient);
+  });
+
+  afterAll(async () => {
+    await mcpClient.close();
+  });
+
+  // Every list tool that returns an array can be paged (list_nvrs returns one
+  // object despite its name).
+  it("offers limit and offset on every array list tool", async () => {
+    const lists = (await mcpClient.listTools()).tools.filter((tool) => tool.name.startsWith("protect_list_") && tool.name !== "protect_list_nvrs");
+    expect(lists.length).toBeGreaterThan(0);
+    for (const tool of lists) {
+      expect(Object.keys((tool.inputSchema as { properties?: object }).properties ?? {}), tool.name).toEqual(expect.arrayContaining(["limit", "offset"]));
+    }
+  });
+
+  it("returns one page with the total when limit or offset is given", async () => {
+    mockFn(toolClient, "get").mockResolvedValueOnce(cameras);
+    const result = await mcpClient.callTool({ name: "protect_list_cameras", arguments: { limit: 2, offset: 1 } });
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual({ result: [{ id: "cam2" }, { id: "cam3" }], totalCount: 5, offset: 1 });
+  });
+
+  it("pages a config-driven device list the same way", async () => {
+    mockFn(toolClient, "get").mockResolvedValueOnce(cameras);
+    const result = await mcpClient.callTool({ name: "protect_list_sensors", arguments: { offset: 4 } });
+    expect(result.structuredContent).toEqual({ result: [{ id: "cam5" }], totalCount: 5, offset: 4 });
+  });
+
+  it("returns the whole list unchanged when neither is given", async () => {
+    mockFn(toolClient, "get").mockResolvedValueOnce(cameras);
+    const result = await mcpClient.callTool({ name: "protect_list_cameras", arguments: {} });
+    expect(result.content).toEqual([{ type: "text", text: JSON.stringify(cameras) }]);
+    expect(result.structuredContent).toEqual({ result: cameras });
+  });
+});
+
 describe("hostile IDs through the SDK", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
