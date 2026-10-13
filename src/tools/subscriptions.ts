@@ -12,14 +12,28 @@ const durationSchema = z
   .default(5)
   .describe("Seconds to listen (1-30, default 5)");
 
+/**
+ * Each device message carries a full device object, so a busy site can emit
+ * enough in 30s to flood the MCP client's context. Stop listening at the cap.
+ */
+export const MAX_SUBSCRIPTION_MESSAGES = 200;
+
+interface CollectResult {
+  messages: unknown[];
+  duration: number;
+  error?: string;
+  truncated?: true;
+}
+
 function collectMessages(
   client: ProtectClient,
   path: string,
   duration: number
-): Promise<{ messages: unknown[]; duration: number; error?: string }> {
+): Promise<CollectResult> {
   return new Promise((resolve) => {
     const messages: unknown[] = [];
     let error: string | undefined;
+    let truncated = false;
 
     const ws = client.connectWebSocket(path);
 
@@ -28,11 +42,17 @@ function collectMessages(
     }, duration * 1000);
 
     ws.on("message", (data: unknown) => {
+      if (truncated) return;
       const text = String(data);
       try {
         messages.push(JSON.parse(text));
       } catch {
         messages.push(text);
+      }
+      if (messages.length >= MAX_SUBSCRIPTION_MESSAGES) {
+        truncated = true;
+        clearTimeout(timeout);
+        ws.close();
       }
     });
 
@@ -44,9 +64,9 @@ function collectMessages(
 
     ws.on("close", () => {
       clearTimeout(timeout);
-      const result: { messages: unknown[]; duration: number; error?: string } =
-        { messages, duration };
+      const result: CollectResult = { messages, duration };
       if (error) result.error = error;
+      if (truncated) result.truncated = true;
       resolve(result);
     });
   });
@@ -60,7 +80,7 @@ export function registerSubscriptionTools(
     "protect_subscribe_devices",
     {
       description:
-        "Connect to the device update WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?}; each message is an envelope {type, item} where item is a device resource carrying id and modelKey (camera, light, sensor, nvr, …). The 7.3.70 docs show type 'add' with the full device object as item; other message types and whether updates carry only changed fields are not documented — inspect the captured messages. Use to detect device state changes or newly adopted devices.",
+        `Connect to the device update WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?, truncated?}; stops early with truncated=true after ${MAX_SUBSCRIPTION_MESSAGES.toString()} messages. Each message is an envelope {type, item} where item is a device resource carrying id and modelKey (camera, light, sensor, nvr, …). The 7.3.70 docs show type 'add' with the full device object as item; other message types and whether updates carry only changed fields are not documented — inspect the captured messages. Use to detect device state changes or newly adopted devices.`,
       inputSchema: { duration: durationSchema },
       outputSchema: subscriptionOutputSchema,
       annotations: READ_ONLY,
@@ -83,7 +103,7 @@ export function registerSubscriptionTools(
     "protect_subscribe_events",
     {
       description:
-        "Connect to the Protect event WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?}; each message is an envelope {type: 'add' | 'update', item: {id, modelKey: 'event', type (event kind, e.g. 'ring'), start, end (epoch ms), device (ID of the camera/sensor that raised it)}} (7.3.70 docs). The full set of event kinds and any further event fields are not documented — inspect the captured messages.",
+        `Connect to the Protect event WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?, truncated?}; stops early with truncated=true after ${MAX_SUBSCRIPTION_MESSAGES.toString()} messages. Each message is an envelope {type: 'add' | 'update', item: {id, modelKey: 'event', type (event kind, e.g. 'ring'), start, end (epoch ms), device (ID of the camera/sensor that raised it)}} (7.3.70 docs). The full set of event kinds and any further event fields are not documented — inspect the captured messages.`,
       inputSchema: { duration: durationSchema },
       outputSchema: subscriptionOutputSchema,
       annotations: READ_ONLY,

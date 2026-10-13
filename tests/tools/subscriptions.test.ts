@@ -7,7 +7,10 @@ import {
   expectSuccess,
   expectError,
 } from "./_helpers.js";
-import { registerSubscriptionTools } from "../../src/tools/subscriptions.js";
+import {
+  registerSubscriptionTools,
+  MAX_SUBSCRIPTION_MESSAGES,
+} from "../../src/tools/subscriptions.js";
 
 /** Minimal mock that quacks like a ws.WebSocket */
 function createMockWebSocket() {
@@ -181,6 +184,38 @@ describe("subscription tools", () => {
         readOnlyHint: true,
         destructiveHint: false,
       });
+    });
+  });
+
+  describe("message cap", () => {
+    it("stops listening once the cap is reached and flags truncation", async () => {
+      const ws = createMockWebSocket();
+      mockFn(client, "connectWebSocket").mockReturnValue(ws);
+
+      // A 30s listen must end early: the test would time out otherwise.
+      const promise = handlers.get("protect_subscribe_devices")!({ duration: 30 });
+
+      setTimeout(() => {
+        ws.emit("open");
+        for (let i = 0; i < MAX_SUBSCRIPTION_MESSAGES + 5; i++) {
+          ws.emit("message", JSON.stringify({ type: "update", item: { id: `d${i.toString()}` } }));
+        }
+      }, 10);
+
+      const result = await promise;
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.messages).toHaveLength(MAX_SUBSCRIPTION_MESSAGES);
+      expect(parsed.truncated).toBe(true);
+      expect(ws.close).toHaveBeenCalled();
+    });
+
+    it("omits the truncated flag when under the cap", async () => {
+      const ws = createMockWebSocket();
+      mockFn(client, "connectWebSocket").mockReturnValue(ws);
+      const promise = handlers.get("protect_subscribe_devices")!({ duration: 1 });
+      setTimeout(() => ws.emit("open"), 10);
+      const parsed = JSON.parse((await promise).content[0].text);
+      expect(parsed.truncated).toBeUndefined();
     });
   });
 });
