@@ -70,6 +70,34 @@ Alternatively, add to your `~/.claude.json` under the top-level `"mcpServers"` k
 }
 ```
 
+### Cloud Connector
+
+To reach a console through Ubiquiti's Cloud Connector instead of over the local
+network, set `UNIFI_PROTECT_HOST=api.ui.com` and `UNIFI_PROTECT_CONSOLE_ID` to
+the console's ID, and supply a **Site Manager** API key (unifi.ui.com →
+Settings → API) as `UNIFI_PROTECT_API_KEY`. That is a different credential
+from a local console API key. Requests are routed through
+`/v1/connector/consoles/{id}`. Keep TLS verification enabled.
+
+Find your console ID with:
+
+```bash
+curl -s https://api.ui.com/v1/hosts -H "X-API-KEY: $KEY" | jq -r '.data[].id'
+```
+
+**WebSocket subscriptions do not work over Cloud Connector.** The connector
+proxies REST calls but returns HTTP 404 on a WebSocket upgrade, so
+`protect_subscribe_devices` and `protect_subscribe_events` fail fast with an
+explanatory error. Every other tool, including snapshots and file uploads,
+works. Connect directly to the console host if you need subscriptions.
+
+Note that `/v1/hosts` reports `protect` under `controllers` for consoles where
+Protect is merely available, not necessarily installed; only consoles actually
+running Protect will answer.
+
+Setting `UNIFI_PROTECT_CONSOLE_ID` against a local host is not fatal: the
+server logs a warning and talks to that host directly.
+
 ## Upgrading to 3.0
 
 3.0 tightens the tools that act on the physical world: disarming the alarm, switching relay outputs, and triggering alarm-hub outputs.
@@ -124,39 +152,11 @@ These three tools are now annotated `destructiveHint: true`. MCP clients that au
 This server provides layered safety controls for responsible operation:
 
 - **Tool annotations** — Every tool declares `readOnlyHint` and `destructiveHint` so MCP clients (like Claude Code) can make informed confirmation decisions
-### Cloud Connector
-
-To reach a console through Ubiquiti's Cloud Connector instead of over the local
-network, set `UNIFI_PROTECT_HOST=api.ui.com` and `UNIFI_PROTECT_CONSOLE_ID` to
-the console's ID, and supply a **Site Manager** API key (unifi.ui.com →
-Settings → API) as `UNIFI_PROTECT_API_KEY`. That is a different credential
-from a local console API key. Requests are routed through
-`/v1/connector/consoles/{id}`. Keep TLS verification enabled.
-
-Find your console ID with:
-
-```bash
-curl -s https://api.ui.com/v1/hosts -H "X-API-KEY: $KEY" | jq -r '.data[].id'
-```
-
-**WebSocket subscriptions do not work over Cloud Connector.** The connector
-proxies REST calls but returns HTTP 404 on a WebSocket upgrade, so
-`protect_subscribe_devices` and `protect_subscribe_events` fail fast with an
-explanatory error. Every other tool, including snapshots and file uploads,
-works. Connect directly to the console host if you need subscriptions.
-
-Note that `/v1/hosts` reports `protect` under `controllers` for consoles where
-Protect is merely available, not necessarily installed; only consoles actually
-running Protect will answer.
-
-Setting `UNIFI_PROTECT_CONSOLE_ID` against a local host is not fatal: the
-server logs a warning and talks to that host directly.
-
 - **Read-only mode** — Enabled by default. Only read operations (list, get, snapshot) are registered. Set `UNIFI_PROTECT_READ_ONLY=false` to enable write/mutating tools
 - **Confirmation parameter** — Irreversible or security-relevant physical actions (`protect_disable_mic`, `protect_trigger_alarm_webhook`, `protect_disable_arm_alarm`, `protect_activate_relay_output`, `protect_trigger_alarm_hub_output`) require an explicit `confirm: true` parameter that must be present for the call to succeed
-- **Dry-run support** — All write tools (except those with `confirm`) accept an optional `dryRun: true` parameter that returns a preview of what would happen without making any changes
+- **Dry-run support** — All write tools accept an optional `dryRun: true` parameter that returns a preview of what would happen without making any changes. On the confirm-gated tools a dry run still requires `confirm: true`
 
-## Tools (73 total)
+## Tools (74 total)
 
 ### System (2)
 | Tool | Description |
