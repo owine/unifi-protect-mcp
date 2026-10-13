@@ -132,8 +132,53 @@ describe("file tools", () => {
       expect(data.path).toBe("/files/animations");
       expect(data.body.contentType).toBe("image/gif");
       expect(data.body.fileName).toBe("upload.gif");
-      expect(data.body.dataLength).toBe(base64.length);
+      expect(data.body.byteLength).toBe(5);
       expect(mockFn(client, "postFile")).not.toHaveBeenCalled();
+    });
+
+    it("strips a data URL prefix before decoding", async () => {
+      mockFn(client, "postFile").mockClear().mockResolvedValue({ id: "f1" });
+      const gif = "R0lGODlhAQABAAAAACw=";
+      await handlers.get("protect_upload_file")!({
+        fileType: "animations",
+        base64Data: `data:image/gif;base64,${gif}`,
+        contentType: "image/gif",
+      });
+      const sent = mockFn(client, "postFile").mock.calls[0][1] as Buffer;
+      expect(sent.subarray(0, 6).toString()).toBe("GIF89a");
+    });
+
+    it("accepts line-wrapped base64", async () => {
+      mockFn(client, "postFile").mockClear().mockResolvedValue({ id: "f1" });
+      await handlers.get("protect_upload_file")!({
+        fileType: "animations",
+        base64Data: "R0lGODlh\nAQABAAAAACw=",
+        contentType: "image/gif",
+      });
+      const sent = mockFn(client, "postFile").mock.calls[0][1] as Buffer;
+      expect(sent.subarray(0, 6).toString()).toBe("GIF89a");
+    });
+
+    it("rejects data that is not base64 instead of uploading garbage", async () => {
+      mockFn(client, "postFile").mockClear();
+      const result = await handlers.get("protect_upload_file")!({
+        fileType: "animations",
+        base64Data: "not base64 at all!!",
+        contentType: "image/gif",
+      });
+      expectError(result);
+      expect(result.content[0].text).toMatch(/base64/i);
+      expect(mockFn(client, "postFile")).not.toHaveBeenCalled();
+    });
+
+    it("rejects invalid base64 in a dry run too", async () => {
+      const result = await handlers.get("protect_upload_file")!({
+        fileType: "animations",
+        base64Data: "%%%",
+        contentType: "image/gif",
+        dryRun: true,
+      });
+      expectError(result);
     });
 
     it("includes an explicit fileName in the dry-run preview", async () => {

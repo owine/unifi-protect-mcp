@@ -54,7 +54,10 @@ export function registerFileTools(
         "Upload a base64-encoded device asset file (sent as multipart/form-data). Observed for GIF image uploads: Protect stores the image as PNG (appending the stored extension to originalName) and a few seconds later creates a separate <name>.gif preview asset, which protect_list_files shows once it exists. Audio uploads have not been observed. Returns: id, name (server-generated), type, originalName, path, size, createdAt, updatedAt, metadata.",
       inputSchema: {
         fileType: FILE_TYPE,
-        base64Data: z.string().describe("Base64-encoded file content"),
+        base64Data: z
+          .string()
+          .min(1)
+          .describe("Base64-encoded file content (a data: URL prefix is accepted and stripped)"),
         contentType: z
           .enum(UPLOAD_CONTENT_TYPES)
           .default("image/gif")
@@ -77,14 +80,14 @@ export function registerFileTools(
     async ({ fileType, base64Data, contentType, fileName, dryRun }) => {
       try {
         const name = fileName ?? defaultFileName(contentType);
+        const buffer = decodeBase64(base64Data);
         if (dryRun) {
           return formatDryRun("POST", safePath`/files/${fileType}`, {
             contentType,
             fileName: name,
-            dataLength: base64Data.length,
+            byteLength: buffer.length,
           });
         }
-        const buffer = Buffer.from(base64Data, "base64");
         const data = await client.postFile(
           safePath`/files/${fileType}`,
           buffer,
@@ -111,4 +114,22 @@ const EXTENSIONS: Record<(typeof UPLOAD_CONTENT_TYPES)[number], string> = {
 
 function defaultFileName(contentType: (typeof UPLOAD_CONTENT_TYPES)[number]): string {
   return `upload.${EXTENSIONS[contentType]}`;
+}
+
+const DATA_URL_PREFIX = /^data:[^,]*;base64,/i;
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$|^[A-Za-z0-9_-]+$/;
+
+/**
+ * Decode upload content strictly. Buffer.from(x, "base64") skips characters it
+ * cannot decode, so a data: URL or a stray non-base64 string would otherwise
+ * upload as corrupt bytes with no error.
+ */
+function decodeBase64(input: string): Buffer {
+  const cleaned = input.replace(DATA_URL_PREFIX, "").replace(/\s+/g, "");
+  if (!BASE64.test(cleaned)) {
+    throw new Error(
+      "base64Data is not valid base64 (expected A-Z, a-z, 0-9, + and /, optionally = padded, or a data: URL)"
+    );
+  }
+  return Buffer.from(cleaned, "base64");
 }
