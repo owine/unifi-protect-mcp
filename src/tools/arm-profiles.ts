@@ -120,7 +120,7 @@ export function registerArmProfileTools(
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
       outputSchema: armProfileOutputSchema,
-      annotations: WRITE,
+      annotations: DESTRUCTIVE,
     },
     async ({ id, settings, confirm, dryRun }) => {
       try {
