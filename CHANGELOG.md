@@ -1,5 +1,36 @@
 # Changelog
 
+## [2.15.0](https://github.com/owine/unifi-protect-mcp/compare/2.14.2...2.15.0) (2026-10-13)
+
+
+### Features
+
+* add dryRun to disable_mic and the alarm webhook, fileName to upload ([e68a0e9](https://github.com/owine/unifi-protect-mcp/commit/e68a0e99667824bf076571c8eaa15ce55a2421b3))
+
+
+### Bug Fixes
+
+* **cameras:** allow PTZ presets above slot 4 ([68f9616](https://github.com/owine/unifi-protect-mcp/commit/68f9616a451c6083c373c6ebcba5c4c60841a82b))
+* **cameras:** send repeated qualities keys when deleting RTSPS streams ([9862c5e](https://github.com/owine/unifi-protect-mcp/commit/9862c5e33c4ff851633790ac97f27146a9771617))
+* **client:** treat 204 No Content as an empty success ([7194d07](https://github.com/owine/unifi-protect-mcp/commit/7194d07be0b5851316ed753ee96bde376e0dcd6f))
+* enforce documented input constraints ([91a8d7c](https://github.com/owine/unifi-protect-mcp/commit/91a8d7c8d6b29bd1a03f13827341cd971f718372))
+* **files:** document live file record fields and upload conversion ([e67e44e](https://github.com/owine/unifi-protect-mcp/commit/e67e44e873f94815368d96501f133dd8176f74da))
+* **files:** scope upload preview claims to what was observed ([b0fa381](https://github.com/owine/unifi-protect-mcp/commit/b0fa381a0c6b1eb2ff30106c9030ffa1c408526c))
+* **files:** upload device assets as multipart/form-data ([435ffde](https://github.com/owine/unifi-protect-mcp/commit/435ffde1c1913bd0e93e2794a1e2a5589957052d))
+
+
+### Dependencies
+
+* update dependency @modelcontextprotocol/sdk to v1.32.1 ([#298](https://github.com/owine/unifi-protect-mcp/issues/298)) ([a83b44b](https://github.com/owine/unifi-protect-mcp/commit/a83b44be079047dac7ea716dd5e13bc121e1cf83))
+* update dependency @types/node to v24.19.2 ([#309](https://github.com/owine/unifi-protect-mcp/issues/309)) ([b91ce78](https://github.com/owine/unifi-protect-mcp/commit/b91ce788dffceafa0fe8a45c0c515ae8a58b48bb))
+* update dependency lefthook to v2.2.1 ([#301](https://github.com/owine/unifi-protect-mcp/issues/301)) ([6a91453](https://github.com/owine/unifi-protect-mcp/commit/6a91453781830fb67c00f216e78f6f4afe34cae9))
+* update dependency typescript-eslint to v8.71.1 ([#299](https://github.com/owine/unifi-protect-mcp/issues/299)) ([36a556b](https://github.com/owine/unifi-protect-mcp/commit/36a556b5d804f2bc624445d596c566fbbe9d9d40))
+* update pnpm to v12.10.1 ([#302](https://github.com/owine/unifi-protect-mcp/issues/302)) ([77733a1](https://github.com/owine/unifi-protect-mcp/commit/77733a11be1e83751e904d19dbc4f448e0f1ad5f))
+* update pnpm to v12.11.0 ([#303](https://github.com/owine/unifi-protect-mcp/issues/303)) ([58fc123](https://github.com/owine/unifi-protect-mcp/commit/58fc123ddbc13e4a7c7b934d8e6e990d5df60865))
+* update pnpm to v12.11.1 ([#304](https://github.com/owine/unifi-protect-mcp/issues/304)) ([bacd884](https://github.com/owine/unifi-protect-mcp/commit/bacd884baed30960e924e01334abde46d8a6be64))
+* update pnpm to v12.11.2 ([#308](https://github.com/owine/unifi-protect-mcp/issues/308)) ([0667248](https://github.com/owine/unifi-protect-mcp/commit/0667248d5c45ff2aa13b4d71d7c1b1f5212f6c07))
+* update pnpm to v12.9.0 ([#294](https://github.com/owine/unifi-protect-mcp/issues/294)) ([5dfbc60](https://github.com/owine/unifi-protect-mcp/commit/5dfbc6035ed5be767b8d78301b11dcb69cfa8f09))
+
 ## [2.14.2](https://github.com/owine/unifi-protect-mcp/compare/2.14.1...2.14.2) (2026-10-05)
 
 
