@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, DESTRUCTIVE, formatDryRun, confirmInput, requireConfirmationForFields } from "../utils/safety.js";
@@ -139,7 +139,7 @@ const DEVICES: DeviceConfig[] = [
 ];
 
 function registerDeviceCrud(
-  server: McpServer,
+  server: ToolRegistrar,
   client: ProtectClient,
   cfg: DeviceConfig,
   readOnly: boolean
@@ -223,7 +223,7 @@ function registerDeviceCrud(
 }
 
 export function registerDeviceTools(
-  server: McpServer,
+  server: ToolRegistrar,
   client: ProtectClient,
   readOnly: boolean
 ) {

@@ -82,8 +82,14 @@ export function listResultSchema<T extends z.ZodType>(itemSchema: T) {
  * tools pass Protect's response through, so the first top-level field a
  * firmware update added would fail the call for every client that validates.
  */
-export function looseOutput(schema: z.ZodRawShape | z.ZodObject): z.ZodObject {
-  return schema instanceof z.ZodObject ? schema.loose() : z.looseObject(schema);
+export function looseOutput(schema: z.ZodRawShape | z.ZodType): z.ZodObject {
+  if (schema instanceof z.ZodObject) return schema.loose();
+  if (schema instanceof z.ZodType) {
+    // structuredContent is always an object; a list wraps its array under
+    // `result` (see listResultSchema).
+    throw new TypeError("An outputSchema must be a z.object or a raw shape");
+  }
+  return z.looseObject(schema);
 }
 
 /**

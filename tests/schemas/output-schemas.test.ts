@@ -27,6 +27,7 @@ import {
   userSchema,
 } from "../../src/schemas/misc.js";
 import { posTransactionOutputSchema } from "../../src/schemas/pos.js";
+import { looseOutput } from "../../src/schemas/common.js";
 
 /**
  * Samples below are REAL UniFi Protect Integration API responses captured from
@@ -1031,4 +1032,16 @@ describe("output schemas (verified against live 7.3.47 responses, re-verified 7.
       expect(z.object(itemOutputShape(key)).safeParse(sample).success).toBe(true);
     }
   );
+});
+
+describe("looseOutput", () => {
+  // structuredContent is always an object, so an array or union outputSchema
+  // is a mistake; it used to surface as an unreadable error deep in zod.
+  it.each([["an array", z.array(z.string())], ["a union", z.string().or(z.number())]])("refuses %s with a clear message", (_label, schema) => {
+    expect(() => looseOutput(schema)).toThrow("An outputSchema must be a z.object or a raw shape");
+  });
+
+  it("publishes an object schema without additionalProperties: false", () => {
+    expect(z.toJSONSchema(looseOutput({ id: z.string() }))).not.toHaveProperty("additionalProperties", false);
+  });
 });
