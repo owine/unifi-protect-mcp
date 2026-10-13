@@ -53,7 +53,7 @@ export function registerDeviceActionTools(
         confirm: STOP_SIREN.input,
         dryRun: dryRunInput(),
       },
-      annotations: WRITE,
+      annotations: DESTRUCTIVE,
     },
     async ({ id, confirm, dryRun }) => {
       if (dryRun) {

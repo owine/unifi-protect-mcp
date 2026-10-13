@@ -384,10 +384,10 @@ describe("camera tools", () => {
       expectError(result);
     });
 
-    it("has write annotations", () => {
+    it("has destructive annotations", () => {
       expect(configs.get("protect_create_talkback")!.annotations).toMatchObject({
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
       });
     });
   });

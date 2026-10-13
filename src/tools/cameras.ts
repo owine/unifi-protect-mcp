@@ -176,7 +176,7 @@ export function registerCameraTools(
         dryRun: dryRunInput(),
       },
       outputSchema: rtspStreamOutputSchema,
-      annotations: WRITE,
+      annotations: DESTRUCTIVE,
     },
     async ({ id, qualities, confirm, dryRun }) => {
       if (dryRun) {
@@ -234,7 +234,7 @@ export function registerCameraTools(
         dryRun: dryRunInput(),
       },
       outputSchema: talkbackSessionOutputSchema,
-      annotations: WRITE,
+      annotations: DESTRUCTIVE,
     },
     async ({ id, confirm, dryRun }) => {
       if (dryRun) {

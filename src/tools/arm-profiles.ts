@@ -83,7 +83,7 @@ export function registerArmProfileTools(
         confirm: SET_CURRENT_PROFILE.input,
         dryRun: dryRunInput(),
       },
-      annotations: WRITE,
+      annotations: DESTRUCTIVE,
     },
     async ({ armProfileId, confirm, dryRun }) => {
       const body = { armProfileId };

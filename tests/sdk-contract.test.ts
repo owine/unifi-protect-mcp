@@ -291,6 +291,18 @@ describe("annotations through the SDK", () => {
     expect(updates.length).toBeGreaterThan(0);
     expect(updates.filter((tool) => tool.annotations?.destructiveHint !== true).map((tool) => tool.name)).toEqual([]);
   });
+
+  // Gated tools weaken alarm coverage, switch physical outputs or open stream
+  // access. confirm is set by the model; the annotation lets the client ask
+  // the person as well.
+  it("marks every confirm-gated tool destructive", async () => {
+    const mcpClient = await connect(createMockClient());
+    const gated = (await mcpClient.listTools()).tools
+      .filter((tool) => "confirm" in ((tool.inputSchema as { properties?: object }).properties ?? {}));
+    await mcpClient.close();
+    expect(gated.length).toBeGreaterThan(0);
+    expect(gated.filter((tool) => tool.annotations?.destructiveHint !== true).map((tool) => tool.name)).toEqual([]);
+  });
 });
 
 /** The smallest input a published JSON Schema accepts: required fields only. */
