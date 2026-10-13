@@ -237,6 +237,29 @@ describe("ProtectClient", () => {
         client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
       ).rejects.toThrow("HTTP 400: Bad Request");
     });
+
+    it("reports an empty JSON body distinctly from a parse failure", async () => {
+      vi.stubGlobal("fetch", mockFetch("", { contentType: "application/json" }));
+      await expect(
+        client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
+      ).rejects.toThrow(/empty body/i);
+    });
+
+    it("rejects a response whose content-length exceeds the JSON limit", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          headers: new Headers({ "content-type": "application/json", "content-length": "99999999" }),
+          text: async () => "{}",
+          json: async () => ({}),
+        } as unknown as Response)
+      );
+      await expect(
+        client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
+      ).rejects.toThrow(/exceeds/i);
+    });
   });
 
   describe("constructor", () => {
@@ -262,6 +285,44 @@ describe("ProtectClient", () => {
       await expect(
         client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
       ).rejects.toThrow("fetch failed");
+    });
+
+    // undici reports every transport failure as "fetch failed" and puts the
+    // actual reason (refused, DNS, TLS) on `cause`.
+    function failWith(message: string, code: string) {
+      const cause = Object.assign(new Error(message), { code });
+      return vi.fn().mockRejectedValue(new TypeError("fetch failed", { cause }));
+    }
+
+    it("includes the underlying cause in the error message", async () => {
+      vi.stubGlobal("fetch", failWith("connect ECONNREFUSED 192.168.1.1:443", "ECONNREFUSED"));
+      await expect(client.get("/nvrs")).rejects.toThrow(
+        "fetch failed: connect ECONNREFUSED 192.168.1.1:443"
+      );
+    });
+
+    it("points to UNIFI_PROTECT_VERIFY_SSL on a certificate error", async () => {
+      vi.stubGlobal("fetch", failWith("self-signed certificate", "DEPTH_ZERO_SELF_SIGNED_CERT"));
+      await expect(client.get("/nvrs")).rejects.toThrow(/UNIFI_PROTECT_VERIFY_SSL=false/);
+    });
+
+    it("includes the cause for getBinary", async () => {
+      vi.stubGlobal("fetch", failWith("self-signed certificate", "DEPTH_ZERO_SELF_SIGNED_CERT"));
+      await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(
+        /self-signed certificate.*UNIFI_PROTECT_VERIFY_SSL=false/
+      );
+    });
+
+    it("includes the cause for postFile", async () => {
+      vi.stubGlobal("fetch", failWith("getaddrinfo ENOTFOUND nvr.local", "ENOTFOUND"));
+      await expect(
+        client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
+      ).rejects.toThrow("fetch failed: getaddrinfo ENOTFOUND nvr.local");
+    });
+
+    it("does not add the TLS hint to non-certificate failures", async () => {
+      vi.stubGlobal("fetch", failWith("connect ECONNREFUSED 192.168.1.1:443", "ECONNREFUSED"));
+      await expect(client.get("/nvrs")).rejects.not.toThrow(/VERIFY_SSL/);
     });
   });
 

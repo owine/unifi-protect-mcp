@@ -42,6 +42,63 @@ async function readErrorBody(response: Response, limit: number): Promise<string>
     : text;
 }
 
+/** Node TLS error codes for a certificate the client could not verify. */
+const CERT_ERROR_CODES = new Set([
+  "DEPTH_ZERO_SELF_SIGNED_CERT",
+  "SELF_SIGNED_CERT_IN_CHAIN",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+  "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+  "CERT_HAS_EXPIRED",
+  "ERR_TLS_CERT_ALTNAME_INVALID",
+]);
+
+/**
+ * fetch reports every transport failure as a bare "fetch failed" and keeps the
+ * reason (refused, DNS, TLS) on `cause`. Only `message` reaches the MCP client,
+ * so fold the cause into it — and name the setting that fixes the most common
+ * first-run failure, a console's self-signed certificate.
+ */
+async function fetchWithCause(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    const cause = err instanceof Error ? err.cause : undefined;
+    if (!(err instanceof Error) || !(cause instanceof Error)) throw err;
+    const code = (cause as NodeJS.ErrnoException).code;
+    const hint =
+      code !== undefined && CERT_ERROR_CODES.has(code)
+        ? ". The console's TLS certificate could not be verified; set UNIFI_PROTECT_VERIFY_SSL=false if it uses a self-signed certificate"
+        : "";
+    throw new Error(`${err.message}: ${cause.message}${hint}`, { cause: err });
+  }
+}
+
+/**
+ * Parse a successful response body: JSON when the content type says so,
+ * otherwise text.
+ */
+async function parseBody(
+  response: Response,
+  method: string,
+  path: string
+): Promise<unknown> {
+  enforceSizeLimit(response, MAX_JSON_BYTES);
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const text = await response.text();
+  if (contentType.includes("application/json")) {
+    if (text.trim() === "") {
+      // A bare JSON.parse would report "Unexpected end of JSON input", which
+      // reads as a broken tool rather than an unusable Protect response.
+      throw new Error(
+        `Protect returned an empty body for ${method} ${path} with a JSON content type`
+      );
+    }
+    return JSON.parse(text);
+  }
+  return text;
+}
+
 export class ProtectClient {
   private baseUrl: string;
   private headers: Record<string, string>;
@@ -91,7 +148,7 @@ export class ProtectClient {
     options.redirect = "error";
     options.signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
 
-    const response = await fetch(url, options);
+    const response = await fetchWithCause(url, options);
 
     if (!response.ok) {
       throw new Error(
@@ -106,21 +163,7 @@ export class ProtectClient {
       return "";
     }
 
-    enforceSizeLimit(response, MAX_JSON_BYTES);
-
-    const contentType = response.headers.get("content-type") ?? "";
-    const text = await response.text();
-    if (contentType.includes("application/json")) {
-      if (text.trim() === "") {
-        // A bare JSON.parse would report "Unexpected end of JSON input", which
-        // reads as a broken tool rather than an unusable Protect response.
-        throw new Error(
-          `Protect returned an empty body for ${method} ${path} with a JSON content type`
-        );
-      }
-      return JSON.parse(text);
-    }
-    return text;
+    return parseBody(response, method, path);
   }
 
   async get(path: string): Promise<unknown> {
@@ -141,7 +184,7 @@ export class ProtectClient {
 
   async getBinary(path: string): Promise<{ data: Buffer; mimeType: string }> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await fetchWithCause(url, {
       method: "GET",
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
       redirect: "error",
@@ -177,7 +220,7 @@ export class ProtectClient {
     const url = `${this.baseUrl}${path}`;
     const form = new FormData();
     form.append("file", new Blob([new Uint8Array(data)], { type: contentType }), fileName);
-    const response = await fetch(url, {
+    const response = await fetchWithCause(url, {
       method: "POST",
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
       body: form,
@@ -191,11 +234,7 @@ export class ProtectClient {
       );
     }
 
-    const ct = response.headers.get("content-type") ?? "";
-    if (ct.includes("application/json")) {
-      return response.json();
-    }
-    return response.text();
+    return parseBody(response, "POST", path);
   }
 
   connectWebSocket(path: string): WebSocket {
