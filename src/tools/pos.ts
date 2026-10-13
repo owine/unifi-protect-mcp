@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
-import { WRITE, formatDryRun } from "../utils/safety.js";
+import { WRITE, formatDryRun, dryRunInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
 import { posTransactionOutputSchema } from "../schemas/pos.js";
@@ -93,10 +93,7 @@ export function registerPosTools(
               "This tool forwards the value unchanged rather than pre-checking it, " +
               "because the window is relative to NVR time, not this process clock."
           ),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       outputSchema: posTransactionOutputSchema,
       annotations: WRITE,

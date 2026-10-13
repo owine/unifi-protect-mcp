@@ -1,10 +1,12 @@
-import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
-import { DESTRUCTIVE, formatDryRun, requireConfirmation, confirmInput } from "../utils/safety.js";
+import { DESTRUCTIVE, formatDryRun, dryRunInput, confirmGate } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { webhookId } from "../utils/params.js";
+
+// Each gate's confirm input and handler check share one action text.
+const TRIGGER_WEBHOOK = confirmGate("trigger the alarm webhook");
 
 export function registerAlarmManagerTools(
   server: ToolRegistrar,
@@ -21,11 +23,8 @@ export function registerAlarmManagerTools(
       inputSchema: {
         id: webhookId()
           .describe("User-defined webhook ID matching an alarm manager configuration"),
-        confirm: confirmInput("trigger the alarm webhook"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        confirm: TRIGGER_WEBHOOK.input,
+        dryRun: dryRunInput(),
       },
       annotations: DESTRUCTIVE,
     },
@@ -33,7 +32,7 @@ export function registerAlarmManagerTools(
       if (dryRun) {
         return formatDryRun("POST", safePath`/alarm-manager/webhook/${id}`);
       }
-      const denied = requireConfirmation(confirm, "trigger the alarm webhook");
+      const denied = TRIGGER_WEBHOOK.check(confirm);
       if (denied) return denied;
       await client.post(safePath`/alarm-manager/webhook/${id}`);
       return formatSuccess({ triggered: true, webhookId: id });

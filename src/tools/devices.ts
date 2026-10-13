@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
-import { READ_ONLY, DESTRUCTIVE, formatDryRun, confirmInput, requireConfirmationForFields } from "../utils/safety.js";
+import { READ_ONLY, DESTRUCTIVE, formatDryRun, confirmInput, requireConfirmationForFields, dryRunInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
 import {
@@ -189,10 +189,7 @@ function registerDeviceCrud(
           ...(cfg.confirmFields
             ? { confirm: confirmInput(`change ${cfg.confirmFields.join(", ")}`) }
             : {}),
-          dryRun: z
-            .boolean()
-            .optional()
-            .describe("If true, return what would happen without making changes"),
+          dryRun: dryRunInput(),
         },
         outputSchema: itemOutputShape(schemaKey),
         annotations: DESTRUCTIVE,
@@ -201,7 +198,7 @@ function registerDeviceCrud(
         if (dryRun) {
           return formatDryRun("PATCH", safePath`/${cfg.urlPath}/${id}`, settings);
         }
-        const denied = requireConfirmationForFields(settings, cfg.confirmFields ?? [], confirm, dryRun);
+        const denied = requireConfirmationForFields(settings, cfg.confirmFields ?? [], confirm);
         if (denied) return denied;
         const data = await client.patch(safePath`/${cfg.urlPath}/${id}`, settings);
         return formatSuccess(data);
