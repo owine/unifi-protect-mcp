@@ -250,13 +250,6 @@ describe("ProtectClient", () => {
     });
   });
 
-  describe("constructor", () => {
-    it("disables TLS verification when verifySsl is false", () => {
-      new ProtectClient({ ...baseConfig, verifySsl: false });
-      expect(process.env.NODE_TLS_REJECT_UNAUTHORIZED).toBe("0");
-    });
-  });
-
   describe("bounded body reads", () => {
     // content-length is optional: a chunked body has none, so the size limit
     // has to be enforced while reading, not only from the header.

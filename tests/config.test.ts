@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { loadConfig } from "../src/config.js";
 
 describe("loadConfig", () => {
@@ -179,5 +183,54 @@ describe("loadConfig", () => {
       .mockImplementation(() => undefined as never);
     loadConfig();
     expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  describe("UNIFI_PROTECT_CA_CERT", () => {
+    let dir: string;
+    let certPath: string;
+
+    beforeEach(() => {
+      dir = mkdtempSync(join(tmpdir(), "protect-ca-"));
+      certPath = join(dir, "console.pem");
+      execFileSync("openssl", [
+        "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1", "-subj", "/CN=unifi.local",
+        "-keyout", join(dir, "console.key"), "-out", certPath,
+      ], { stdio: "ignore" });
+      process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+      process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    });
+
+    afterEach(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+
+    function expectExit() {
+      const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+      loadConfig();
+      expect(exitSpy).toHaveBeenCalledWith(1);
+    }
+
+    it("loads the certificate the variable names", () => {
+      process.env.UNIFI_PROTECT_CA_CERT = certPath;
+      expect(loadConfig().caCert).toBe(readFileSync(certPath, "utf8"));
+    });
+
+    it("calls process.exit(1) when the file cannot be read", () => {
+      process.env.UNIFI_PROTECT_CA_CERT = join(dir, "missing.pem");
+      expectExit();
+    });
+
+    it("calls process.exit(1) when the file holds no certificate", () => {
+      const notACert = join(dir, "notes.txt");
+      writeFileSync(notACert, "not a certificate");
+      process.env.UNIFI_PROTECT_CA_CERT = notACert;
+      expectExit();
+    });
+
+    it("calls process.exit(1) when combined with VERIFY_SSL=false", () => {
+      process.env.UNIFI_PROTECT_CA_CERT = certPath;
+      process.env.UNIFI_PROTECT_VERIFY_SSL = "false";
+      expectExit();
+    });
   });
 });

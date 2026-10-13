@@ -1,4 +1,14 @@
+import { readFileSync } from "node:fs";
 import { z } from "zod";
+import { pemCertificates } from "./tls.js";
+
+function holdsCertificate(pem: string): boolean {
+  try {
+    return pemCertificates(pem).length > 0;
+  } catch {
+    return false;
+  }
+}
 
 const ConfigSchema = z.object({
   // The client builds https://<host>/..., so accept the URL people paste from
@@ -47,6 +57,14 @@ const ConfigSchema = z.object({
     .optional(),
   verifySsl: z.boolean(),
   readOnly: z.boolean(),
+  // PEM certificate(s) to trust for the console, e.g. its own self-signed one.
+  caCert: z
+    .string()
+    .refine(holdsCertificate, "UNIFI_PROTECT_CA_CERT must name a PEM file containing a certificate")
+    .optional(),
+}).refine((config) => config.verifySsl || config.caCert === undefined, {
+  path: ["caCert"],
+  message: "UNIFI_PROTECT_CA_CERT pins a certificate to verify against; it cannot be combined with UNIFI_PROTECT_VERIFY_SSL=false",
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -66,6 +84,17 @@ function envFlag(value: string | undefined, fallback: boolean): boolean {
 }
 
 export function loadConfig(): Config {
+  const caCertPath = process.env.UNIFI_PROTECT_CA_CERT;
+  let caCert: string | undefined;
+  if (caCertPath) {
+    try {
+      caCert = readFileSync(caCertPath, "utf8");
+    } catch (err) {
+      console.error(`Configuration error: cannot read UNIFI_PROTECT_CA_CERT (${caCertPath}): ${err instanceof Error ? err.message : String(err)}`);
+      process.exit(1);
+    }
+  }
+
   const result = ConfigSchema.safeParse({
     host: process.env.UNIFI_PROTECT_HOST,
     apiKey: process.env.UNIFI_PROTECT_API_KEY,
@@ -74,6 +103,7 @@ export function loadConfig(): Config {
       : {}),
     verifySsl: envFlag(process.env.UNIFI_PROTECT_VERIFY_SSL, true),
     readOnly: envFlag(process.env.UNIFI_PROTECT_READ_ONLY, true),
+    ...(caCert !== undefined ? { caCert } : {}),
   });
 
   if (!result.success) {
