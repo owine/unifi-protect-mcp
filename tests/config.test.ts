@@ -113,6 +113,31 @@ describe("loadConfig", () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
+  it.each(["nvr.local:notaport", "nvr.local:99999", "2001:db8::1", "admin@nvr.local"])(
+    "calls process.exit(1) for the malformed host %j",
+    (host) => {
+      process.env.UNIFI_PROTECT_HOST = host;
+      process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+      const exitSpy = vi
+        .spyOn(process, "exit")
+        .mockImplementation(() => undefined as never);
+      loadConfig();
+      expect(exitSpy).toHaveBeenCalledWith(1);
+    }
+  );
+
+  it("accepts a bracketed IPv6 host with a port", () => {
+    process.env.UNIFI_PROTECT_HOST = "[2001:db8::1]:7443";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    expect(loadConfig().host).toBe("[2001:db8::1]:7443");
+  });
+
+  it("drops the default https port so api.ui.com:443 still selects Cloud Connector", () => {
+    process.env.UNIFI_PROTECT_HOST = "api.ui.com:443";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    expect(loadConfig().host).toBe("api.ui.com");
+  });
+
   it.each(["FALSE", "0", "no", "off", " false "])(
     "parses verifySsl=false for %j",
     (value) => {
