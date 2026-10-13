@@ -7,7 +7,13 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { registerAllTools } from "../src/tools/index.js";
 import { ProtectClient } from "../src/client.js";
 import { formatDryRun } from "../src/utils/safety.js";
-import { MAX_JSON_BYTES, MAX_SNAPSHOT_BYTES, MAX_UPLOAD_BASE64_CHARS } from "../src/utils/limits.js";
+import {
+  BINARY_TIMEOUT_MS,
+  MAX_JSON_BYTES,
+  MAX_SNAPSHOT_BYTES,
+  MAX_UPLOAD_BASE64_CHARS,
+  REQUEST_TIMEOUT_MS,
+} from "../src/utils/limits.js";
 import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/sdk/shared/stdio.js";
 import { createMockServer, createMockClient, mockFn } from "./tools/_helpers.js";
 
@@ -107,6 +113,13 @@ describe("dry-run preview against every write tool's published outputSchema", ()
 
   it("covers the write tools that declare an outputSchema", () => {
     expect(writeToolsWithOutput.length).toBeGreaterThan(0);
+  });
+
+  it("declares the preview fields in each published outputSchema", () => {
+    for (const [name, config] of writeToolsWithOutput) {
+      const shape = (config.outputSchema as z.ZodObject).shape;
+      expect(Object.keys(shape), name).toEqual(expect.arrayContaining(["dryRun", "action", "path", "body"]));
+    }
   });
 
   for (const [name, config] of writeToolsWithOutput) {
@@ -352,6 +365,120 @@ describe("tool metadata through the SDK", () => {
 
   it("marks every tool as talking to one closed system", () => {
     for (const tool of tools) expect(tool.annotations?.openWorldHint, tool.name).toBe(false);
+  });
+});
+
+describe("confirm coverage", () => {
+  // Every tool that publishes a confirm input must be in CONFIRM_GATED, so a
+  // new gated tool cannot skip the dry-run / refuse / act checks above.
+  it("covers every tool that takes confirm", async () => {
+    const mcpClient = await connect(createMockClient());
+    const gated = (await mcpClient.listTools()).tools
+      .filter((tool) => "confirm" in ((tool.inputSchema as { properties?: object }).properties ?? {}))
+      .map((tool) => tool.name);
+    await mcpClient.close();
+    expect([...new Set(CONFIRM_GATED.map(([name]) => name))].sort()).toEqual(gated.sort());
+  });
+});
+
+describe("every alarm-related field is gated", () => {
+  // The policy, pinned field by field: dropping one from a gate's list must
+  // fail here. Each is sent alongside a routine field, as a model would.
+  const GATED_FIELDS: [string, string, unknown][] = [
+    ["protect_update_sensor", "alarmSettings", { isEnabled: false }],
+    ["protect_update_sensor", "motionSettings", { isEnabled: false }],
+    ["protect_update_sensor", "glassBreakSettings", { isEnabled: false }],
+    ["protect_update_sensor", "armProfileIds", null],
+    ["protect_update_sensor", "scheduleMode", "always"],
+    ["protect_update_fob", "armControlSettings", { enabled: false }],
+    ["protect_update_arm_profile", "schedules", []],
+    ["protect_update_arm_profile", "automations", []],
+  ];
+  let mcpClient: Client;
+  const toolClient = createMockClient();
+
+  beforeAll(async () => {
+    mcpClient = await connect(toolClient);
+  });
+
+  afterAll(async () => {
+    await mcpClient.close();
+  });
+
+  it.each(GATED_FIELDS)("%s refuses %s without confirm", async (name, field, value) => {
+    mockFn(toolClient, "patch").mockClear();
+    const result = await mcpClient.callTool({ name, arguments: { id: "x1", settings: { name: "Renamed", [field]: value } } });
+    expect(result.isError).toBe(true);
+    expect(mockFn(toolClient, "patch")).not.toHaveBeenCalled();
+  });
+});
+
+describe("request timeouts inside an MCP call", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  // The caller's abort signal is combined with the request timeout; using the
+  // caller's signal alone would drop the timeout from every real tool call.
+  it.each([
+    ["protect_get_info", {}, REQUEST_TIMEOUT_MS, /GET \/meta\/info: Protect did not respond/],
+    ["protect_get_snapshot", { id: "cam1" }, BINARY_TIMEOUT_MS, /GET \/cameras\/cam1\/snapshot: Protect did not respond/],
+    ["protect_upload_file", { fileType: "animations", base64Data: "R0lGODlhAQABAAAAACw=" }, BINARY_TIMEOUT_MS, /POST \/files\/animations: Protect did not respond.*may still have been applied/],
+  ])("%s times out after its budget with a message naming the call", async (name, args, budget, message) => {
+    const timers: { ms: number; controller: AbortController }[] = [];
+    vi.spyOn(AbortSignal, "timeout").mockImplementation((ms: number) => {
+      const controller = new AbortController();
+      timers.push({ ms, controller });
+      return controller.signal;
+    });
+    vi.stubGlobal("fetch", (_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
+      init.signal?.addEventListener("abort", () => { reject(init.signal?.reason as Error); });
+    }));
+    const mcpClient = await connect(
+      new ProtectClient({ host: "192.168.1.1", apiKey: "k", verifySsl: true, readOnly: false })
+    );
+    const call = mcpClient.callTool({ name, arguments: args });
+    await vi.waitFor(() => { expect(timers.length).toBe(1); });
+    expect(timers[0].ms).toBe(budget);
+    timers[0].controller.abort(new DOMException("The operation was aborted due to timeout", "TimeoutError"));
+    const result = await call;
+    await mcpClient.close();
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toMatch(message);
+  });
+
+  // AsyncLocalStorage gives each call its own signal: cancelling one call
+  // must not abort another running beside it.
+  it("cancels only the call that was cancelled", async () => {
+    const NVRS_DELAY_MS = 500;
+    const signals = new Map<string, AbortSignal>();
+    vi.stubGlobal("fetch", (url: string, init: RequestInit) => {
+      signals.set(url.replace(/.*\/v1/, ""), init.signal!);
+      return new Promise((resolve, reject) => {
+        init.signal?.addEventListener("abort", () => { reject(init.signal?.reason as Error); });
+        if (url.endsWith("/nvrs")) setTimeout(() => { resolve(new Response("{}", { headers: { "content-type": "application/json" } })); }, NVRS_DELAY_MS);
+      });
+    });
+    const mcpClient = await connect(
+      new ProtectClient({ host: "192.168.1.1", apiKey: "k", verifySsl: true, readOnly: true }),
+      true
+    );
+    const cancelled = new AbortController();
+    const first = mcpClient.callTool({ name: "protect_get_info", arguments: {} }, undefined, { signal: cancelled.signal });
+    const firstRejects = expect(first).rejects.toThrow();
+    const second = mcpClient.callTool({ name: "protect_list_nvrs", arguments: {} });
+    await vi.waitFor(() => { expect(signals.size).toBe(2); });
+    cancelled.abort();
+    // The cancellation reaches the server asynchronously. Checked while the
+    // second request is still in flight: the SDK may abort a call's signal
+    // once that call has finished.
+    await vi.waitFor(() => { expect(signals.get("/meta/info")?.aborted).toBe(true); });
+    expect(signals.get("/nvrs")?.aborted).toBe(false);
+    await firstRejects;
+    const result = await second;
+    await mcpClient.close();
+    expect(result.isError, JSON.stringify(result.content)).toBeFalsy();
   });
 });
 
