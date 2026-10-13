@@ -219,6 +219,33 @@ describe("loadConfig", () => {
     expect(errors.join(" ")).not.toContain("X-Injected");
   });
 
+  describe("configuration error output", () => {
+    function errorOutput(): string {
+      const lines: string[] = [];
+      vi.spyOn(console, "error").mockImplementation((msg: string) => { lines.push(msg); });
+      vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+      loadConfig();
+      return lines.join("\n");
+    }
+
+    it("names the missing variable", () => {
+      delete process.env.UNIFI_PROTECT_HOST;
+      process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+      expect(errorOutput()).toMatch(/UNIFI_PROTECT_HOST/);
+    });
+
+    // The old trailer listed the two required variables after every error,
+    // pointing at the wrong fix when the problem was elsewhere.
+    it("does not blame the required variables for an unrelated error", () => {
+      process.env.UNIFI_PROTECT_HOST = "api.ui.com";
+      process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+      process.env.UNIFI_PROTECT_VERIFY_SSL = "false";
+      const output = errorOutput();
+      expect(output).toMatch(/api\.ui\.com/);
+      expect(output).not.toMatch(/Required env vars/);
+    });
+  });
+
   describe("UNIFI_PROTECT_CA_CERT", () => {
     let dir: string;
     let certPath: string;

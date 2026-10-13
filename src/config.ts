@@ -17,7 +17,7 @@ const ConfigSchema = z.object({
   // change the request (credentials, path, query) is rejected rather than
   // silently misrouted.
   host: z
-    .string()
+    .string({ error: "UNIFI_PROTECT_HOST is required" })
     .min(1, "UNIFI_PROTECT_HOST is required")
     .transform((raw, ctx) => {
       const trimmed = raw.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
@@ -49,7 +49,7 @@ const ConfigSchema = z.object({
   // header and echo the whole key into every tool error. The message never
   // repeats the value.
   apiKey: z
-    .string()
+    .string({ error: "UNIFI_PROTECT_API_KEY is required" })
     .trim()
     .min(1, "UNIFI_PROTECT_API_KEY is required")
     // eslint-disable-next-line no-control-regex -- matching control characters is the point
@@ -122,11 +122,9 @@ export function loadConfig(): Config {
   });
 
   if (!result.success) {
-    const errors = result.error.issues.map((i) => i.message).join(", ");
+    // Every message names the variable it is about, so no generic trailer.
+    const errors = result.error.issues.map((i) => i.message).join("; ");
     console.error(`Configuration error: ${errors}`);
-    console.error(
-      "Required env vars: UNIFI_PROTECT_HOST, UNIFI_PROTECT_API_KEY"
-    );
     process.exit(1);
   }
 
