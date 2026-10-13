@@ -28,8 +28,7 @@ const ConfigSchema = z.object({
         // reported below
       }
       if (
-        !url ||
-        url.username !== "" ||
+        url?.username !== "" ||
         url.password !== "" ||
         url.pathname !== "/" ||
         url.search !== "" ||

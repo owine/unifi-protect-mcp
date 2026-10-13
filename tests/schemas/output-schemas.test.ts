@@ -578,7 +578,7 @@ describe("output schemas (verified against live 7.3.47 responses, re-verified 7.
   });
 
   it("talkback session schema accepts the full audio config", () => {
-    const schema = z.object(talkbackSessionOutputSchema).passthrough();
+    const schema = z.object(talkbackSessionOutputSchema).loose();
     expect(() =>
       schema.parse({
         url: "rtp://192.168.1.123:7004",
@@ -830,7 +830,7 @@ describe("output schemas (verified against live 7.3.47 responses, re-verified 7.
     expect(() => chimeSchema.parse({ id: "x" })).not.toThrow();
   });
 
-  it("schemas pass unknown future fields through (.passthrough())", () => {
+  it("schemas pass unknown future fields through (.loose())", () => {
     const result = cameraSchema.parse({ id: "x", brandNewField: 42 });
     expect((result as Record<string, unknown>).brandNewField).toBe(42);
   });

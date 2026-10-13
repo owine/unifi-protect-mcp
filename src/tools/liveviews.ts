@@ -19,7 +19,7 @@ const liveviewSlotInput = z
     cycleMode: z.string().describe('Cycle mode, e.g. "time" or "motion"'),
     cycleInterval: z.number().describe("Cycle interval in seconds"),
   })
-  .passthrough();
+  .loose();
 
 const liveviewBody = z
   .object({
@@ -32,7 +32,7 @@ const liveviewBody = z
     layout: z.number().min(1).max(26).describe("Number of slots (1-26)"),
     slots: z.array(liveviewSlotInput).describe("Per-slot cameras and cycling settings"),
   })
-  .passthrough();
+  .loose();
 
 export function registerLiveviewTools(
   server: McpServer,

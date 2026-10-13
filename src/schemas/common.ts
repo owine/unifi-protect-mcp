@@ -17,12 +17,12 @@ import { z } from "zod";
  * - Non-string fields (booleans, numbers, nested objects whose shape we have
  *   not verified) use `unknownField()` — name + description published, no
  *   runtime type constraint at all.
- * - Every object uses `.passthrough()` so unverified/extra fields flow through.
+ * - Every object uses `.loose()` so unverified/extra fields flow through.
  */
 
-/** Create an object schema with `.passthrough()` to allow unknown fields. */
+/** Create an object schema with `.loose()` to allow unknown fields. */
 export function passthroughObject<T extends z.ZodRawShape>(shape: T) {
-  return z.object(shape).passthrough();
+  return z.object(shape).loose();
 }
 
 /**
@@ -68,7 +68,7 @@ export function hardwareModelFields() {
 }
 
 /** Output-schema shape for list endpoints that return a top-level array. */
-export function listResultSchema<T extends z.ZodTypeAny>(itemSchema: T) {
+export function listResultSchema<T extends z.ZodType>(itemSchema: T) {
   return {
     result: z.array(itemSchema).describe("Array of items returned by the list endpoint"),
   };
