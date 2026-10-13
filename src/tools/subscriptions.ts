@@ -35,6 +35,7 @@ function collectMessages(
     let error: string | undefined;
     let truncated = false;
 
+    const startedAt = Date.now();
     const ws = client.connectWebSocket(path);
 
     const timeout = setTimeout(() => {
@@ -64,7 +65,10 @@ function collectMessages(
 
     ws.on("close", () => {
       clearTimeout(timeout);
-      const result: CollectResult = { messages, duration };
+      // Elapsed time, not the requested duration: the cap or an error can end
+      // the listen early.
+      const elapsed = Math.round((Date.now() - startedAt) / 100) / 10;
+      const result: CollectResult = { messages, duration: elapsed };
       if (error) result.error = error;
       if (truncated) result.truncated = true;
       resolve(result);
