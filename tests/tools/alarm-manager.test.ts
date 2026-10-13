@@ -45,13 +45,13 @@ describe("alarm manager tools", () => {
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
     });
 
-    it("refuses a dry run without confirm", async () => {
+    it("previews a dry run without confirm", async () => {
       mockFn(client, "post").mockClear();
       const result = await handlers.get("protect_trigger_alarm_webhook")!({
         id: "wh1",
         dryRun: true,
       });
-      expect(result.isError).toBe(true);
+      expect(result.isError).toBeUndefined();
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
     });
 
@@ -93,8 +93,9 @@ describe("alarm manager tools", () => {
         expect(schema.safeParse({ id: "", confirm: true }).success).toBe(false);
       });
 
-      it("rejects missing confirm", () => {
-        expect(schema.safeParse({ id: "wh1" }).success).toBe(false);
+      // A missing confirm is refused by the handler, after the dry-run branch.
+      it("leaves a missing confirm to the handler", () => {
+        expect(schema.safeParse({ id: "wh1" }).success).toBe(true);
       });
 
       it("accepts dryRun alongside confirm", () => {

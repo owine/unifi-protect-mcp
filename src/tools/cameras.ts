@@ -2,7 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
+import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation, confirmInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
 import {
@@ -287,9 +287,7 @@ export function registerCameraTools(
         "IRREVERSIBLE: Permanently disable the microphone on a camera. Can only be re-enabled by factory resetting the camera. Returns: the full updated camera (same fields as protect_get_camera).",
       inputSchema: {
         id: resourceId().describe("Camera ID"),
-        confirm: z
-          .literal(true)
-          .describe("Must be true to confirm this irreversible action"),
+        confirm: confirmInput("permanently disable the microphone"),
         dryRun: z
           .boolean()
           .optional()
@@ -299,12 +297,12 @@ export function registerCameraTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, confirm, dryRun }) => {
-      const denied = requireConfirmation(confirm, "permanently disable the microphone");
-      if (denied) return denied;
       try {
         if (dryRun) {
           return formatDryRun("POST", safePath`/cameras/${id}/disable-mic-permanently`);
         }
+        const denied = requireConfirmation(confirm, "permanently disable the microphone");
+        if (denied) return denied;
         const data = await client.post(
           safePath`/cameras/${id}/disable-mic-permanently`
         );
