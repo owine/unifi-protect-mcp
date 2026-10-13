@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmationForFields, dryRunInput, confirmGate, confirmInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { PAGING_NOTE, pageOf, pagingInput } from "../utils/paging.js";
 import { armProfileId } from "../utils/params.js";
 import {
   armProfileListOutputSchema,
@@ -41,13 +42,14 @@ export function registerArmProfileTools(
     "protect_list_arm_profiles",
     {
       description:
-        "List all arm profiles (only available when using the local alarm manager — the standalone NVR alarm system, not Protect cloud alerts). Returns array; each profile (7.3.70 docs): id, name, automations[], creator, schedules[], recordEverything, activationDelay (0 | 60000 | 300000 | 600000), createdAt, updatedAt.",
+        "List all arm profiles (only available when using the local alarm manager — the standalone NVR alarm system, not Protect cloud alerts). Returns array; each profile (7.3.70 docs): id, name, automations[], creator, schedules[], recordEverything, activationDelay (0 | 60000 | 300000 | 600000), createdAt, updatedAt." + PAGING_NOTE,
+      inputSchema: pagingInput,
       outputSchema: armProfileListOutputSchema,
       annotations: READ_ONLY,
     },
-    async () => {
+    async ({ limit, offset }) => {
       const data = await client.get("/arm-profiles");
-      return formatSuccess(data);
+      return formatSuccess(pageOf(data, limit, offset));
     }
   );
 
