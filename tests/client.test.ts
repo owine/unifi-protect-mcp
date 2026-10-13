@@ -364,6 +364,16 @@ describe("ProtectClient", () => {
       );
     });
 
+    // Cloud Connector refuses a pin and verification-off, so its hint must not
+    // suggest them.
+    it("points at interception, not a pin, for a Cloud Connector certificate error", async () => {
+      vi.stubGlobal("fetch", failWith("unable to verify the first certificate", "UNABLE_TO_VERIFY_LEAF_SIGNATURE"));
+      const cloud = new ProtectClient({ ...baseConfig, host: "api.ui.com", consoleId: "abc" });
+      const error = (await cloud.get("/nvrs").catch((err: unknown) => err)) as Error;
+      expect(error.message).toMatch(/intercepting TLS/);
+      expect(error.message).not.toMatch(/UNIFI_PROTECT_CA_CERT|VERIFY_SSL/);
+    });
+
     it("points to UNIFI_PROTECT_VERIFY_SSL on a certificate error", async () => {
       vi.stubGlobal("fetch", failWith("self-signed certificate", "DEPTH_ZERO_SELF_SIGNED_CERT"));
       await expect(client.get("/nvrs")).rejects.toThrow(/UNIFI_PROTECT_VERIFY_SSL=false/);

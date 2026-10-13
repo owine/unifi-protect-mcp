@@ -23,7 +23,7 @@ export function registerDeviceActionTools(
   server.registerTool(
     "protect_play_siren",
     {
-      description: "Activate the siren alarm for a duration. Tracks status and can be stopped early.",
+      description: "Activate the siren alarm for a duration. Stop it early with protect_stop_siren, which requires confirm: true.",
       inputSchema: {
         id: resourceId().describe("Siren ID"),
         duration: z
@@ -118,7 +118,7 @@ export function registerDeviceActionTools(
       description: "Control a relay output. Relays commonly drive gates, door strikes and garage doors, so this requires confirm: true. state (\"on\"/\"off\") is required: the API's toggle mode is not exposed because a retried toggle would flip the output back. Read the current output state with protect_get_relay. When state is \"on\", pulseDuration auto-turns off after the given milliseconds.",
       inputSchema: {
         id: resourceId().describe("Relay ID"),
-        outputId: z.number().int().min(0).describe("Output channel ID (0 or 1)"),
+        outputId: z.number().int().min(0).describe("Output channel ID: an outputs[].id from protect_get_relay"),
         state: z.enum(["on", "off"]).describe("Desired output state"),
         pulseDuration: z.number().int().min(0).optional().describe("Auto-off duration in milliseconds (only when state is \"on\"). 0 means stay on."),
         confirm: SWITCH_RELAY.input,
@@ -149,7 +149,7 @@ export function registerDeviceActionTools(
       description: "Trigger an alarm hub output channel. Used to turn on/off connected sirens, lights, locks, or other actuators, so this requires confirm: true. enable is required: the API's toggle mode is not exposed because a retried toggle would flip the output back.",
       inputSchema: {
         id: resourceId().describe("Alarm hub (link station) ID"),
-        outputId: z.number().int().min(0).describe("Output channel ID (0 or 1)"),
+        outputId: z.number().int().min(0).describe("Output channel ID: a key of alarmHub.output from protect_get_alarm_hub"),
         enable: z.boolean().describe("True to turn on, false to turn off"),
         delay: z.number().int().min(0).optional().describe("Delay in milliseconds before output activates"),
         duration: z.number().int().min(0).optional().describe("Duration in milliseconds to keep output active. 0 = indefinite."),

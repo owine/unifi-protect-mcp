@@ -116,10 +116,13 @@ async function fetchWithCause(url: string, init: RequestInit & { dispatcher: Age
     const cause = err instanceof Error ? err.cause : undefined;
     if (!(err instanceof Error) || !(cause instanceof Error)) throw err;
     const code = (cause as NodeJS.ErrnoException).code;
-    const hint =
-      code !== undefined && CERT_ERROR_CODES.has(code)
-        ? ". The console's TLS certificate could not be verified; for a console with a self-signed certificate, save the certificate and point UNIFI_PROTECT_CA_CERT at it (or, on a trusted network only, set UNIFI_PROTECT_VERIFY_SSL=false)"
-        : "";
+    // Cloud Connector has a publicly trusted certificate, and refuses both a
+    // pin and verification-off, so a failure there means something between
+    // here and api.ui.com is presenting another certificate.
+    const certificateHint = isCloudConnectorHost(new URL(url).host)
+      ? ". The certificate for api.ui.com could not be verified; check for a proxy or firewall intercepting TLS"
+      : ". The console's TLS certificate could not be verified; for a console with a self-signed certificate, save the certificate and point UNIFI_PROTECT_CA_CERT at it (or, on a trusted network only, set UNIFI_PROTECT_VERIFY_SSL=false)";
+    const hint = code !== undefined && CERT_ERROR_CODES.has(code) ? certificateHint : "";
     throw new Error(`${err.message}: ${cause.message}${hint}`, { cause: err });
   }
 }
