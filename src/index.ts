@@ -5,16 +5,17 @@ import { loadConfig } from "./config.js";
 import { ProtectClient } from "./client.js";
 import { registerAllTools } from "./tools/index.js";
 import { SERVER_VERSION } from "./version.js";
+import { serverInstructions } from "./instructions.js";
 import { SERVER_READ_BUFFER_BYTES } from "./utils/limits.js";
 
 async function main() {
   const config = loadConfig();
   const client = new ProtectClient(config);
 
-  const server = new McpServer({
-    name: "unifi-protect",
-    version: SERVER_VERSION,
-  });
+  const server = new McpServer(
+    { name: "unifi-protect", title: "UniFi Protect", version: SERVER_VERSION },
+    { instructions: serverInstructions(config.readOnly) }
+  );
 
   registerAllTools(server, client, config.readOnly);
 

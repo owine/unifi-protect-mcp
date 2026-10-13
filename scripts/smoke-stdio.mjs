@@ -1,5 +1,6 @@
 // Smoke-test an installed server binary over stdio:
-// - it starts through its shebang and reports this package's version;
+// - it starts through its shebang, reports this package's version and sends
+//   instructions;
 // - read-only mode serves only read-only tools, read-write mode adds writes;
 // - an upload too large for one MCP message is refused with an error, and the
 //   server is still there afterwards (its transport used to close, ending the
@@ -42,6 +43,7 @@ async function connect(readOnly) {
   }));
   const served = client.getServerVersion()?.version;
   if (served !== version) throw new Error(`server reports version ${served}, package.json says ${version}`);
+  if (!client.getInstructions()) throw new Error("server sent no instructions");
   return client;
 }
 

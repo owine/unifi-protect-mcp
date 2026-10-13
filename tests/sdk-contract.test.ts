@@ -313,6 +313,34 @@ describe("read-only mode through the SDK", () => {
   });
 });
 
+describe("tool metadata through the SDK", () => {
+  let tools: Awaited<ReturnType<Client["listTools"]>>["tools"];
+
+  beforeAll(async () => {
+    const mcpClient = await connect(createMockClient());
+    tools = (await mcpClient.listTools()).tools;
+    await mcpClient.close();
+  });
+
+  it("gives every tool a readable title", () => {
+    for (const tool of tools) expect(tool.title, tool.name).toMatch(/^[A-Z][^_]*$/);
+  });
+
+  it.each([
+    ["protect_get_rtsp_streams", "Get RTSP streams"],
+    ["protect_goto_ptz_preset", "Go to PTZ preset"],
+    ["protect_list_nvrs", "List NVRs"],
+    ["protect_list_ulp_users", "List ULP users"],
+    ["protect_ingest_pos_transaction", "Ingest POS transaction"],
+  ])("titles %s as %s", (name, title) => {
+    expect(tools.find((tool) => tool.name === name)?.title).toBe(title);
+  });
+
+  it("marks every tool as talking to one closed system", () => {
+    for (const tool of tools) expect(tool.annotations?.openWorldHint, tool.name).toBe(false);
+  });
+});
+
 describe("hostile IDs through the SDK", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
