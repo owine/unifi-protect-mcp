@@ -185,6 +185,20 @@ describe("loadConfig", () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
+  // A Site Manager key reaches every console on the account and crosses the
+  // internet; it never goes out over unverified TLS.
+  it.each(["api.ui.com", "https://API.UI.COM/"])(
+    "calls process.exit(1) for Cloud Connector host %j with VERIFY_SSL=false",
+    (host) => {
+      process.env.UNIFI_PROTECT_HOST = host;
+      process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+      process.env.UNIFI_PROTECT_VERIFY_SSL = "false";
+      const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+      loadConfig();
+      expect(exitSpy).toHaveBeenCalledWith(1);
+    }
+  );
+
   describe("UNIFI_PROTECT_CA_CERT", () => {
     let dir: string;
     let certPath: string;

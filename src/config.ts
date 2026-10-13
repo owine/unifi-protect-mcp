@@ -65,6 +65,12 @@ const ConfigSchema = z.object({
 }).refine((config) => config.verifySsl || config.caCert === undefined, {
   path: ["caCert"],
   message: "UNIFI_PROTECT_CA_CERT pins a certificate to verify against; it cannot be combined with UNIFI_PROTECT_VERIFY_SSL=false",
+}).refine((config) => config.verifySsl || config.host !== "api.ui.com", {
+  // Turning verification off is for local consoles with self-signed
+  // certificates. A Site Manager key reaches every console on the account and
+  // crosses the internet, so it never goes out unverified.
+  path: ["verifySsl"],
+  message: "TLS verification cannot be disabled for api.ui.com; unset UNIFI_PROTECT_VERIFY_SSL",
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
