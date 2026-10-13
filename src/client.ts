@@ -130,31 +130,42 @@ export class ProtectClient {
     }
   }
 
+  /**
+   * The one place a request is sent: every path builds its URL, applies
+   * `redirect: "error"` (so X-API-KEY never follows a redirect) and its
+   * timeout, and turns a non-2xx status into an error with a bounded body.
+   */
+  private async send(
+    method: string,
+    path: string,
+    init: { body?: BodyInit; headers: Record<string, string>; timeoutMs: number; errorLimit: number }
+  ): Promise<Response> {
+    const response = await fetchWithCause(`${this.baseUrl}${path}`, {
+      method,
+      headers: init.headers,
+      ...(init.body !== undefined ? { body: init.body } : {}),
+      redirect: "error",
+      signal: AbortSignal.timeout(init.timeoutMs),
+    });
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}: ${await readErrorBody(response, init.errorLimit)}`
+      );
+    }
+    return response;
+  }
+
   private async request(
     method: string,
     path: string,
     body?: unknown
   ): Promise<unknown> {
-    const url = `${this.baseUrl}${path}`;
-    const options: RequestInit = {
-      method,
+    const response = await this.send(method, path, {
       headers: this.headers,
-    };
-
-    if (body !== undefined) {
-      options.body = JSON.stringify(body);
-    }
-
-    options.redirect = "error";
-    options.signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
-
-    const response = await fetchWithCause(url, options);
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status}: ${await readErrorBody(response, MAX_JSON_BYTES)}`
-      );
-    }
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      timeoutMs: REQUEST_TIMEOUT_MS,
+      errorLimit: MAX_JSON_BYTES,
+    });
 
     // 204 No Content (action endpoints: siren/relay/speaker triggers, arm
     // profile enable/disable, PTZ, …) has no body by definition — don't let a
@@ -183,19 +194,11 @@ export class ProtectClient {
   }
 
   async getBinary(path: string): Promise<{ data: Buffer; mimeType: string }> {
-    const url = `${this.baseUrl}${path}`;
-    const response = await fetchWithCause(url, {
-      method: "GET",
+    const response = await this.send("GET", path, {
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
-      redirect: "error",
-      signal: AbortSignal.timeout(BINARY_TIMEOUT_MS),
+      timeoutMs: BINARY_TIMEOUT_MS,
+      errorLimit: MAX_BINARY_BYTES,
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status}: ${await readErrorBody(response, MAX_BINARY_BYTES)}`
-      );
-    }
 
     enforceSizeLimit(response, MAX_BINARY_BYTES);
 
@@ -217,23 +220,14 @@ export class ProtectClient {
     contentType: string,
     fileName: string
   ): Promise<unknown> {
-    const url = `${this.baseUrl}${path}`;
     const form = new FormData();
     form.append("file", new Blob([new Uint8Array(data)], { type: contentType }), fileName);
-    const response = await fetchWithCause(url, {
-      method: "POST",
+    const response = await this.send("POST", path, {
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
       body: form,
-      redirect: "error",
-      signal: AbortSignal.timeout(BINARY_TIMEOUT_MS),
+      timeoutMs: BINARY_TIMEOUT_MS,
+      errorLimit: MAX_BINARY_BYTES,
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status}: ${await readErrorBody(response, MAX_BINARY_BYTES)}`
-      );
-    }
-
     return parseBody(response, "POST", path);
   }
 
