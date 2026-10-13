@@ -74,7 +74,7 @@ describe("POS tools", () => {
         ...minimal,
         dryRun: true,
       });
-      const data = JSON.parse(result.content[0].text!);
+      const data = JSON.parse(result.content[0].text);
       expect(data.dryRun).toBe(true);
       expect(data.action).toBe("POST");
       expect(data.path).toBe("/pos/cameras/cam1/transactions");

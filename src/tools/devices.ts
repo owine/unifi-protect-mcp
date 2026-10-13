@@ -205,12 +205,11 @@ function registerDeviceCrud(
         outputSchema: itemOutputShape(schemaKey),
         annotations: DESTRUCTIVE,
       },
-      async ({ id, settings, dryRun, ...rest }) => {
+      async ({ id, settings, dryRun, confirm }) => {
         try {
           if (dryRun) {
             return formatDryRun("PATCH", safePath`/${cfg.urlPath}/${id}`, settings);
           }
-          const confirm = (rest as { confirm?: boolean }).confirm;
           const denied = requireConfirmationForFields(settings, cfg.confirmFields ?? [], confirm, dryRun);
           if (denied) return denied;
           const data = await client.patch(safePath`/${cfg.urlPath}/${id}`, settings);

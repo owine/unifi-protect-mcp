@@ -44,7 +44,7 @@ function assertPathContains(
   method: keyof ReturnType<typeof createMockClient>,
   encodedSegment: string,
 ) {
-  const fn = mockFn(client, method as keyof import("../../src/client.js").ProtectClient);
+  const fn = mockFn(client, method);
   expect(fn).toHaveBeenCalled();
 
   const paths = (fn.mock.calls as [string, ...unknown[]][]).map((call) => call[0]);

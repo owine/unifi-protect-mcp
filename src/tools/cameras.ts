@@ -155,7 +155,7 @@ export function registerCameraTools(
               .optional()
               .describe("Smart detection (objectTypes[], audioTypes[])"),
           })
-          .passthrough()
+          .loose()
           .refine((o) => Object.keys(o).length > 0, "settings must include at least one field")
           .describe("Partial camera settings to update"),
         dryRun: z

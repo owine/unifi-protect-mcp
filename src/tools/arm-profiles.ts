@@ -113,7 +113,7 @@ export function registerArmProfileTools(
         settings: z
           .object(armProfileFields)
           .partial()
-          .passthrough()
+          .loose()
           .refine((o) => Object.keys(o).length > 0, "settings must include at least one field")
           .describe("Partial arm profile settings to update"),
         confirm: confirmInput("change schedules or automations"),

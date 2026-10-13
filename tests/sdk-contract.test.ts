@@ -124,9 +124,9 @@ describe("payload sizes through the SDK", () => {
   });
 
   async function snapshot(bytes: number) {
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(async () =>
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(() => Promise.resolve(
       new Response(new Uint8Array(bytes), { headers: { "content-type": "image/jpeg" } })
-    ));
+    )));
     const mcpClient = await connect(
       new ProtectClient({ host: "192.168.1.1", apiKey: "k", verifySsl: true, readOnly: true }),
       true

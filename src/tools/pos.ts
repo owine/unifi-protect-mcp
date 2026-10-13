@@ -10,7 +10,7 @@ import { posTransactionOutputSchema } from "../schemas/pos.js";
 /**
  * Point-of-sale event ingestion (added in Protect 7.3.x).
  *
- * `lineItems` entries use `.passthrough()` because the 7.3.70 docs render the
+ * `lineItems` entries use `.loose()` because the 7.3.70 docs render the
  * item schema collapsed — the request sample shows `{ title, quantity: 1 }`, but
  * an undocumented extra field should reach the API rather than be stripped.
  * Since the item constraints are not published, `quantity` is only required
@@ -28,7 +28,7 @@ export function registerPosTools(
       title: z.string().describe("Line item name"),
       quantity: z.number().positive().describe("Quantity purchased (> 0)"),
     })
-    .passthrough();
+    .loose();
 
   server.registerTool(
     "protect_ingest_pos_transaction",
@@ -72,7 +72,7 @@ export function registerPosTools(
             id: z.string().optional().describe("Store/location ID"),
             name: z.string().optional().describe("Store/location name"),
           })
-          .passthrough()
+          .loose()
           .optional()
           .describe("Point-of-sale location"),
         paymentTypes: z

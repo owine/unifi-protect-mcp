@@ -15,10 +15,10 @@ function mockFetch(body: unknown, options?: { status?: number; contentType?: str
   const status = options?.status ?? 200;
   const contentType = options?.contentType ?? "application/json";
   // A fresh real Response per call: a body can be read only once.
-  return vi.fn().mockImplementation(async () => new Response(
+  return vi.fn().mockImplementation(() => Promise.resolve(new Response(
     status === 204 ? null : typeof body === "string" ? body : JSON.stringify(body),
     { status, headers: { "content-type": contentType } }
-  ));
+  )));
 }
 
 const MiB = 1024 * 1024;
@@ -402,7 +402,7 @@ describe("ProtectClient", () => {
 
   describe("transport hardening", () => {
     function rawFetch(headers: Record<string, string>, body: BodyInit = "{}") {
-      return vi.fn().mockImplementation(async () => new Response(body, { headers }));
+      return vi.fn().mockImplementation(() => Promise.resolve(new Response(body, { headers })));
     }
 
     it("rejects redirects on JSON requests", async () => {
@@ -492,10 +492,10 @@ describe("ProtectClient", () => {
 
     it("truncates a long error body in the thrown message", async () => {
       const long = "x".repeat(50_000);
-      vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(long, { status: 500 })));
+      vi.stubGlobal("fetch", vi.fn().mockImplementation(() => Promise.resolve(new Response(long, { status: 500 }))));
       await expect(client.get("/nvrs")).rejects.toThrow(/truncated/);
-      const err = await client.get("/nvrs").catch((e: Error) => e);
-      expect((err as Error).message.length).toBeLessThan(3000);
+      const err = (await client.get("/nvrs").catch((e: unknown) => e)) as Error;
+      expect(err.message.length).toBeLessThan(3000);
     });
 
     it("rejects redirects on binary uploads", async () => {
