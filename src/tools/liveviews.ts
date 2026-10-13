@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
-import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun } from "../utils/safety.js";
+import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, dryRunInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
 import {
@@ -77,10 +77,7 @@ export function registerLiveviewTools(
         "Create a new live view. Returns: the created liveview (same fields as protect_get_liveview).",
       inputSchema: {
         settings: liveviewBody.describe("Full liveview object (all fields required)"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       outputSchema: liveviewOutputSchema,
       annotations: WRITE,
@@ -104,10 +101,7 @@ export function registerLiveviewTools(
         settings: liveviewBody.describe(
           "Full liveview object (all fields required — fetch it with protect_get_liveview first)"
         ),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       outputSchema: liveviewOutputSchema,
       annotations: DESTRUCTIVE,

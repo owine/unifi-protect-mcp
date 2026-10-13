@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
-import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
+import { READ_ONLY, WRITE, formatDryRun, dryRunInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { MAX_UPLOAD_BASE64_CHARS } from "../utils/limits.js";
 import { fileListOutputSchema, fileOutputSchema } from "../schemas/misc.js";
@@ -67,10 +67,7 @@ export function registerFileTools(
           .describe(
             "Original file name to record. Reported back as originalName, with the stored extension appended when Protect converts the file (e.g. welcome.gif → welcome.gif.png)"
           ),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       outputSchema: fileOutputSchema,
       annotations: WRITE,

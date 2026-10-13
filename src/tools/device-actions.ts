@@ -2,9 +2,14 @@ import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
-import { WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation, confirmInput } from "../utils/safety.js";
+import { WRITE, DESTRUCTIVE, formatDryRun, dryRunInput, confirmGate } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
+
+// Each gate's confirm input and handler check share one action text.
+const STOP_SIREN = confirmGate("silence the siren");
+const SWITCH_RELAY = confirmGate("switch the relay output");
+const TRIGGER_HUB_OUTPUT = confirmGate("trigger the alarm hub output");
 
 export function registerDeviceActionTools(
   server: ToolRegistrar,
@@ -25,7 +30,7 @@ export function registerDeviceActionTools(
           .union([z.literal(5), z.literal(10), z.literal(20), z.literal(30)])
           .optional()
           .describe("Duration of siren activation in seconds (5, 10, 20, or 30). Defaults to 5."),
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       annotations: WRITE,
     },
@@ -45,8 +50,8 @@ export function registerDeviceActionTools(
       description: "Stop an active siren. Requires confirm: true: it silences an alarm siren.",
       inputSchema: {
         id: resourceId().describe("Siren ID"),
-        confirm: confirmInput("silence the siren"),
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        confirm: STOP_SIREN.input,
+        dryRun: dryRunInput(),
       },
       annotations: WRITE,
     },
@@ -54,7 +59,7 @@ export function registerDeviceActionTools(
       if (dryRun) {
         return formatDryRun("POST", safePath`/sirens/${id}/stop`);
       }
-      const denied = requireConfirmation(confirm, "silence the siren");
+      const denied = STOP_SIREN.check(confirm);
       if (denied) return denied;
       const data = await client.post(safePath`/sirens/${id}/stop`);
       return formatSuccess(data);
@@ -68,7 +73,7 @@ export function registerDeviceActionTools(
       inputSchema: {
         id: resourceId().describe("Siren ID"),
         volume: z.number().int().min(1).max(100).optional().describe("Test volume 1-100. Defaults to configured device volume."),
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       annotations: WRITE,
     },
@@ -91,7 +96,7 @@ export function registerDeviceActionTools(
       inputSchema: {
         id: resourceId().describe("Speaker ID"),
         volume: z.number().int().min(0).max(100).optional().describe("Test volume 0-100. Defaults to configured device volume."),
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       annotations: WRITE,
     },
@@ -116,8 +121,8 @@ export function registerDeviceActionTools(
         outputId: z.number().int().min(0).describe("Output channel ID (0 or 1)"),
         state: z.enum(["on", "off"]).describe("Desired output state"),
         pulseDuration: z.number().int().min(0).optional().describe("Auto-off duration in milliseconds (only when state is \"on\"). 0 means stay on."),
-        confirm: confirmInput("switch the relay output"),
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        confirm: SWITCH_RELAY.input,
+        dryRun: dryRunInput(),
       },
       annotations: DESTRUCTIVE,
     },
@@ -128,7 +133,7 @@ export function registerDeviceActionTools(
       if (dryRun) {
         return formatDryRun("POST", path, body);
       }
-      const denied = requireConfirmation(confirm, "switch the relay output");
+      const denied = SWITCH_RELAY.check(confirm);
       if (denied) return denied;
       const data = await client.post(path, body);
       return formatSuccess(data);
@@ -147,8 +152,8 @@ export function registerDeviceActionTools(
         enable: z.boolean().describe("True to turn on, false to turn off"),
         delay: z.number().int().min(0).optional().describe("Delay in milliseconds before output activates"),
         duration: z.number().int().min(0).optional().describe("Duration in milliseconds to keep output active. 0 = indefinite."),
-        confirm: confirmInput("trigger the alarm hub output"),
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        confirm: TRIGGER_HUB_OUTPUT.input,
+        dryRun: dryRunInput(),
       },
       annotations: DESTRUCTIVE,
     },
@@ -160,7 +165,7 @@ export function registerDeviceActionTools(
       if (dryRun) {
         return formatDryRun("POST", path, body);
       }
-      const denied = requireConfirmation(confirm, "trigger the alarm hub output");
+      const denied = TRIGGER_HUB_OUTPUT.check(confirm);
       if (denied) return denied;
       const data = await client.post(path, body);
       return formatSuccess(data);

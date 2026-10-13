@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
-import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation, confirmInput } from "../utils/safety.js";
+import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, dryRunInput, confirmGate } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
 import {
@@ -11,6 +11,11 @@ import {
   rtspStreamOutputSchema,
   talkbackSessionOutputSchema,
 } from "../schemas/cameras.js";
+
+// Each gate's confirm input and handler check share one action text.
+const OPEN_STREAM = confirmGate("open an RTSPS stream (its URL is a credential for live video)");
+const OPEN_TALKBACK = confirmGate("open a two-way audio session");
+const DISABLE_MIC = confirmGate("permanently disable the microphone");
 
 export function registerCameraTools(
   server: ToolRegistrar,
@@ -142,10 +147,7 @@ export function registerCameraTools(
           .loose()
           .refine((o) => Object.keys(o).length > 0, "settings must include at least one field")
           .describe("Partial camera settings to update"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       outputSchema: cameraOutputSchema,
       annotations: DESTRUCTIVE,
@@ -170,11 +172,8 @@ export function registerCameraTools(
           .array(z.enum(["high", "medium", "low", "package"]))
           .min(1)
           .describe("Quality levels to include in the RTSPS stream (at least one)"),
-        confirm: confirmInput("open an RTSPS stream (its URL is a credential for live video)"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        confirm: OPEN_STREAM.input,
+        dryRun: dryRunInput(),
       },
       outputSchema: rtspStreamOutputSchema,
       annotations: WRITE,
@@ -187,7 +186,7 @@ export function registerCameraTools(
           { qualities }
         );
       }
-      const denied = requireConfirmation(confirm, "open an RTSPS stream (its URL is a credential for live video)");
+      const denied = OPEN_STREAM.check(confirm);
       if (denied) return denied;
       const data = await client.post(safePath`/cameras/${id}/rtsps-stream`, {
         qualities,
@@ -206,10 +205,7 @@ export function registerCameraTools(
           .array(z.enum(["high", "medium", "low", "package"]))
           .min(1)
           .describe("Quality levels to remove from the RTSPS stream (at least one)"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       annotations: DESTRUCTIVE,
     },
@@ -234,11 +230,8 @@ export function registerCameraTools(
         "Create a talkback (two-way audio) session for a camera. Returns: url, codec, samplingRate, bitsPerSample (the audio config for encoding outbound audio). Requires confirm: true: the session opens two-way audio to the camera.",
       inputSchema: {
         id: resourceId().describe("Camera ID"),
-        confirm: confirmInput("open a two-way audio session"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        confirm: OPEN_TALKBACK.input,
+        dryRun: dryRunInput(),
       },
       outputSchema: talkbackSessionOutputSchema,
       annotations: WRITE,
@@ -247,7 +240,7 @@ export function registerCameraTools(
       if (dryRun) {
         return formatDryRun("POST", safePath`/cameras/${id}/talkback-session`);
       }
-      const denied = requireConfirmation(confirm, "open a two-way audio session");
+      const denied = OPEN_TALKBACK.check(confirm);
       if (denied) return denied;
       const data = await client.post(safePath`/cameras/${id}/talkback-session`);
       return formatSuccess(data);
@@ -261,11 +254,8 @@ export function registerCameraTools(
         "IRREVERSIBLE: Permanently disable the microphone on a camera. Can only be re-enabled by factory resetting the camera. Returns: the full updated camera (same fields as protect_get_camera).",
       inputSchema: {
         id: resourceId().describe("Camera ID"),
-        confirm: confirmInput("permanently disable the microphone"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        confirm: DISABLE_MIC.input,
+        dryRun: dryRunInput(),
       },
       outputSchema: cameraOutputSchema,
       annotations: DESTRUCTIVE,
@@ -274,7 +264,7 @@ export function registerCameraTools(
       if (dryRun) {
         return formatDryRun("POST", safePath`/cameras/${id}/disable-mic-permanently`);
       }
-      const denied = requireConfirmation(confirm, "permanently disable the microphone");
+      const denied = DISABLE_MIC.check(confirm);
       if (denied) return denied;
       const data = await client.post(
         safePath`/cameras/${id}/disable-mic-permanently`
@@ -290,10 +280,7 @@ export function registerCameraTools(
       inputSchema: {
         id: resourceId().describe("Camera ID"),
         slot: z.number().int().min(0).max(4).describe("Patrol slot number (0-4)"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       annotations: WRITE,
     },
@@ -314,10 +301,7 @@ export function registerCameraTools(
       description: "Stop PTZ patrol on a camera",
       inputSchema: {
         id: resourceId().describe("Camera ID"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       annotations: WRITE,
     },
@@ -341,10 +325,7 @@ export function registerCameraTools(
           .int()
           .min(-1)
           .describe("PTZ preset slot: -1 for the home position, 0 or higher for saved presets"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       annotations: WRITE,
     },

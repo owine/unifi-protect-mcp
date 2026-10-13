@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess } from "../utils/responses.js";
-import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation, requireConfirmationForFields, confirmInput } from "../utils/safety.js";
+import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmationForFields, dryRunInput, confirmGate, confirmInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { armProfileId } from "../utils/params.js";
 import {
@@ -26,6 +26,11 @@ const armProfileFields = {
 
 /** Arm profile settings that change what the alarm protects, and when. */
 const ARM_PROFILE_CONFIRM_FIELDS = ["schedules", "automations"] as const;
+
+// Each gate's confirm input and handler check share one action text.
+const DELETE_PROFILE = confirmGate("delete the arm profile");
+const SET_CURRENT_PROFILE = confirmGate("change which arm profile the alarm uses");
+const DISARM = confirmGate("disarm the alarm");
 
 export function registerArmProfileTools(
   server: ToolRegistrar,
@@ -54,7 +59,7 @@ export function registerArmProfileTools(
       description: "Create a new arm profile. Only available when using local alarm manager.",
       inputSchema: {
         ...armProfileFields,
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       outputSchema: armProfileOutputSchema,
       annotations: WRITE,
@@ -75,8 +80,8 @@ export function registerArmProfileTools(
       description: "Set the current arm profile to be used when enabling the arm alarm. Only available when using local alarm manager. Requires confirm: true: it changes what the alarm protects when armed.",
       inputSchema: {
         armProfileId: armProfileId().describe("The arm profile ID to set as current"),
-        confirm: confirmInput("change which arm profile the alarm uses"),
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        confirm: SET_CURRENT_PROFILE.input,
+        dryRun: dryRunInput(),
       },
       annotations: WRITE,
     },
@@ -85,7 +90,7 @@ export function registerArmProfileTools(
       if (dryRun) {
         return formatDryRun("PATCH", "/arm-profiles/settings", body);
       }
-      const denied = requireConfirmation(confirm, "change which arm profile the alarm uses");
+      const denied = SET_CURRENT_PROFILE.check(confirm);
       if (denied) return denied;
       const data = await client.patch("/arm-profiles/settings", body);
       return formatSuccess(data);
@@ -105,7 +110,7 @@ export function registerArmProfileTools(
           .refine((o) => Object.keys(o).length > 0, "settings must include at least one field")
           .describe("Partial arm profile settings to update"),
         confirm: confirmInput("change schedules or automations"),
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       outputSchema: armProfileOutputSchema,
       annotations: DESTRUCTIVE,
@@ -114,7 +119,7 @@ export function registerArmProfileTools(
       if (dryRun) {
         return formatDryRun("PATCH", safePath`/arm-profiles/${id}`, settings);
       }
-      const denied = requireConfirmationForFields(settings, ARM_PROFILE_CONFIRM_FIELDS, confirm, dryRun);
+      const denied = requireConfirmationForFields(settings, ARM_PROFILE_CONFIRM_FIELDS, confirm);
       if (denied) return denied;
       const data = await client.patch(safePath`/arm-profiles/${id}`, settings);
       return formatSuccess(data);
@@ -127,8 +132,8 @@ export function registerArmProfileTools(
       description: "Delete an arm profile by ID. Only available when using local alarm manager. Requires confirm: true.",
       inputSchema: {
         id: armProfileId().describe("Arm profile ID"),
-        confirm: confirmInput("delete the arm profile"),
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        confirm: DELETE_PROFILE.input,
+        dryRun: dryRunInput(),
       },
       annotations: DESTRUCTIVE,
     },
@@ -136,7 +141,7 @@ export function registerArmProfileTools(
       if (dryRun) {
         return formatDryRun("DELETE", safePath`/arm-profiles/${id}`);
       }
-      const denied = requireConfirmation(confirm, "delete the arm profile");
+      const denied = DELETE_PROFILE.check(confirm);
       if (denied) return denied;
       const data = await client.delete(safePath`/arm-profiles/${id}`);
       return formatSuccess(data);
@@ -148,7 +153,7 @@ export function registerArmProfileTools(
     {
       description: "Enable the arm alarm using the currently selected arm profile. Only available when using local alarm manager.",
       inputSchema: {
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        dryRun: dryRunInput(),
       },
       annotations: WRITE,
     },
@@ -166,8 +171,8 @@ export function registerArmProfileTools(
     {
       description: "Disable (disarm) the arm alarm, leaving the site unprotected until it is re-armed; requires confirm: true. Only available when using local alarm manager.",
       inputSchema: {
-        confirm: confirmInput("disarm the alarm"),
-        dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
+        confirm: DISARM.input,
+        dryRun: dryRunInput(),
       },
       annotations: DESTRUCTIVE,
     },
@@ -175,7 +180,7 @@ export function registerArmProfileTools(
       if (dryRun) {
         return formatDryRun("POST", "/arm-profiles/disable");
       }
-      const denied = requireConfirmation(confirm, "disarm the alarm");
+      const denied = DISARM.check(confirm);
       if (denied) return denied;
       const data = await client.post("/arm-profiles/disable");
       return formatSuccess(data);

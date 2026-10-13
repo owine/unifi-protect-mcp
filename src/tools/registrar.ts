@@ -34,9 +34,9 @@ type ToolHandler = (...args: unknown[]) => CallToolResult | Promise<CallToolResu
  *   modules need no try/catch of their own.
  * - A result too large for one stdio message becomes an error, instead of a
  *   message the client cannot read (which ends its session).
- * - Each tool gets a human-readable title derived from its name, and
- *   `openWorldHint: false`: every tool talks to one known console, not to an
- *   open set of external systems.
+ * - Each tool gets a human-readable title derived from its name, and by
+ *   default `openWorldHint: false`: every tool talks to one known console,
+ *   not to an open set of external systems.
  */
 export function instrumentTools(server: McpServer): ToolRegistrar {
   const registerTool: McpServer["registerTool"] = (name, config, handler) => {
@@ -61,7 +61,7 @@ export function instrumentTools(server: McpServer): ToolRegistrar {
       ...rest,
       ...(output === undefined ? {} : { outputSchema: looseOutput(withPreview(output, input)) }),
       title: config.title ?? toolTitle(name),
-      annotations: { ...config.annotations, openWorldHint: false },
+      annotations: { openWorldHint: false, ...config.annotations },
     }, bound as typeof handler); // the one cast: bound has handler's call shape
   };
   return { registerTool };
