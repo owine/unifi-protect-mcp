@@ -3,6 +3,7 @@ import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/sdk/shared/
 import { DEFAULT_REQUEST_TIMEOUT_MSEC } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import {
   MAX_JSON_BYTES,
+  MAX_RESULT_BYTES,
   MAX_SNAPSHOT_BYTES,
   MAX_UPLOAD_BASE64_CHARS,
   SERVER_READ_BUFFER_BYTES,
@@ -20,8 +21,14 @@ describe("payload ceilings fit one stdio message", () => {
     expect(Math.ceil(MAX_SNAPSHOT_BYTES / 3) * 4).toBeLessThan(STDIO_DEFAULT_MAX_BUFFER_SIZE);
   });
 
-  it("a JSON response, carried twice (text and structuredContent), fits", () => {
+  // Necessary, not sufficient: escaping can still push a result over, which
+  // the result guard in registerAllTools catches (see sdk-contract.test.ts).
+  it("a JSON response, carried twice (text and structuredContent), fits before escaping", () => {
     expect(MAX_JSON_BYTES * 2).toBeLessThan(STDIO_DEFAULT_MAX_BUFFER_SIZE);
+  });
+
+  it("a whole result leaves room for the JSON-RPC envelope", () => {
+    expect(MAX_RESULT_BYTES).toBeLessThan(STDIO_DEFAULT_MAX_BUFFER_SIZE);
   });
 
   it("the server reads an over-limit upload far enough to reject it with a message", () => {

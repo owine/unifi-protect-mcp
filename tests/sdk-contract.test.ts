@@ -7,7 +7,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { registerAllTools } from "../src/tools/index.js";
 import { ProtectClient } from "../src/client.js";
 import { formatDryRun } from "../src/utils/safety.js";
-import { MAX_SNAPSHOT_BYTES, MAX_UPLOAD_BASE64_CHARS } from "../src/utils/limits.js";
+import { MAX_JSON_BYTES, MAX_SNAPSHOT_BYTES, MAX_UPLOAD_BASE64_CHARS } from "../src/utils/limits.js";
 import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/sdk/shared/stdio.js";
 import { createMockServer, createMockClient, mockFn } from "./tools/_helpers.js";
 
@@ -148,6 +148,20 @@ describe("payload sizes through the SDK", () => {
     const result = await snapshot(MAX_SNAPSHOT_BYTES + 1);
     expect(result.isError).toBe(true);
     expect(JSON.stringify(result).length).toBeLessThan(STDIO_DEFAULT_MAX_BUFFER_SIZE);
+  });
+
+  // A result's text copy is JSON-escaped again inside the JSON-RPC line, so
+  // a JSON response under MAX_JSON_BYTES can still make an unreadable message
+  // (quotes double at each level). The final result is what must fit.
+  it("refuses a JSON result that would not fit one stdio message once serialised", async () => {
+    const toolClient = createMockClient();
+    mockFn(toolClient, "get").mockResolvedValueOnce({ applicationVersion: "7.3.70", notes: '"'.repeat(MAX_JSON_BYTES / 2) });
+    const mcpClient = await connect(toolClient, true);
+    const result = await mcpClient.callTool({ name: "protect_get_info", arguments: {} });
+    await mcpClient.close();
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toMatch(/too large/);
+    expect(JSON.stringify({ jsonrpc: "2.0", id: 1, result }).length).toBeLessThan(STDIO_DEFAULT_MAX_BUFFER_SIZE);
   });
 
   it("rejects an upload over the base64 ceiling at input validation", async () => {
