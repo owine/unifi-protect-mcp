@@ -19,7 +19,7 @@ export function registerAlarmManagerTools(
     "protect_trigger_alarm_webhook",
     {
       description:
-        "Trigger an alarm manager webhook by ID. This fires an external alarm action.",
+        "Trigger an alarm manager webhook by ID. This fires the external alarm action configured for it. Requires confirm: true.",
       inputSchema: {
         id: webhookId()
           .describe("User-defined webhook ID matching an alarm manager configuration"),

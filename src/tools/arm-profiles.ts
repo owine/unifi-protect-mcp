@@ -26,7 +26,7 @@ const armProfileFields = {
 };
 
 /** Arm profile settings that change what the alarm protects, and when. */
-const ARM_PROFILE_CONFIRM_FIELDS = ["schedules", "automations"] as const;
+export const ARM_PROFILE_CONFIRM_FIELDS = ["schedules", "automations"] as const;
 
 // Each gate's confirm input and handler check share one action text.
 const DELETE_PROFILE = confirmGate("delete the arm profile");

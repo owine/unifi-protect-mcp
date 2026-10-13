@@ -87,7 +87,7 @@ const DEVICES: DeviceConfig[] = [
     confirmFields: ["armControlSettings"],
     plural: "fobs",
     label: "Fob",
-    hint: "Known fields: name (string)",
+    hint: "Known fields: name (string). armControlSettings is not documented as patchable; sending it requires confirm: true",
     returns:
       "id, modelKey, name, mac, state, type, guid, awayState, buttonLabels, featureFlags (buttons[], hasKeypad), armControlSettings (enabled, armProfileId, nightProfileId), keypadSettings (beepEnabled, beepVolume), wirelessConnectionState (signalState: signalQuality, signalStrength; batteryStatus: percentage, isLow; bridge) (7.3.70 docs)",
   },

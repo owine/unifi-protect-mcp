@@ -59,7 +59,7 @@ export function registerCameraTools(
     "protect_get_snapshot",
     {
       description:
-        "Get a JPEG snapshot from a camera. Returns a base64-encoded image/jpeg (rendered directly by MCP clients). Use highQuality=true to force a 1080p-or-higher capture; set channel=package to capture from the secondary package camera on doorbells with hasPackageCamera=true. Fails with HTTP 503 when the camera is offline or unreachable.",
+        "Get a JPEG snapshot from a camera. Returns a base64-encoded image/jpeg (rendered directly by MCP clients). Use highQuality=true to force a 1080p-or-higher capture; set channel=package to capture from the secondary package camera on doorbells with hasPackageCamera=true. Fails with HTTP 503 when the camera is offline or unreachable. A snapshot too large for one MCP message is refused with an error; try without highQuality.",
       inputSchema: {
         id: resourceId().describe("Camera ID"),
         highQuality: z
@@ -98,7 +98,7 @@ export function registerCameraTools(
     "protect_get_rtsp_streams",
     {
       description:
-        "Get active RTSPS stream sessions for a camera. Returns: high, medium, low, package — each an rtsps:// URL, or null (or absent) when no session is active at that quality. Use protect_create_rtsp_stream to start one.",
+        "Get active RTSPS stream sessions for a camera. Returns: high, medium, low, package — each an rtsps:// URL, or null (or absent) when no session is active at that quality. Use protect_create_rtsp_stream to start one. Each URL is a bearer credential for live video: do not repeat it unless the user asked for it.",
       inputSchema: { id: resourceId().describe("Camera ID") },
       outputSchema: rtspStreamOutputSchema,
       annotations: READ_ONLY,
@@ -229,7 +229,7 @@ export function registerCameraTools(
     "protect_create_talkback",
     {
       description:
-        "Create a talkback (two-way audio) session for a camera. Returns: url, codec, samplingRate, bitsPerSample (the audio config for encoding outbound audio). Requires confirm: true: the session opens two-way audio to the camera.",
+        "Create a talkback (two-way audio) session for a camera. Returns: url, codec, samplingRate, bitsPerSample (the audio config for encoding outbound audio). Requires confirm: true: the session opens two-way audio to the camera, and the returned url lets anyone holding it talk through the camera.",
       inputSchema: {
         id: resourceId().describe("Camera ID"),
         confirm: OPEN_TALKBACK.input,
@@ -253,7 +253,7 @@ export function registerCameraTools(
     "protect_disable_mic",
     {
       description:
-        "IRREVERSIBLE: Permanently disable the microphone on a camera. Can only be re-enabled by factory resetting the camera. Returns: the full updated camera (same fields as protect_get_camera).",
+        "IRREVERSIBLE: Permanently disable the microphone on a camera. Can only be re-enabled by factory resetting the camera. Returns: the full updated camera (same fields as protect_get_camera). Requires confirm: true.",
       inputSchema: {
         id: resourceId().describe("Camera ID"),
         confirm: DISABLE_MIC.input,
