@@ -66,11 +66,11 @@ export const cameraSchema = passthroughObject({
   isMicEnabled: unknownField("Microphone enabled (boolean)"),
   micVolume: unknownField("Microphone volume 0-100 (number)"),
   videoMode: nullableString('Video mode, e.g. "default"'),
-  featureFlags: featureFlagsSchema.optional(),
-  lcdMessage: lcdMessageSchema.optional(),
-  ledSettings: ledSettingsSchema.optional(),
-  osdSettings: osdSettingsSchema.optional(),
-  smartDetectSettings: smartDetectSettingsSchema.optional(),
+  featureFlags: featureFlagsSchema.nullable().optional(),
+  lcdMessage: lcdMessageSchema.nullable().optional(),
+  ledSettings: ledSettingsSchema.nullable().optional(),
+  osdSettings: osdSettingsSchema.nullable().optional(),
+  smartDetectSettings: smartDetectSettingsSchema.nullable().optional(),
 });
 
 export const cameraOutputSchema = { ...cameraSchema.shape };
