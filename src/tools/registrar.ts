@@ -30,6 +30,9 @@ type ToolHandler = (...args: unknown[]) => CallToolResult | Promise<CallToolResu
  * - Handlers run with their call's abort signal in scope, so ProtectClient
  *   aborts the Protect request (and subscriptions close their WebSocket) when
  *   the MCP client cancels the call.
+ * - In read-only mode, registering anything but a read-only tool fails at
+ *   startup. Modules also return before their write tools; this catches a
+ *   write tool placed above that return.
  * - A handler that throws returns an error result (formatError), so tool
  *   modules need no try/catch of their own.
  * - A result too large for one stdio message becomes an error, instead of a
@@ -38,8 +41,11 @@ type ToolHandler = (...args: unknown[]) => CallToolResult | Promise<CallToolResu
  *   default `openWorldHint: false`: every tool talks to one known console,
  *   not to an open set of external systems.
  */
-export function instrumentTools(server: McpServer): ToolRegistrar {
+export function instrumentTools(server: McpServer, readOnly = false): ToolRegistrar {
   const registerTool: McpServer["registerTool"] = (name, config, handler) => {
+    if (readOnly && config.annotations?.readOnlyHint !== true) {
+      throw new Error(`${name} is a write tool registered in read-only mode`);
+    }
     // outputSchema is destructured out so the inner call infers its own
     // output type rather than the caller's generic one. The SDK also accepts
     // Zod 3 schemas; this server uses Zod 4 throughout, so narrow to that.

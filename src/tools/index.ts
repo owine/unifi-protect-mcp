@@ -19,7 +19,7 @@ export function registerAllTools(
   readOnly: boolean
 ) {
   // Modules register through instrumentTools only; see registrar.ts.
-  const tools = instrumentTools(server);
+  const tools = instrumentTools(server, readOnly);
   registerSystemTools(tools, client);
   registerSubscriptionTools(tools, client);
   registerCameraTools(tools, client, readOnly);
