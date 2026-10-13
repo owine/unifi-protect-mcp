@@ -165,6 +165,59 @@ describe("payload sizes through the SDK", () => {
   });
 });
 
+/**
+ * Each confirm-gated tool with the smallest valid input besides confirm, and
+ * the client method it calls. A dry run changes nothing, so it never needs
+ * confirming; the real call must refuse without confirm: true.
+ */
+const CONFIRM_GATED: [string, Record<string, unknown>, "post" | "patch" | "delete"][] = [
+  ["protect_disable_mic", { id: "cam1" }, "post"],
+  ["protect_trigger_alarm_webhook", { id: "hook1" }, "post"],
+  ["protect_disable_arm_alarm", {}, "post"],
+  ["protect_activate_relay_output", { id: "r1", outputId: 0, state: "on" }, "post"],
+  ["protect_trigger_alarm_hub_output", { id: "h1", outputId: 0, enable: true }, "post"],
+];
+
+describe("confirm through the SDK", () => {
+  let mcpClient: Client;
+  const toolClient = createMockClient();
+
+  beforeAll(async () => {
+    mcpClient = await connect(toolClient);
+  });
+
+  afterAll(async () => {
+    await mcpClient.close();
+  });
+
+  for (const [name, args, method] of CONFIRM_GATED) {
+    describe(name, () => {
+      it("previews with dryRun and no confirm, sending nothing", async () => {
+        mockFn(toolClient, method).mockClear();
+        const result = await mcpClient.callTool({ name, arguments: { ...args, dryRun: true } });
+        expect(result.isError).toBeFalsy();
+        expect(result.structuredContent).toMatchObject({ dryRun: true });
+        expect(mockFn(toolClient, method)).not.toHaveBeenCalled();
+      });
+
+      it("refuses without confirm, sending nothing", async () => {
+        mockFn(toolClient, method).mockClear();
+        const result = await mcpClient.callTool({ name, arguments: args });
+        expect(result.isError).toBe(true);
+        expect(JSON.stringify(result.content)).toMatch(/confirm/);
+        expect(mockFn(toolClient, method)).not.toHaveBeenCalled();
+      });
+
+      it("acts with confirm: true", async () => {
+        mockFn(toolClient, method).mockClear().mockResolvedValueOnce({});
+        const result = await mcpClient.callTool({ name, arguments: { ...args, confirm: true } });
+        expect(result.isError).toBeFalsy();
+        expect(mockFn(toolClient, method)).toHaveBeenCalledOnce();
+      });
+    });
+  }
+});
+
 describe("hostile IDs through the SDK", () => {
   afterEach(() => {
     vi.unstubAllGlobals();

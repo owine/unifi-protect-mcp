@@ -2,7 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-import { DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
+import { DESTRUCTIVE, formatDryRun, requireConfirmation, confirmInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { webhookId } from "../utils/params.js";
 
@@ -21,9 +21,7 @@ export function registerAlarmManagerTools(
       inputSchema: {
         id: webhookId()
           .describe("User-defined webhook ID matching an alarm manager configuration"),
-        confirm: z
-          .literal(true)
-          .describe("Must be true to confirm triggering the alarm webhook"),
+        confirm: confirmInput("trigger the alarm webhook"),
         dryRun: z
           .boolean()
           .optional()
@@ -32,12 +30,12 @@ export function registerAlarmManagerTools(
       annotations: DESTRUCTIVE,
     },
     async ({ id, confirm, dryRun }) => {
-      const denied = requireConfirmation(confirm, "trigger the alarm webhook");
-      if (denied) return denied;
       try {
         if (dryRun) {
           return formatDryRun("POST", safePath`/alarm-manager/webhook/${id}`);
         }
+        const denied = requireConfirmation(confirm, "trigger the alarm webhook");
+        if (denied) return denied;
         await client.post(safePath`/alarm-manager/webhook/${id}`);
         return formatSuccess({ triggered: true, webhookId: id });
       } catch (err) {

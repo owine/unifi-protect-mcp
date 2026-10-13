@@ -451,22 +451,26 @@ describe("camera tools", () => {
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
     });
 
-    it("still requires confirm when dryRun is set", async () => {
+    it("previews a dry run without confirm", async () => {
       mockFn(client, "post").mockClear();
-      const result = await handlers.get("protect_disable_mic")!({
-        id: "cam1",
-        confirm: false,
-        dryRun: true,
-      });
+      const result = await handlers.get("protect_disable_mic")!({ id: "cam1", dryRun: true });
+      expect(result.isError).toBeUndefined();
+      expect(JSON.parse(result.content[0].text).dryRun).toBe(true);
+      expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
+    it("refuses the real call without confirm", async () => {
+      mockFn(client, "post").mockClear();
+      const result = await handlers.get("protect_disable_mic")!({ id: "cam1", confirm: false });
       expectError(result);
       expect(mockFn(client, "post")).not.toHaveBeenCalled();
     });
 
-    it("rejects confirm other than literal true in the input schema", () => {
+    it("accepts only a boolean confirm in the input schema", () => {
       const schema = parseInputSchema(configs, "protect_disable_mic");
-      expect(schema.safeParse({ id: "cam1", confirm: false }).success).toBe(false);
-      expect(schema.safeParse({ id: "cam1", dryRun: true }).success).toBe(false);
-      expect(schema.safeParse({ id: "cam1", confirm: true, dryRun: true }).success).toBe(true);
+      expect(schema.safeParse({ id: "cam1", dryRun: true }).success).toBe(true);
+      expect(schema.safeParse({ id: "cam1", confirm: true }).success).toBe(true);
+      expect(schema.safeParse({ id: "cam1", confirm: "true" }).success).toBe(false);
     });
 
     it("declares an outputSchema", () => {

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-import { WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
+import { WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation, confirmInput } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import { resourceId } from "../utils/params.js";
 
@@ -129,14 +129,12 @@ export function registerDeviceActionTools(
         outputId: z.number().int().min(0).describe("Output channel ID (0 or 1)"),
         state: z.enum(["on", "off"]).describe("Desired output state"),
         pulseDuration: z.number().int().min(0).optional().describe("Auto-off duration in milliseconds (only when state is \"on\"). 0 means stay on."),
-        confirm: z.literal(true).describe("Must be true to confirm switching a physical relay output"),
+        confirm: confirmInput("switch the relay output"),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
       annotations: DESTRUCTIVE,
     },
     async ({ id, outputId, state, pulseDuration, confirm, dryRun }) => {
-      const denied = requireConfirmation(confirm, "switch the relay output");
-      if (denied) return denied;
       try {
         const body: Record<string, unknown> = { state };
         if (pulseDuration !== undefined) body.pulseDuration = pulseDuration;
@@ -144,6 +142,8 @@ export function registerDeviceActionTools(
         if (dryRun) {
           return formatDryRun("POST", path, body);
         }
+        const denied = requireConfirmation(confirm, "switch the relay output");
+        if (denied) return denied;
         const data = await client.post(path, body);
         return formatSuccess(data);
       } catch (err) {
@@ -164,14 +164,12 @@ export function registerDeviceActionTools(
         enable: z.boolean().describe("True to turn on, false to turn off"),
         delay: z.number().int().min(0).optional().describe("Delay in milliseconds before output activates"),
         duration: z.number().int().min(0).optional().describe("Duration in milliseconds to keep output active. 0 = indefinite."),
-        confirm: z.literal(true).describe("Must be true to confirm triggering a physical alarm hub output"),
+        confirm: confirmInput("trigger the alarm hub output"),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
       annotations: DESTRUCTIVE,
     },
     async ({ id, outputId, enable, delay, duration, confirm, dryRun }) => {
-      const denied = requireConfirmation(confirm, "trigger the alarm hub output");
-      if (denied) return denied;
       try {
         const body: Record<string, unknown> = { enable };
         if (delay !== undefined) body.delay = delay;
@@ -180,6 +178,8 @@ export function registerDeviceActionTools(
         if (dryRun) {
           return formatDryRun("POST", path, body);
         }
+        const denied = requireConfirmation(confirm, "trigger the alarm hub output");
+        if (denied) return denied;
         const data = await client.post(path, body);
         return formatSuccess(data);
       } catch (err) {

@@ -26,7 +26,10 @@ registerLiveviewTools(server, client, false);
 registerDeviceActionTools(server, client, false);
 registerArmProfileTools(server, client, false);
 
-describe("confirm: z.literal(true) pattern", () => {
+// confirm is optional in the schema (a dry run needs none) and enforced in
+// the handler; tests/sdk-contract.test.ts covers that end to end. The schema
+// still accepts only a boolean.
+describe("confirm input", () => {
   // Tool → the rest of a valid input, without confirm.
   const confirmTools: Record<string, Record<string, unknown>> = {
     protect_disable_mic: { id: "test-id" },
@@ -40,29 +43,17 @@ describe("confirm: z.literal(true) pattern", () => {
     describe(toolName, () => {
       const schema = parseInputSchema(configs, toolName);
 
-      it("accepts confirm: true", () => {
-        const result = schema.safeParse({ ...base, confirm: true });
-        expect(result.success).toBe(true);
-      });
-
-      it("rejects confirm: false", () => {
-        const result = schema.safeParse({ ...base, confirm: false });
-        expect(result.success).toBe(false);
-      });
-
-      it("rejects confirm: undefined (missing)", () => {
-        const result = schema.safeParse(base);
-        expect(result.success).toBe(false);
+      it("accepts confirm: true, and none for a dry run", () => {
+        expect(schema.safeParse({ ...base, confirm: true }).success).toBe(true);
+        expect(schema.safeParse({ ...base, dryRun: true }).success).toBe(true);
       });
 
       it("rejects confirm: string 'true'", () => {
-        const result = schema.safeParse({ ...base, confirm: "true" });
-        expect(result.success).toBe(false);
+        expect(schema.safeParse({ ...base, confirm: "true" }).success).toBe(false);
       });
 
       it("rejects confirm: 1", () => {
-        const result = schema.safeParse({ ...base, confirm: 1 });
-        expect(result.success).toBe(false);
+        expect(schema.safeParse({ ...base, confirm: 1 }).success).toBe(false);
       });
     });
   }
