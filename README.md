@@ -179,9 +179,9 @@ This server provides layered safety controls for responsible operation:
 | `protect_get_snapshot` | Get a JPEG snapshot (returns image) |
 | `protect_create_rtsp_stream` | Create an RTSPS stream session |
 | `protect_get_rtsp_streams` | Get active RTSPS stream sessions |
-| `protect_delete_rtsp_stream` | Stop and delete an active RTSPS stream |
+| `protect_delete_rtsp_stream` | **DESTRUCTIVE:** Stop and delete an active RTSPS stream |
 | `protect_create_talkback` | Create a talkback (two-way audio) session |
-| `protect_disable_mic` | **IRREVERSIBLE:** Permanently disable camera microphone |
+| `protect_disable_mic` | **IRREVERSIBLE:** Permanently disable camera microphone (requires `confirm: true`) |
 | `protect_start_ptz_patrol` | Start PTZ patrol at a given slot |
 | `protect_stop_ptz_patrol` | Stop PTZ patrol |
 | `protect_goto_ptz_preset` | Move PTZ to a preset position |
@@ -237,7 +237,7 @@ This server provides layered safety controls for responsible operation:
 | `protect_list_relays` | List all relays |
 | `protect_get_relay` | Get relay details by ID |
 | `protect_update_relay` | Update relay settings |
-| `protect_activate_relay_output` | Turn a relay output channel on or off, with optional pulse duration (requires `confirm: true` and an explicit `state`) |
+| `protect_activate_relay_output` | **DESTRUCTIVE:** Turn a relay output channel on or off, with optional pulse duration (requires `confirm: true` and an explicit `state`) |
 
 ### Speakers (4)
 | Tool | Description |
@@ -267,7 +267,7 @@ This server provides layered safety controls for responsible operation:
 | `protect_list_alarm_hubs` | List all alarm hubs |
 | `protect_get_alarm_hub` | Get alarm hub details by ID |
 | `protect_update_alarm_hub` | Update alarm hub settings |
-| `protect_trigger_alarm_hub_output` | Turn an alarm hub output channel on or off (sirens, lights, etc.; requires `confirm: true` and an explicit `enable`) |
+| `protect_trigger_alarm_hub_output` | **DESTRUCTIVE:** Turn an alarm hub output channel on or off (sirens, lights, etc.; requires `confirm: true` and an explicit `enable`) |
 
 ### Arm Profiles (7) — local alarm manager
 | Tool | Description |
@@ -278,7 +278,7 @@ This server provides layered safety controls for responsible operation:
 | `protect_update_arm_profile` | Update an arm profile |
 | `protect_delete_arm_profile` | **DESTRUCTIVE:** Delete an arm profile by ID |
 | `protect_enable_arm_alarm` | Arm the alarm using the current profile |
-| `protect_disable_arm_alarm` | Disarm the alarm (requires `confirm: true`) |
+| `protect_disable_arm_alarm` | **DESTRUCTIVE:** Disarm the alarm (requires `confirm: true`) |
 
 ### Live Views (4)
 | Tool | Description |
@@ -291,7 +291,7 @@ This server provides layered safety controls for responsible operation:
 ### Alarm & Files (3)
 | Tool | Description |
 |---|---|
-| `protect_trigger_alarm_webhook` | Trigger an alarm webhook (fires external alarm action) |
+| `protect_trigger_alarm_webhook` | **DESTRUCTIVE:** Trigger an alarm webhook (fires external alarm action; requires `confirm: true`) |
 | `protect_list_files` | List device asset files (`animations`) |
 | `protect_upload_file` | Upload a device asset file (base64 in, sent as multipart/form-data) |
 
@@ -323,7 +323,7 @@ pnpm run test:watch    # Run tests in watch mode
 pnpm run test:coverage # Run tests with coverage
 ```
 
-Git hooks are managed by [lefthook](https://github.com/evilmartians/lefthook) — `pnpm exec lefthook install` enables them. Pre-commit runs ESLint on staged files and a full typecheck, so fnm and pnpm both need to be on your PATH.
+Git hooks are managed by [lefthook](https://github.com/evilmartians/lefthook) — `pnpm exec lefthook install` enables them. Pre-commit runs ESLint on staged files, a full typecheck, and a GitGuardian secret scan when [ggshield](https://github.com/GitGuardian/ggshield) is installed (skipped otherwise), so fnm and pnpm both need to be on your PATH.
 
 ### Commit conventions
 
@@ -331,6 +331,7 @@ This project uses [conventional commits](https://www.conventionalcommits.org/) a
 
 - `feat: ...` — new feature (minor version bump)
 - `fix: ...` — bug fix (patch version bump)
+- `deps: ...` — dependency update (patch version bump; Renovate's type for package bumps)
 - `feat!: ...` or `BREAKING CHANGE:` footer — breaking change (major version bump)
 - `chore:`, `docs:`, `ci:`, etc. — no version bump
 

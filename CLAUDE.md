@@ -70,6 +70,7 @@ src/
     responses.ts      # formatSuccess() / formatError() helpers
     safety.ts         # READ_ONLY/WRITE/DESTRUCTIVE annotation constants, formatDryRun(), requireConfirmation()
     url.ts            # safePath tagged template — URL-encodes interpolated path segments
+  version.ts          # SERVER_VERSION, read from package.json at runtime for serverInfo
 ```
 
 ### Adding a new tool
@@ -125,7 +126,7 @@ Versioning and npm publishing are automated via [release-please](https://github.
   - `deps: ...` → patch bump (production dependency updates)
   - `feat!: ...` or `BREAKING CHANGE:` footer → major bump
   - `chore:`, `docs:`, `ci:`, `refactor:`, `test:` → no release
-- **Dependency commits**: Only `feat`, `fix`, and `deps` are "releasable units" in release-please. Renovate is configured to use `deps:` for all dependency updates (triggers a patch release)
+- **Dependency commits**: Only `feat`, `fix`, and `deps` are "releasable units" in release-please. Renovate's commit types come from the shared `owine/renovate-config` presets: package bumps are `deps:` (patch release), lock file maintenance is `chore:` and GitHub Actions/workflow updates are `ci:` (no release), and security updates are `fix:`. Those presets keep `ci:` and `deps:` updates on separate group branches, because a branch takes one commit type and a mixed group once shipped a runtime bump (`ws`, #284) as `ci:` with no release
 - On push to `main`, release-please opens/updates a "Release PR" that bumps `package.json` version and updates `CHANGELOG.md`
 - Merging the Release PR triggers `npm publish` to `@owine/unifi-protect-mcp` with provenance attestation
 - To override the version number, add `Release-As: x.x.x` in the **commit body** (not the title):
