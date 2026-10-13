@@ -293,10 +293,12 @@ describe("device action tools - annotations", () => {
     expect([...configs.keys()].sort()).toEqual([...tools].sort());
   });
 
-  // Relays and alarm-hub outputs drive gates, door strikes and sirens.
+  // Relays and alarm-hub outputs drive gates, door strikes and sirens, and
+  // stopping a siren silences an alarm: all confirm-gated, so destructive.
   const destructive = new Set([
     "protect_activate_relay_output",
     "protect_trigger_alarm_hub_output",
+    "protect_stop_siren",
   ]);
 
   for (const name of tools) {
