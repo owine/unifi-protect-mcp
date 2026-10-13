@@ -13,7 +13,9 @@ import {
 
 interface DeviceConfig {
   urlPath: string;   // URL segment (may contain hyphens, e.g. "link-stations")
-  singular: string;  // Tool-name singular (snake_case, e.g. "link_station")
+  // Tool-name singular (snake_case, e.g. "link_station"); also the key of its
+  // output schema, so a name with no schema fails to compile.
+  singular: keyof typeof DEVICE_SCHEMAS;
   plural: string;    // Tool-name plural (snake_case, e.g. "link_stations")
   label: string;     // Human-readable label, e.g. "Link station"
   hint: string;      // Description of patchable fields (for PATCH tools)
@@ -142,7 +144,7 @@ function registerDeviceCrud(
   cfg: DeviceConfig,
   readOnly: boolean
 ) {
-  const schemaKey = cfg.singular as keyof typeof DEVICE_SCHEMAS;
+  const schemaKey = cfg.singular;
   const note = cfg.note ? `${cfg.note} ` : "";
   server.registerTool(
     `protect_list_${cfg.plural}`,
