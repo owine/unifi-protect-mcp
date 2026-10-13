@@ -70,8 +70,10 @@ function collectMessages(
       if (finishedAt !== undefined) return;
       finishedAt = Date.now();
       clearTimeout(window);
-      ws.close();
+      // Armed before close(): a socket may report "close" synchronously, and
+      // the close handler must find the timer to clear it.
       grace = setTimeout(() => { ws.terminate(); }, CLOSE_GRACE_MS);
+      ws.close();
     };
 
     const window = setTimeout(finish, duration * MS_PER_SECOND);
@@ -83,7 +85,6 @@ function collectMessages(
       finish();
       ws.terminate();
     };
-    signal?.addEventListener("abort", onAbort, { once: true });
 
     ws.on("message", (data: unknown) => {
       if (finishedAt !== undefined) return;
@@ -128,6 +129,11 @@ function collectMessages(
       if (truncated) result.truncated = true;
       resolve(result);
     });
+
+    // Last, once every listener is attached: a call cancelled before its
+    // listen began gets no abort event, and must still see its close.
+    if (signal?.aborted) onAbort();
+    else signal?.addEventListener("abort", onAbort, { once: true });
   });
 }
 
