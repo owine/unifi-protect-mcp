@@ -2,6 +2,8 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient, withCallSignal } from "../client.js";
 import { dryRunPreviewFields, looseOutput } from "../schemas/common.js";
+import { formatError } from "../utils/responses.js";
+import { MAX_RESULT_BYTES } from "../utils/limits.js";
 import { registerSystemTools } from "./system.js";
 import { registerCameraTools } from "./cameras.js";
 import { registerDeviceTools } from "./devices.js";
@@ -52,6 +54,8 @@ interface ToolConfig {
  * - Handlers run with their call's abort signal in scope, so ProtectClient
  *   aborts the Protect request (and subscriptions close their WebSocket) when
  *   the MCP client cancels the call.
+ * - A result too large for one stdio message becomes an error, instead of a
+ *   message the client cannot read (which ends its session).
  * - Each tool gets a human-readable title derived from its name, and
  *   `openWorldHint: false`: every tool talks to one known console, not to an
  *   open set of external systems.
@@ -62,11 +66,12 @@ function instrumentTools(server: McpServer): McpServer {
     const published = outputSchema === undefined
       ? {}
       : { outputSchema: looseOutput(withPreview(outputSchema, inputSchema)) };
-    const bound = (...args: unknown[]): unknown => {
+    const bound = async (...args: unknown[]): Promise<unknown> => {
       // The SDK passes the call's `extra` (with its abort signal) last.
       const extra = args.at(-1) as { signal?: unknown } | undefined;
       const signal = extra?.signal instanceof AbortSignal ? extra.signal : undefined;
-      return withCallSignal(signal, () => (handler as (...a: unknown[]) => unknown)(...args));
+      const result = await withCallSignal(signal, () => (handler as (...a: unknown[]) => unknown)(...args));
+      return fitsOneMessage(result);
     };
     const described = {
       ...config,
@@ -109,4 +114,19 @@ export function toolTitle(name: string): string {
     .map((word) => TITLE_WORDS[word] ?? word)
     .join(" ");
   return title.charAt(0).toUpperCase() + title.slice(1);
+}
+
+/**
+ * The result itself, or an error when its serialised form would exceed what
+ * one stdio message carries. Measured on the final result: escaping makes a
+ * payload under the per-kind ceilings in limits.ts larger than it looks.
+ */
+function fitsOneMessage(result: unknown): unknown {
+  // `?? null`: JSON.stringify(undefined) returns undefined, not a string.
+  const bytes = Buffer.byteLength(JSON.stringify(result ?? null), "utf8");
+  return bytes <= MAX_RESULT_BYTES
+    ? result
+    : formatError(new Error(
+      `Result too large to send in one MCP message (${bytes.toString()} bytes); narrow the request`
+    ));
 }

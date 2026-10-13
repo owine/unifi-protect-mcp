@@ -20,11 +20,22 @@ const BASE64_CHARS_PER_BYTE = 4 / 3;
 /** The largest payload, in bytes or base64 characters, one message can carry. */
 const MAX_PAYLOAD = STDIO_DEFAULT_MAX_BUFFER_SIZE - ENVELOPE_BYTES;
 
+/**
+ * The largest serialised tool result. The ceilings below keep payloads near
+ * this, but a result's text copy is JSON-escaped again inside the JSON-RPC
+ * line (quotes double at each level), so registerAllTools measures the final
+ * result against this and refuses one that would not fit.
+ */
+export const MAX_RESULT_BYTES = MAX_PAYLOAD;
+
 /** A result carries a JSON response twice: as text and as structuredContent. */
 export const MAX_JSON_BYTES = Math.floor(MAX_PAYLOAD / 2);
 
-/** A snapshot reaches the client base64-encoded. */
-export const MAX_SNAPSHOT_BYTES = Math.floor(MAX_PAYLOAD / BASE64_CHARS_PER_BYTE);
+/** Room for a result's own wrapping around a payload (content type, mimeType). */
+const RESULT_WRAPPER_BYTES = 1024;
+
+/** A snapshot reaches the client base64-encoded, inside its result. */
+export const MAX_SNAPSHOT_BYTES = Math.floor((MAX_PAYLOAD - RESULT_WRAPPER_BYTES) / BASE64_CHARS_PER_BYTE);
 
 /** An upload arrives from the client base64-encoded. */
 export const MAX_UPLOAD_BASE64_CHARS = MAX_PAYLOAD;
