@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   createMockServer,
   createMockClient,
@@ -169,6 +169,43 @@ describe("file tools", () => {
       expectError(result);
       expect(result.content[0].text).toMatch(/base64/i);
       expect(mockFn(client, "postFile")).not.toHaveBeenCalled();
+    });
+
+    it.each(["abcde", "ab=", "R0lGODlhAQABAAAAACw=="])(
+      "rejects base64 with an impossible length or padding (%j)",
+      async (base64Data) => {
+        mockFn(client, "postFile").mockClear();
+        const result = await handlers.get("protect_upload_file")!({
+          fileType: "animations",
+          base64Data,
+          contentType: "image/gif",
+        });
+        expectError(result);
+        expect(mockFn(client, "postFile")).not.toHaveBeenCalled();
+      }
+    );
+
+    it("accepts unpadded base64", async () => {
+      mockFn(client, "postFile").mockClear().mockResolvedValue({ id: "f1" });
+      await handlers.get("protect_upload_file")!({
+        fileType: "animations",
+        base64Data: "R0lGODlhAQABAAAAACw",
+        contentType: "image/gif",
+      });
+      const sent = mockFn(client, "postFile").mock.calls[0][1] as Buffer;
+      expect(sent.subarray(0, 6).toString()).toBe("GIF89a");
+    });
+
+    it("sizes a dry run without decoding the payload", async () => {
+      const spy = vi.spyOn(Buffer, "from");
+      const result = await handlers.get("protect_upload_file")!({
+        fileType: "animations",
+        base64Data: "R0lGODlhAQABAAAAACw=",
+        contentType: "image/gif",
+        dryRun: true,
+      });
+      expect(JSON.parse(result.content[0].text).body.byteLength).toBe(14);
+      expect(spy).not.toHaveBeenCalled();
     });
 
     it("rejects invalid base64 in a dry run too", async () => {
