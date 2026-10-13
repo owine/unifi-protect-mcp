@@ -34,8 +34,10 @@ export function registerAllTools(
 }
 
 interface ToolConfig {
+  title?: string;
   inputSchema?: z.ZodRawShape;
   outputSchema?: z.ZodRawShape | z.ZodObject;
+  annotations?: Record<string, unknown>;
 }
 
 /**
@@ -50,6 +52,9 @@ interface ToolConfig {
  * - Handlers run with their call's abort signal in scope, so ProtectClient
  *   aborts the Protect request (and subscriptions close their WebSocket) when
  *   the MCP client cancels the call.
+ * - Each tool gets a human-readable title derived from its name, and
+ *   `openWorldHint: false`: every tool talks to one known console, not to an
+ *   open set of external systems.
  */
 function instrumentTools(server: McpServer): McpServer {
   const registerTool = (name: string, config: ToolConfig, handler: unknown) => {
@@ -63,7 +68,13 @@ function instrumentTools(server: McpServer): McpServer {
       const signal = extra?.signal instanceof AbortSignal ? extra.signal : undefined;
       return withCallSignal(signal, () => (handler as (...a: unknown[]) => unknown)(...args));
     };
-    return server.registerTool(name, { ...config, ...published } as never, bound as never);
+    const described = {
+      ...config,
+      ...published,
+      title: config.title ?? toolTitle(name),
+      annotations: { ...config.annotations, openWorldHint: false },
+    };
+    return server.registerTool(name, described as never, bound as never);
   };
   return new Proxy(server, {
     get: (target, prop, receiver) =>
@@ -78,4 +89,24 @@ function withPreview(
   if (inputSchema?.dryRun === undefined) return outputSchema;
   const shape = outputSchema instanceof z.ZodObject ? outputSchema.shape : outputSchema;
   return { ...dryRunPreviewFields, ...shape };
+}
+
+// Words in tool names that read wrongly in plain sentence case.
+const TITLE_WORDS: Record<string, string> = {
+  rtsp: "RTSP",
+  ptz: "PTZ",
+  nvrs: "NVRs",
+  ulp: "ULP",
+  pos: "POS",
+  goto: "go to",
+};
+
+/** "protect_get_rtsp_streams" → "Get RTSP streams". */
+export function toolTitle(name: string): string {
+  const title = name
+    .replace(/^protect_/, "")
+    .split("_")
+    .map((word) => TITLE_WORDS[word] ?? word)
+    .join(" ");
+  return title.charAt(0).toUpperCase() + title.slice(1);
 }
