@@ -3,11 +3,15 @@ import { ProtectClient } from "../src/client.js";
 import type { Config } from "../src/config.js";
 import { MAX_ERROR_BODY_BYTES, MAX_JSON_BYTES } from "../src/utils/limits.js";
 
-const { wsUrls } = vi.hoisted(() => ({ wsUrls: [] as string[] }));
+const { wsUrls, wsOptions } = vi.hoisted(() => ({
+  wsUrls: [] as string[],
+  wsOptions: [] as Record<string, unknown>[],
+}));
 vi.mock("ws", () => ({
   // A function expression, not an arrow: connectWebSocket calls it with `new`.
-  default: vi.fn(function (url: string) {
+  default: vi.fn(function (url: string, options: Record<string, unknown>) {
     wsUrls.push(url);
+    wsOptions.push(options);
   }),
 }));
 
@@ -572,8 +576,20 @@ describe("ProtectClient", () => {
   });
 
   describe("connectWebSocket", () => {
-    it("has connectWebSocket method", () => {
-      expect(typeof client.connectWebSocket).toBe("function");
+    it("authenticates with the API key and passes the caller's frame cap to ws", () => {
+      client.connectWebSocket("/subscribe/events", { maxPayload: 1234 });
+      const options = wsOptions.at(-1) as { headers: Record<string, string>; maxPayload: number };
+      expect(options.headers["X-API-KEY"]).toBe("test-key");
+      expect(options.maxPayload).toBe(1234);
+    });
+  });
+
+  describe("binary requests", () => {
+    it("authenticate snapshots with the API key", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new Uint8Array(4), { headers: { "content-type": "image/jpeg" } })));
+      await client.getBinary("/cameras/1/snapshot");
+      const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      expect((init.headers as Record<string, string>)["X-API-KEY"]).toBe("test-key");
     });
   });
 });
