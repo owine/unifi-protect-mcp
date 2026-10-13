@@ -6,16 +6,27 @@ on:
     types: [completed]
     branches: [main]
 
-permissions:
-  contents: write
-  pull-requests: write
+# Nothing by default: release-please acts through the GitHub App token, and
+# publish asks for what it needs.
+permissions: {}
 
 jobs:
   release-please:
-    if: github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: read
+    # workflow_run's branch filter matches the head branch name, which a fork
+    # PR can also call main; release only after a push to this repo's main.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-26.04
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
+      # The commit the release was tagged at. release-please tags main as it
+      # is when the job runs, which need not be the commit this run was
+      # triggered for.
+      sha: ${{ steps.release.outputs.sha }}
     steps:
       # Mint a GitHub App installation token so release-please's PRs/tags are
       # authored by the App, not the default GITHUB_TOKEN. PRs created by the
@@ -42,7 +53,11 @@ jobs:
       contents: read
       id-token: write
     steps:
+      # Publish exactly the tagged commit, so the npm version matches its tag
+      # and changelog; the test steps below re-verify it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.sha }}
       - uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
           install: false
@@ -59,9 +74,17 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          # No dependency cache: a poisoned cache entry would run in a job
+          # that can mint an npm publish token.
+      # No lifecycle scripts in a job that can mint an npm OIDC token: a
+      # compromised allowed build (lefthook) could otherwise publish with valid
+      # provenance. The build needs none of them.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm run build
+      - run: pnpm test
+      # Install the packed tarball into an empty project and check the binary
+      # over stdio, before anything is published.
+      - run: sh scripts/smoke-package.sh
       # Publish stays on npm — most battle-tested OIDC provenance + scoped-package flow.
       # pnpm install/build above produces identical dist/, so the published artifact is the same.
       - run: npm publish --provenance --access public
