@@ -139,9 +139,21 @@ describe("device action tools", () => {
   });
 
   describe("protect_activate_relay_output", () => {
+    it("refuses without confirm and does not call the client", async () => {
+      mockFn(client, "post").mockClear();
+      const result = await handlers.get("protect_activate_relay_output")!({
+        id: "x1",
+        outputId: 0,
+        confirm: false,
+      });
+      expectError(result);
+      expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
     it("activates with state and pulseDuration", async () => {
       mockFn(client, "post").mockResolvedValue({ ok: true });
       await handlers.get("protect_activate_relay_output")!({
+        confirm: true,
         id: "r1",
         outputId: 0,
         state: "on",
@@ -155,7 +167,7 @@ describe("device action tools", () => {
 
     it("toggles when state omitted", async () => {
       mockFn(client, "post").mockResolvedValue({ ok: true });
-      await handlers.get("protect_activate_relay_output")!({ id: "r1", outputId: 1 });
+      await handlers.get("protect_activate_relay_output")!({ confirm: true, id: "r1", outputId: 1 });
       expect(mockFn(client, "post")).toHaveBeenCalledWith(
         "/relays/r1/outputs/1/activate",
         undefined
@@ -165,6 +177,7 @@ describe("device action tools", () => {
     it("returns error on failure", async () => {
       mockFn(client, "post").mockRejectedValue(new Error("offline"));
       const result = await handlers.get("protect_activate_relay_output")!({
+        confirm: true,
         id: "r1",
         outputId: 0,
       });
@@ -174,6 +187,7 @@ describe("device action tools", () => {
     it("dry-run does not call client", async () => {
       mockFn(client, "post").mockClear();
       const result = await handlers.get("protect_activate_relay_output")!({
+        confirm: true,
         id: "r1",
         outputId: 0,
         state: "off",
@@ -188,9 +202,21 @@ describe("device action tools", () => {
   });
 
   describe("protect_trigger_alarm_hub_output", () => {
+    it("refuses without confirm and does not call the client", async () => {
+      mockFn(client, "post").mockClear();
+      const result = await handlers.get("protect_trigger_alarm_hub_output")!({
+        id: "x1",
+        outputId: 0,
+        confirm: false,
+      });
+      expectError(result);
+      expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
     it("triggers with all options", async () => {
       mockFn(client, "post").mockResolvedValue({ ok: true });
       await handlers.get("protect_trigger_alarm_hub_output")!({
+        confirm: true,
         id: "h1",
         outputId: 0,
         enable: true,
@@ -205,7 +231,7 @@ describe("device action tools", () => {
 
     it("toggles when no body params", async () => {
       mockFn(client, "post").mockResolvedValue({ ok: true });
-      await handlers.get("protect_trigger_alarm_hub_output")!({ id: "h1", outputId: 1 });
+      await handlers.get("protect_trigger_alarm_hub_output")!({ confirm: true, id: "h1", outputId: 1 });
       expect(mockFn(client, "post")).toHaveBeenCalledWith(
         "/alarm-hubs/h1/outputs/1/trigger",
         undefined
@@ -215,6 +241,7 @@ describe("device action tools", () => {
     it("returns error on failure", async () => {
       mockFn(client, "post").mockRejectedValue(new Error("offline"));
       const result = await handlers.get("protect_trigger_alarm_hub_output")!({
+        confirm: true,
         id: "h1",
         outputId: 0,
       });
@@ -224,6 +251,7 @@ describe("device action tools", () => {
     it("dry-run does not call client", async () => {
       mockFn(client, "post").mockClear();
       const result = await handlers.get("protect_trigger_alarm_hub_output")!({
+        confirm: true,
         id: "h1",
         outputId: 0,
         enable: false,
@@ -255,11 +283,18 @@ describe("device action tools - annotations", () => {
     expect([...configs.keys()].sort()).toEqual([...tools].sort());
   });
 
+  // Relays and alarm-hub outputs drive gates, door strikes and sirens.
+  const destructive = new Set([
+    "protect_activate_relay_output",
+    "protect_trigger_alarm_hub_output",
+  ]);
+
   for (const name of tools) {
-    it(`${name} has WRITE annotations`, () => {
+    const kind = destructive.has(name) ? "DESTRUCTIVE" : "WRITE";
+    it(`${name} has ${kind} annotations`, () => {
       expect(configs.get(name)!.annotations).toEqual({
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: destructive.has(name),
       });
     });
   }
@@ -324,7 +359,7 @@ describe("device action tools - input validation", () => {
     const schema = parseInputSchema(configs, "protect_activate_relay_output");
 
     it("accepts outputId 0 and pulseDuration 0", () => {
-      expect(schema.safeParse({ id: "r1", outputId: 0, state: "on", pulseDuration: 0 }).success).toBe(true);
+      expect(schema.safeParse({ id: "r1", outputId: 0, state: "on", pulseDuration: 0, confirm: true }).success).toBe(true);
     });
 
     it("requires outputId", () => {
@@ -353,7 +388,7 @@ describe("device action tools - input validation", () => {
 
     it("accepts zero values", () => {
       expect(
-        schema.safeParse({ id: "h1", outputId: 0, delay: 0, duration: 0 }).success
+        schema.safeParse({ id: "h1", outputId: 0, delay: 0, duration: 0, confirm: true }).success
       ).toBe(true);
     });
 

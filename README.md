@@ -104,7 +104,7 @@ Setting `UNIFI_PROTECT_CONSOLE_ID` against a local host is not fatal: the
 server logs a warning and talks to that host directly.
 
 - **Read-only mode** — Enabled by default. Only read operations (list, get, snapshot) are registered. Set `UNIFI_PROTECT_READ_ONLY=false` to enable write/mutating tools
-- **Confirmation parameter** — The most dangerous tools (`protect_disable_mic`, `protect_trigger_alarm_webhook`) require an explicit `confirm: true` parameter that must be present for the call to succeed
+- **Confirmation parameter** — Irreversible or security-relevant physical actions (`protect_disable_mic`, `protect_trigger_alarm_webhook`, `protect_disable_arm_alarm`, `protect_activate_relay_output`, `protect_trigger_alarm_hub_output`) require an explicit `confirm: true` parameter that must be present for the call to succeed
 - **Dry-run support** — All write tools (except those with `confirm`) accept an optional `dryRun: true` parameter that returns a preview of what would happen without making any changes
 
 ## Tools (73 total)
@@ -188,7 +188,7 @@ server logs a warning and talks to that host directly.
 | `protect_list_relays` | List all relays |
 | `protect_get_relay` | Get relay details by ID |
 | `protect_update_relay` | Update relay settings |
-| `protect_activate_relay_output` | Set/toggle a relay output channel, with optional pulse duration |
+| `protect_activate_relay_output` | Set/toggle a relay output channel, with optional pulse duration (requires `confirm: true`) |
 
 ### Speakers (4)
 | Tool | Description |
@@ -218,7 +218,7 @@ server logs a warning and talks to that host directly.
 | `protect_list_alarm_hubs` | List all alarm hubs |
 | `protect_get_alarm_hub` | Get alarm hub details by ID |
 | `protect_update_alarm_hub` | Update alarm hub settings |
-| `protect_trigger_alarm_hub_output` | Trigger an alarm hub output channel (sirens, lights, etc.) |
+| `protect_trigger_alarm_hub_output` | Trigger an alarm hub output channel (sirens, lights, etc.; requires `confirm: true`) |
 
 ### Arm Profiles (7) — local alarm manager
 | Tool | Description |
@@ -229,7 +229,7 @@ server logs a warning and talks to that host directly.
 | `protect_update_arm_profile` | Update an arm profile |
 | `protect_delete_arm_profile` | **DESTRUCTIVE:** Delete an arm profile by ID |
 | `protect_enable_arm_alarm` | Arm the alarm using the current profile |
-| `protect_disable_arm_alarm` | Disarm the alarm |
+| `protect_disable_arm_alarm` | Disarm the alarm (requires `confirm: true`) |
 
 ### Live Views (4)
 | Tool | Description |

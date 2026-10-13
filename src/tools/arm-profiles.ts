@@ -2,7 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
-import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun } from "../utils/safety.js";
+import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
 import {
   armProfileListOutputSchema,
@@ -175,13 +175,16 @@ export function registerArmProfileTools(
   server.registerTool(
     "protect_disable_arm_alarm",
     {
-      description: "Disable the arm alarm. Only available when using local alarm manager.",
+      description: "Disable (disarm) the arm alarm, leaving the site unprotected until it is re-armed; requires confirm: true. Only available when using local alarm manager.",
       inputSchema: {
+        confirm: z.literal(true).describe("Must be true to confirm disarming the alarm"),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
-      annotations: WRITE,
+      annotations: DESTRUCTIVE,
     },
-    async ({ dryRun }) => {
+    async ({ confirm, dryRun }) => {
+      const denied = requireConfirmation(confirm, "disarm the alarm");
+      if (denied) return denied;
       try {
         if (dryRun) {
           return formatDryRun("POST", "/arm-profiles/disable");
