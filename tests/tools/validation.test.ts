@@ -5,6 +5,8 @@ import { registerDeviceTools } from "../../src/tools/devices.js";
 import { registerFileTools } from "../../src/tools/files.js";
 import { registerAlarmManagerTools } from "../../src/tools/alarm-manager.js";
 import { registerLiveviewTools } from "../../src/tools/liveviews.js";
+import { registerDeviceActionTools } from "../../src/tools/device-actions.js";
+import { registerArmProfileTools } from "../../src/tools/arm-profiles.js";
 
 /**
  * These tests validate the Zod input schemas registered on each tool.
@@ -21,36 +23,45 @@ registerDeviceTools(server, client, false);
 registerFileTools(server, client, false);
 registerAlarmManagerTools(server, client, false);
 registerLiveviewTools(server, client, false);
+registerDeviceActionTools(server, client, false);
+registerArmProfileTools(server, client, false);
 
 describe("confirm: z.literal(true) pattern", () => {
-  const confirmTools = ["protect_disable_mic", "protect_trigger_alarm_webhook"];
+  // Tool → the rest of a valid input, without confirm.
+  const confirmTools: Record<string, Record<string, unknown>> = {
+    protect_disable_mic: { id: "test-id" },
+    protect_trigger_alarm_webhook: { id: "test-id" },
+    protect_disable_arm_alarm: {},
+    protect_activate_relay_output: { id: "r1", outputId: 0 },
+    protect_trigger_alarm_hub_output: { id: "h1", outputId: 0 },
+  };
 
-  for (const toolName of confirmTools) {
+  for (const [toolName, base] of Object.entries(confirmTools)) {
     describe(toolName, () => {
       const schema = parseInputSchema(configs, toolName);
 
       it("accepts confirm: true", () => {
-        const result = schema.safeParse({ id: "test-id", confirm: true });
+        const result = schema.safeParse({ ...base, confirm: true });
         expect(result.success).toBe(true);
       });
 
       it("rejects confirm: false", () => {
-        const result = schema.safeParse({ id: "test-id", confirm: false });
+        const result = schema.safeParse({ ...base, confirm: false });
         expect(result.success).toBe(false);
       });
 
       it("rejects confirm: undefined (missing)", () => {
-        const result = schema.safeParse({ id: "test-id" });
+        const result = schema.safeParse(base);
         expect(result.success).toBe(false);
       });
 
       it("rejects confirm: string 'true'", () => {
-        const result = schema.safeParse({ id: "test-id", confirm: "true" });
+        const result = schema.safeParse({ ...base, confirm: "true" });
         expect(result.success).toBe(false);
       });
 
       it("rejects confirm: 1", () => {
-        const result = schema.safeParse({ id: "test-id", confirm: 1 });
+        const result = schema.safeParse({ ...base, confirm: 1 });
         expect(result.success).toBe(false);
       });
     });

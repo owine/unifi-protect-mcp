@@ -96,7 +96,7 @@ Conventions:
 
 - All tools declare `readOnlyHint` and `destructiveHint` annotations
 - `UNIFI_PROTECT_READ_ONLY=true` prevents write tool registration entirely
-- `protect_disable_mic` and `protect_trigger_alarm_webhook` require `confirm: true` (validated by `z.literal(true)`)
+- `protect_disable_mic`, `protect_trigger_alarm_webhook`, `protect_disable_arm_alarm`, `protect_activate_relay_output` and `protect_trigger_alarm_hub_output` require `confirm: true` (validated by `z.literal(true)`) — irreversible, or physical/security effects (disarming, gates, locks)
 - Write tools support `dryRun: true` to preview actions without executing
 
 ### Testing patterns

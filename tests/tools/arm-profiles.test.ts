@@ -271,21 +271,35 @@ describe("arm profile tools", () => {
   });
 
   describe("protect_disable_arm_alarm", () => {
+    it("refuses without confirm and does not call the client", async () => {
+      mockFn(client, "post").mockClear();
+      const result = await handlers.get("protect_disable_arm_alarm")!({ confirm: false });
+      expectError(result);
+      expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
+    it("has DESTRUCTIVE annotations", () => {
+      expect(configs.get("protect_disable_arm_alarm")!.annotations).toEqual({
+        readOnlyHint: false,
+        destructiveHint: true,
+      });
+    });
+
     it("disables arm alarm", async () => {
       mockFn(client, "post").mockResolvedValue({ ok: true });
-      await handlers.get("protect_disable_arm_alarm")!({});
+      await handlers.get("protect_disable_arm_alarm")!({ confirm: true });
       expect(mockFn(client, "post")).toHaveBeenCalledWith("/arm-profiles/disable");
     });
 
     it("returns error on failure", async () => {
       mockFn(client, "post").mockRejectedValue(new Error("fail"));
-      const result = await handlers.get("protect_disable_arm_alarm")!({});
+      const result = await handlers.get("protect_disable_arm_alarm")!({ confirm: true });
       expectError(result);
     });
 
     it("dry-run does not call client", async () => {
       mockFn(client, "post").mockClear();
-      const result = await handlers.get("protect_disable_arm_alarm")!({ dryRun: true });
+      const result = await handlers.get("protect_disable_arm_alarm")!({ confirm: true, dryRun: true });
       const data = JSON.parse(result.content[0].text);
       expect(data.dryRun).toBe(true);
       expect(data.path).toBe("/arm-profiles/disable");
