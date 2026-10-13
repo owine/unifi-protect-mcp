@@ -2,20 +2,38 @@ import { z } from "zod";
 
 const ConfigSchema = z.object({
   // The client builds https://<host>/..., so accept the URL people paste from
-  // a browser and reduce it to host[:port]. Anything left that could change
-  // the request path is rejected rather than silently misrouted.
+  // a browser and reduce it to host[:port]. Parsing it as a URL validates the
+  // port and IPv6 brackets, and drops a redundant :443. Anything that would
+  // change the request (credentials, path, query) is rejected rather than
+  // silently misrouted.
   host: z
     .string()
-    .transform((h) => h.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, ""))
-    .pipe(
-      z
-        .string()
-        .min(1, "UNIFI_PROTECT_HOST is required")
-        .regex(
-          /^[^\s/?#@]+$/,
-          "UNIFI_PROTECT_HOST must be a hostname or IP, optionally with :port (no path)"
-        )
-    ),
+    .min(1, "UNIFI_PROTECT_HOST is required")
+    .transform((raw, ctx) => {
+      const trimmed = raw.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+      let url: URL | undefined;
+      try {
+        url = new URL(`https://${trimmed}`);
+      } catch {
+        // reported below
+      }
+      if (
+        !url ||
+        url.username !== "" ||
+        url.password !== "" ||
+        url.pathname !== "/" ||
+        url.search !== "" ||
+        url.hash !== ""
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "UNIFI_PROTECT_HOST must be a hostname or IP with an optional :port (no path); bracket IPv6 addresses, e.g. [2001:db8::1]:443",
+        });
+        return z.NEVER;
+      }
+      return url.host;
+    }),
   apiKey: z.string().min(1, "UNIFI_PROTECT_API_KEY is required"),
   // Console IDs are hex, UUID- or colon-shaped depending on vintage. The
   // charset excludes anything that could escape the URL path segment it is
