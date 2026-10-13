@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { webhookId } from "../utils/params.js";
 
 export function registerAlarmManagerTools(
   server: McpServer,
@@ -18,9 +19,7 @@ export function registerAlarmManagerTools(
       description:
         "Trigger an alarm manager webhook by ID. This fires an external alarm action.",
       inputSchema: {
-        id: z
-          .string()
-          .min(1)
+        id: webhookId()
           .describe("User-defined webhook ID matching an alarm manager configuration"),
         confirm: z
           .literal(true)

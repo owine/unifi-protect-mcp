@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { resourceId } from "../utils/params.js";
 import {
   DEVICE_SCHEMAS,
   itemOutputShape,
@@ -159,7 +160,7 @@ function registerDeviceCrud(
     `protect_get_${cfg.singular}`,
     {
       description: `Get full details for a specific ${cfg.label.toLowerCase()} by ID. ${note}Returns: ${cfg.returns}.`,
-      inputSchema: { id: z.string().describe(`${cfg.label} ID`) },
+      inputSchema: { id: resourceId().describe(`${cfg.label} ID`) },
       outputSchema: itemOutputShape(schemaKey),
       annotations: READ_ONLY,
     },
@@ -179,7 +180,7 @@ function registerDeviceCrud(
       {
         description: `Update ${cfg.label.toLowerCase()} settings (partial update via PATCH)`,
         inputSchema: {
-          id: z.string().describe(`${cfg.label} ID`),
+          id: resourceId().describe(`${cfg.label} ID`),
           settings: z
             .record(z.string(), z.unknown())
             .refine((o) => Object.keys(o).length > 0, "settings must include at least one field")

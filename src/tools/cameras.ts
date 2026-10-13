@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { resourceId } from "../utils/params.js";
 import {
   cameraOutputSchema,
   cameraListOutputSchema,
@@ -41,7 +42,7 @@ export function registerCameraTools(
     {
       description:
         "Get details for a specific camera by ID. The Protect Integration API returns the SAME field set as protect_list_cameras entries (id, mac, name, modelKey, state, type, guid, activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags, lcdMessage, ledSettings, osdSettings, smartDetectSettings) — there is no extended/by-id-only payload (confirmed live on 7.3.70). Recording state, motion events, zones, and channel/RTSP config are NOT exposed by this API surface.",
-      inputSchema: { id: z.string().describe("Camera ID") },
+      inputSchema: { id: resourceId().describe("Camera ID") },
       outputSchema: cameraOutputSchema,
       annotations: READ_ONLY,
     },
@@ -61,7 +62,7 @@ export function registerCameraTools(
       description:
         "Get a JPEG snapshot from a camera. Returns a base64-encoded image/jpeg (rendered directly by MCP clients). Use highQuality=true to force a 1080p-or-higher capture; set channel=package to capture from the secondary package camera on doorbells with hasPackageCamera=true. Fails with HTTP 503 when the camera is offline or unreachable.",
       inputSchema: {
-        id: z.string().describe("Camera ID"),
+        id: resourceId().describe("Camera ID"),
         highQuality: z
           .boolean()
           .optional()
@@ -103,7 +104,7 @@ export function registerCameraTools(
     {
       description:
         "Get active RTSPS stream sessions for a camera. Returns: high, medium, low, package — each an rtsps:// URL, or null (or absent) when no session is active at that quality. Use protect_create_rtsp_stream to start one.",
-      inputSchema: { id: z.string().describe("Camera ID") },
+      inputSchema: { id: resourceId().describe("Camera ID") },
       outputSchema: rtspStreamOutputSchema,
       annotations: READ_ONLY,
     },
@@ -127,7 +128,7 @@ export function registerCameraTools(
       description:
         "Update camera settings (partial update via PATCH). Returns: the full updated camera (same fields as protect_get_camera).",
       inputSchema: {
-        id: z.string().describe("Camera ID"),
+        id: resourceId().describe("Camera ID"),
         settings: z
           .object({
             name: z.string().optional().describe("Camera name"),
@@ -184,7 +185,7 @@ export function registerCameraTools(
       description:
         "Create an RTSPS stream session for a camera. Returns: one key per requested quality (high, medium, low, package), each an rtsps:// URL. The package quality is only available on cameras with hasPackageCamera=true.",
       inputSchema: {
-        id: z.string().describe("Camera ID"),
+        id: resourceId().describe("Camera ID"),
         qualities: z
           .array(z.enum(["high", "medium", "low", "package"]))
           .min(1)
@@ -221,7 +222,7 @@ export function registerCameraTools(
     {
       description: "Stop and delete an active RTSPS stream session for a camera",
       inputSchema: {
-        id: z.string().describe("Camera ID"),
+        id: resourceId().describe("Camera ID"),
         qualities: z
           .array(z.enum(["high", "medium", "low", "package"]))
           .min(1)
@@ -257,7 +258,7 @@ export function registerCameraTools(
       description:
         "Create a talkback (two-way audio) session for a camera. Returns: url, codec, samplingRate, bitsPerSample (the audio config for encoding outbound audio).",
       inputSchema: {
-        id: z.string().describe("Camera ID"),
+        id: resourceId().describe("Camera ID"),
         dryRun: z
           .boolean()
           .optional()
@@ -285,7 +286,7 @@ export function registerCameraTools(
       description:
         "IRREVERSIBLE: Permanently disable the microphone on a camera. Can only be re-enabled by factory resetting the camera. Returns: the full updated camera (same fields as protect_get_camera).",
       inputSchema: {
-        id: z.string().describe("Camera ID"),
+        id: resourceId().describe("Camera ID"),
         confirm: z
           .literal(true)
           .describe("Must be true to confirm this irreversible action"),
@@ -319,7 +320,7 @@ export function registerCameraTools(
     {
       description: "Start PTZ patrol on a camera at a given slot",
       inputSchema: {
-        id: z.string().describe("Camera ID"),
+        id: resourceId().describe("Camera ID"),
         slot: z.number().int().min(0).max(4).describe("Patrol slot number (0-4)"),
         dryRun: z
           .boolean()
@@ -348,7 +349,7 @@ export function registerCameraTools(
     {
       description: "Stop PTZ patrol on a camera",
       inputSchema: {
-        id: z.string().describe("Camera ID"),
+        id: resourceId().describe("Camera ID"),
         dryRun: z
           .boolean()
           .optional()
@@ -374,7 +375,7 @@ export function registerCameraTools(
     {
       description: "Move camera PTZ to a preset position",
       inputSchema: {
-        id: z.string().describe("Camera ID"),
+        id: resourceId().describe("Camera ID"),
         slot: z
           .number()
           .int()

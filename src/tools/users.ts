@@ -1,9 +1,9 @@
-import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { resourceId } from "../utils/params.js";
 import {
   userListOutputSchema,
   userOutputSchema,
@@ -35,7 +35,7 @@ export function registerUserTools(server: McpServer, client: ProtectClient) {
     {
       description:
         "Get details for a specific Protect user by ID. Returns the same fields as protect_list_users entries: id, modelKey, name, firstName, lastName, email, ucoreUserId.",
-      inputSchema: { id: z.string().describe("User ID") },
+      inputSchema: { id: resourceId().describe("User ID") },
       outputSchema: userOutputSchema,
       annotations: READ_ONLY,
     },
@@ -72,7 +72,7 @@ export function registerUserTools(server: McpServer, client: ProtectClient) {
     {
       description:
         "Get details for a specific UniFi Identity (ULP) user by ID. Returns: id, modelKey, firstName, lastName, fullName, email, status.",
-      inputSchema: { id: z.string().describe("ULP user ID") },
+      inputSchema: { id: resourceId().describe("ULP user ID") },
       outputSchema: ulpUserOutputSchema,
       annotations: READ_ONLY,
     },

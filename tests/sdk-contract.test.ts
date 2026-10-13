@@ -116,6 +116,30 @@ describe("dry-run preview against every write tool's published outputSchema", ()
   }
 });
 
+describe("hostile IDs through the SDK", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ["protect_get_camera", { id: ".." }],
+    ["protect_update_light", { id: "..", settings: { name: "x" } }],
+    ["protect_delete_arm_profile", { id: "..", confirm: true }],
+    ["protect_update_arm_profile", { id: "settings", settings: { armProfileId: "p1" } }],
+    ["protect_ingest_pos_transaction", { id: "..", type: "sale", externalId: "t1", amount: 1 }],
+  ])("%s with a path-changing ID sends nothing", async (name, args) => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const mcpClient = await connect(
+      new ProtectClient({ host: "192.168.1.1", apiKey: "k", verifySsl: true, readOnly: false })
+    );
+    const result = await mcpClient.callTool({ name, arguments: args });
+    expect(result.isError).toBe(true);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    await mcpClient.close();
+  });
+});
+
 describe("cancellation through the SDK", () => {
   afterEach(() => {
     vi.unstubAllGlobals();

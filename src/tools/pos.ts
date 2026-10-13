@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { resourceId } from "../utils/params.js";
 import { posTransactionOutputSchema } from "../schemas/pos.js";
 
 /**
@@ -43,7 +44,7 @@ export function registerPosTools(
         "processed for this camera; retry shortly. " +
         "Returns: created (boolean), eventId (string).",
       inputSchema: {
-        id: z.string().describe("Camera ID to attach the transaction event to"),
+        id: resourceId().describe("Camera ID to attach the transaction event to"),
         type: z.enum(["sale", "refund"]).describe("Transaction type"),
         externalId: z
           .string()

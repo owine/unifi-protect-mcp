@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { resourceId } from "../utils/params.js";
 import {
   liveviewListOutputSchema,
   liveviewOutputSchema,
@@ -22,7 +23,7 @@ const liveviewSlotInput = z
 
 const liveviewBody = z
   .object({
-    id: z.string().describe("Liveview ID"),
+    id: resourceId().describe("Liveview ID"),
     modelKey: z.literal("liveview").describe('Must be "liveview"'),
     name: z.string().describe("Liveview name"),
     isDefault: z.boolean().describe("Whether this is the default liveview for all viewers"),
@@ -61,7 +62,7 @@ export function registerLiveviewTools(
     {
       description:
         "Get details for a specific live view by ID. Returns: id, modelKey, name, isDefault, isGlobal, layout, owner, slots (each slot: cameras string[], cycleMode, cycleInterval). The full slot list is needed when updating because PATCH replaces the slots array.",
-      inputSchema: { id: z.string().describe("Liveview ID") },
+      inputSchema: { id: resourceId().describe("Liveview ID") },
       outputSchema: liveviewOutputSchema,
       annotations: READ_ONLY,
     },
@@ -111,7 +112,7 @@ export function registerLiveviewTools(
       description:
         "Update an existing live view (full replacement via PUT-style PATCH — include all fields). Returns: the updated liveview.",
       inputSchema: {
-        id: z.string().describe("Liveview ID"),
+        id: resourceId().describe("Liveview ID"),
         settings: liveviewBody.describe(
           "Full liveview object (all fields required — fetch it with protect_get_liveview first)"
         ),

@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { resourceId } from "../utils/params.js";
 
 export function registerDeviceActionTools(
   server: McpServer,
@@ -19,7 +20,7 @@ export function registerDeviceActionTools(
     {
       description: "Activate the siren alarm for a duration. Tracks status and can be stopped early.",
       inputSchema: {
-        id: z.string().describe("Siren ID"),
+        id: resourceId().describe("Siren ID"),
         duration: z
           .union([z.literal(5), z.literal(10), z.literal(20), z.literal(30)])
           .optional()
@@ -47,7 +48,7 @@ export function registerDeviceActionTools(
     {
       description: "Stop an active siren",
       inputSchema: {
-        id: z.string().describe("Siren ID"),
+        id: resourceId().describe("Siren ID"),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
       annotations: WRITE,
@@ -70,7 +71,7 @@ export function registerDeviceActionTools(
     {
       description: "Test the siren sound for 5 seconds at the specified volume",
       inputSchema: {
-        id: z.string().describe("Siren ID"),
+        id: resourceId().describe("Siren ID"),
         volume: z.number().int().min(1).max(100).optional().describe("Test volume 1-100. Defaults to configured device volume."),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
@@ -97,7 +98,7 @@ export function registerDeviceActionTools(
     {
       description: "Test the speaker sound at the specified volume",
       inputSchema: {
-        id: z.string().describe("Speaker ID"),
+        id: resourceId().describe("Speaker ID"),
         volume: z.number().int().min(0).max(100).optional().describe("Test volume 0-100. Defaults to configured device volume."),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
@@ -124,7 +125,7 @@ export function registerDeviceActionTools(
     {
       description: "Control a relay output. Relays commonly drive gates, door strikes and garage doors, so this requires confirm: true. state (\"on\"/\"off\") is required: the API's toggle mode is not exposed because a retried toggle would flip the output back. Read the current output state with protect_get_relay. When state is \"on\", pulseDuration auto-turns off after the given milliseconds.",
       inputSchema: {
-        id: z.string().describe("Relay ID"),
+        id: resourceId().describe("Relay ID"),
         outputId: z.number().int().min(0).describe("Output channel ID (0 or 1)"),
         state: z.enum(["on", "off"]).describe("Desired output state"),
         pulseDuration: z.number().int().min(0).optional().describe("Auto-off duration in milliseconds (only when state is \"on\"). 0 means stay on."),
@@ -158,7 +159,7 @@ export function registerDeviceActionTools(
     {
       description: "Trigger an alarm hub output channel. Used to turn on/off connected sirens, lights, locks, or other actuators, so this requires confirm: true. enable is required: the API's toggle mode is not exposed because a retried toggle would flip the output back.",
       inputSchema: {
-        id: z.string().describe("Alarm hub (link station) ID"),
+        id: resourceId().describe("Alarm hub (link station) ID"),
         outputId: z.number().int().min(0).describe("Output channel ID (0 or 1)"),
         enable: z.boolean().describe("True to turn on, false to turn off"),
         delay: z.number().int().min(0).optional().describe("Delay in milliseconds before output activates"),

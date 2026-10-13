@@ -269,6 +269,30 @@ describe("ProtectClient", () => {
     });
   });
 
+  describe("path guard", () => {
+    // A bare `.` or `..` survives safePath and URL parsing folds it out of the
+    // path, so the request would reach a different endpoint.
+    // URL parsing treats %2E%2E as `..` too. safePath double-encodes `%`, so
+    // only a hand-built path could carry it.
+    it.each(["/cameras/..", "/cameras/.", "/cameras/a/../nvrs", "/cameras/%2E%2E", "/cameras/x#y", "cameras"])(
+      "refuses %s without sending it",
+      async (path) => {
+        vi.stubGlobal("fetch", mockFetch({}));
+        await expect(client.get(path)).rejects.toThrow(/outside the Integration API/);
+        expect(fetch).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each(["/cameras/abc/snapshot?highQuality=true", "/alarm-manager/webhook/Front%20door", "/cameras/%252E%252E"])(
+      "sends %s",
+      async (path) => {
+        vi.stubGlobal("fetch", mockFetch({}));
+        await client.get(path);
+        expect(fetch).toHaveBeenCalledOnce();
+      }
+    );
+  });
+
   describe("network failures", () => {
     it("propagates fetch TypeError on network failure", async () => {
       vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
