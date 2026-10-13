@@ -80,17 +80,17 @@ export function registerFileTools(
     async ({ fileType, base64Data, contentType, fileName, dryRun }) => {
       try {
         const name = fileName ?? defaultFileName(contentType);
-        const buffer = decodeBase64(base64Data);
+        const base64 = normalizeBase64(base64Data);
         if (dryRun) {
           return formatDryRun("POST", safePath`/files/${fileType}`, {
             contentType,
             fileName: name,
-            byteLength: buffer.length,
+            byteLength: Buffer.byteLength(base64, "base64"),
           });
         }
         const data = await client.postFile(
           safePath`/files/${fileType}`,
-          buffer,
+          Buffer.from(base64, "base64"),
           contentType,
           name
         );
@@ -120,16 +120,22 @@ const DATA_URL_PREFIX = /^data:[^,]*;base64,/i;
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$|^[A-Za-z0-9_-]+$/;
 
 /**
- * Decode upload content strictly. Buffer.from(x, "base64") skips characters it
- * cannot decode, so a data: URL or a stray non-base64 string would otherwise
- * upload as corrupt bytes with no error.
+ * Strip a data: URL prefix and whitespace, then reject anything that is not
+ * well-formed base64. Buffer.from(x, "base64") skips characters it cannot
+ * decode and ignores a dangling final character, so malformed input would
+ * otherwise upload as corrupt bytes with no error.
  */
-function decodeBase64(input: string): Buffer {
+function normalizeBase64(input: string): string {
   const cleaned = input.replace(DATA_URL_PREFIX, "").replace(/\s+/g, "");
-  if (!BASE64.test(cleaned)) {
+  // Padded input comes in whole 4-character groups; unpadded input can end
+  // in a 2- or 3-character group but never a lone character.
+  const wellFormed =
+    BASE64.test(cleaned) &&
+    (cleaned.endsWith("=") ? cleaned.length % 4 === 0 : cleaned.length % 4 !== 1);
+  if (!wellFormed) {
     throw new Error(
-      "base64Data is not valid base64 (expected A-Z, a-z, 0-9, + and /, optionally = padded, or a data: URL)"
+      "base64Data is not valid base64 (expected A-Z, a-z, 0-9, + and /, correctly = padded, or a data: URL)"
     );
   }
-  return Buffer.from(cleaned, "base64");
+  return cleaned;
 }
