@@ -1,6 +1,8 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import WebSocket from "ws";
+import type { Agent } from "undici";
 import { Config } from "./config.js";
+import { consoleDispatcher, consoleTlsOptions } from "./tls.js";
 import { MAX_ERROR_BODY_BYTES, MAX_JSON_BYTES, MAX_SNAPSHOT_BYTES } from "./utils/limits.js";
 
 /**
@@ -104,7 +106,7 @@ const CERT_ERROR_CODES = new Set([
  * so fold the cause into it — and name the setting that fixes the most common
  * first-run failure, a console's self-signed certificate.
  */
-async function fetchWithCause(url: string, init: RequestInit): Promise<Response> {
+async function fetchWithCause(url: string, init: RequestInit & { dispatcher: Agent }): Promise<Response> {
   try {
     return await fetch(url, init);
   } catch (err) {
@@ -113,7 +115,7 @@ async function fetchWithCause(url: string, init: RequestInit): Promise<Response>
     const code = (cause as NodeJS.ErrnoException).code;
     const hint =
       code !== undefined && CERT_ERROR_CODES.has(code)
-        ? ". The console's TLS certificate could not be verified; set UNIFI_PROTECT_VERIFY_SSL=false if it uses a self-signed certificate"
+        ? ". The console's TLS certificate could not be verified; for a console with a self-signed certificate, save the certificate and point UNIFI_PROTECT_CA_CERT at it (or, on a trusted network only, set UNIFI_PROTECT_VERIFY_SSL=false)"
         : "";
     throw new Error(`${err.message}: ${cause.message}${hint}`, { cause: err });
   }
@@ -147,6 +149,8 @@ async function parseBody(
 export class ProtectClient {
   private baseUrl: string;
   private basePath: string;
+  private tls: ReturnType<typeof consoleTlsOptions>;
+  private dispatcher: Agent;
   private headers: Record<string, string>;
   private usingConnector: boolean;
 
@@ -172,9 +176,8 @@ export class ProtectClient {
       "Content-Type": "application/json",
     };
 
-    if (!config.verifySsl) {
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-    }
+    this.tls = consoleTlsOptions(config);
+    this.dispatcher = consoleDispatcher(config);
   }
 
   /**
@@ -210,6 +213,7 @@ export class ProtectClient {
       ...(init.body !== undefined ? { body: init.body } : {}),
       redirect: "error",
       signal: requestSignal(init.timeoutMs),
+      dispatcher: this.dispatcher,
     });
     if (!response.ok) {
       throw new Error(
@@ -305,9 +309,8 @@ export class ProtectClient {
     const url = `wss://${this.baseUrl.replace(/^https?:\/\//, "")}${path}`;
     return new WebSocket(url, {
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
+      ...this.tls,
       ...options,
-      rejectUnauthorized:
-        process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0",
     });
   }
 }
