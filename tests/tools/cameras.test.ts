@@ -28,7 +28,7 @@ describe("camera tools", () => {
     });
 
     it("has read-only annotations", () => {
-      expect(configs.get("protect_list_cameras")!.annotations).toEqual({
+      expect(configs.get("protect_list_cameras")!.annotations).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
       });
@@ -141,7 +141,7 @@ describe("camera tools", () => {
     });
 
     it("has destructive annotations", () => {
-      expect(configs.get("protect_update_camera")!.annotations).toEqual({
+      expect(configs.get("protect_update_camera")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: true,
       });
@@ -282,7 +282,7 @@ describe("camera tools", () => {
     });
 
     it("has destructive annotations", () => {
-      expect(configs.get("protect_delete_rtsp_stream")!.annotations).toEqual({
+      expect(configs.get("protect_delete_rtsp_stream")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: true,
       });
@@ -385,7 +385,7 @@ describe("camera tools", () => {
     });
 
     it("has write annotations", () => {
-      expect(configs.get("protect_create_talkback")!.annotations).toEqual({
+      expect(configs.get("protect_create_talkback")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: false,
       });
@@ -406,7 +406,7 @@ describe("camera tools", () => {
     });
 
     it("has destructive annotations", () => {
-      expect(configs.get("protect_disable_mic")!.annotations).toEqual({
+      expect(configs.get("protect_disable_mic")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: true,
       });
@@ -516,7 +516,7 @@ describe("camera tools", () => {
     });
 
     it("has write annotations", () => {
-      expect(configs.get("protect_start_ptz_patrol")!.annotations).toEqual({
+      expect(configs.get("protect_start_ptz_patrol")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: false,
       });
@@ -561,7 +561,7 @@ describe("camera tools", () => {
     });
 
     it("has write annotations", () => {
-      expect(configs.get("protect_stop_ptz_patrol")!.annotations).toEqual({
+      expect(configs.get("protect_stop_ptz_patrol")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: false,
       });
@@ -611,7 +611,7 @@ describe("camera tools", () => {
     });
 
     it("has write annotations", () => {
-      expect(configs.get("protect_goto_ptz_preset")!.annotations).toEqual({
+      expect(configs.get("protect_goto_ptz_preset")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: false,
       });

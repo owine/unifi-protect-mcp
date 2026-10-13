@@ -28,7 +28,7 @@ describe("user tools", () => {
       });
 
       it("has read-only annotations", () => {
-        expect(configs.get(tool)!.annotations).toEqual({
+        expect(configs.get(tool)!.annotations).toMatchObject({
           readOnlyHint: true,
           destructiveHint: false,
         });
@@ -63,7 +63,7 @@ describe("user tools", () => {
       });
 
       it("has read-only annotations", () => {
-        expect(configs.get(tool)!.annotations).toEqual({
+        expect(configs.get(tool)!.annotations).toMatchObject({
           readOnlyHint: true,
           destructiveHint: false,
         });

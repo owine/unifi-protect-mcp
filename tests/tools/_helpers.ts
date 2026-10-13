@@ -2,6 +2,7 @@ import { vi, expect } from "vitest";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../../src/client.js";
+import { instrumentTools } from "../../src/tools/registrar.js";
 
 interface ToolConfig {
   title?: string;
@@ -17,13 +18,16 @@ interface ToolResult {
 }
 
 /**
- * Captures tool handlers registered via server.registerTool().
+ * Captures tool handlers registered via server.registerTool(), through the same
+ * instrumentTools wrapper production uses: captured handlers catch errors,
+ * bind the call signal and guard result size, and captured configs carry the
+ * published (loose) outputSchema, title and annotations.
  * Returns maps from tool name → handler function and tool name → config.
  */
 export function createMockServer() {
   const handlers = new Map<string, (...args: any[]) => any>();
   const configs = new Map<string, ToolConfig>();
-  const server = {
+  const raw = {
     registerTool: vi.fn((...args: any[]) => {
       // server.registerTool(name, config, handler)
       const name = args[0] as string;
@@ -33,6 +37,8 @@ export function createMockServer() {
       handlers.set(name, handler);
     }),
   } as unknown as McpServer;
+  // Typed as McpServer so it also fits registerAllTools; only registerTool exists.
+  const server = instrumentTools(raw) as unknown as McpServer;
   return { server, handlers, configs };
 }
 

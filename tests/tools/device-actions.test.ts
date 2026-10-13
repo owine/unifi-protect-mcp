@@ -50,7 +50,7 @@ describe("device action tools", () => {
     });
 
     it("has WRITE annotations", () => {
-      expect(configs.get("protect_play_siren")!.annotations).toEqual({
+      expect(configs.get("protect_play_siren")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: false,
       });
@@ -302,7 +302,7 @@ describe("device action tools - annotations", () => {
   for (const name of tools) {
     const kind = destructive.has(name) ? "DESTRUCTIVE" : "WRITE";
     it(`${name} has ${kind} annotations`, () => {
-      expect(configs.get(name)!.annotations).toEqual({
+      expect(configs.get(name)!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: destructive.has(name),
       });

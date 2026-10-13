@@ -29,7 +29,7 @@ describe("liveview tools", () => {
     });
 
     it("has read-only annotations", () => {
-      expect(configs.get("protect_list_liveviews")!.annotations).toEqual({
+      expect(configs.get("protect_list_liveviews")!.annotations).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
       });

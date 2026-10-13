@@ -33,7 +33,7 @@ describe("file tools", () => {
     });
 
     it("has read-only annotations", () => {
-      expect(configs.get("protect_list_files")!.annotations).toEqual({
+      expect(configs.get("protect_list_files")!.annotations).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
       });
@@ -231,7 +231,7 @@ describe("file tools", () => {
     });
 
     it("has write annotations", () => {
-      expect(configs.get("protect_upload_file")!.annotations).toEqual({
+      expect(configs.get("protect_upload_file")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: false,
       });
