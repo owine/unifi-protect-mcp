@@ -14,7 +14,7 @@ import {
  * re-verified live on 7.3.70 (2026-10-12) — and against the 7.3.70 published
  * docs otherwise (arm profiles, files — no instances on the console). The Integration API surface is much thinner than
  * the internal Protect app API — only observed/documented fields are typed;
- * `.passthrough()` still allows anything extra a firmware/hardware mix adds.
+ * `.loose()` still allows anything extra a firmware/hardware mix adds.
  */
 
 // --- System ---

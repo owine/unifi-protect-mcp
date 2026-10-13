@@ -2,7 +2,10 @@
  * Tagged template that encodes interpolated values for safe URL path construction.
  *
  * This function URL-encodes only the interpolated values, which prevents them from
- * introducing path traversal (`/`), query (`?`), or fragment (`#`) delimiters.
+ * introducing path separators (`/`), query (`?`), or fragment (`#`) delimiters.
+ * A bare `.` or `..` survives encoding, and URL parsing folds it out of the
+ * path: resourceId() in utils/params.ts rejects such IDs, and
+ * ProtectClient.resolve() refuses any path that parsing would rewrite.
  * The literal template segments are not modified, so they must be trusted and should
  * not contain user-controlled data.
  *

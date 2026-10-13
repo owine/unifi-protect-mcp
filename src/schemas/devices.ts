@@ -16,7 +16,7 @@ import {
  * have no instances on the available console, so their TOP-LEVEL fields are
  * typed from the published docs while every nested object/array is left as `unknownField()` (z.unknown()) — naming
  * the field for the LLM without risking SDK output-validation failures on a
- * shape we have not observed live. `.passthrough()` lets any extra field flow.
+ * shape we have not observed live. `.loose()` lets any extra field flow.
  *
  * Convention (see schemas/common.ts): only `id` is strictly typed; strings use
  * `nullableString()` (API returns explicit null for absent strings); booleans,
