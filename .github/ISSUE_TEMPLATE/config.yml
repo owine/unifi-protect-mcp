@@ -1,0 +1,4 @@
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/owine/unifi-protect-mcp/security/advisories/new
+    about: Please report security problems privately, not as an issue.
