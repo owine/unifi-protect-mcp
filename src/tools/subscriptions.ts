@@ -19,10 +19,11 @@ const durationSchema = z
 export const MAX_SUBSCRIPTION_MESSAGES = 200;
 
 /**
- * The most JSON text one listen returns: about 25k tokens, Claude Code's
- * default limit on a tool result. The count cap alone allowed 95k-385k tokens
- * at 200 device messages. Also the largest single WebSocket frame accepted,
- * since a frame bigger than the whole budget could never be returned.
+ * The most JSON text one listen returns, about 25k tokens: the scale at which
+ * MCP hosts commonly cap or warn about a tool result. The count cap alone
+ * allowed 95k-385k tokens at 200 device messages. Also the largest single
+ * WebSocket frame accepted, since a frame bigger than the whole budget could
+ * never be returned.
  */
 export const MAX_SUBSCRIPTION_TEXT_CHARS = 100_000;
 

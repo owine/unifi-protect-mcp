@@ -74,18 +74,18 @@ const ConfigSchema = z.object({
     .optional(),
 }).refine((config) => config.verifySsl || config.caCert === undefined, {
   path: ["caCert"],
-  message: "UNIFI_PROTECT_CA_CERT pins a certificate to verify against; it cannot be combined with UNIFI_PROTECT_VERIFY_SSL=false",
+  error: "UNIFI_PROTECT_CA_CERT pins a certificate to verify against; it cannot be combined with UNIFI_PROTECT_VERIFY_SSL=false",
 }).refine((config) => config.caCert === undefined || !isCloudConnectorHost(config.host), {
   // Node's `ca` option replaces the public roots, so pinning a certificate
   // can only break the connection to Ubiquiti's properly certified cloud.
   path: ["caCert"],
-  message: "UNIFI_PROTECT_CA_CERT is for local consoles; unset it for api.ui.com",
+  error: "UNIFI_PROTECT_CA_CERT is for local consoles; unset it for api.ui.com",
 }).refine((config) => config.verifySsl || !isCloudConnectorHost(config.host), {
   // Turning verification off is for local consoles with self-signed
   // certificates. A Site Manager key reaches every console on the account and
   // crosses the internet, so it never goes out unverified.
   path: ["verifySsl"],
-  message: "TLS verification cannot be disabled for api.ui.com; unset UNIFI_PROTECT_VERIFY_SSL",
+  error: "TLS verification cannot be disabled for api.ui.com; unset UNIFI_PROTECT_VERIFY_SSL",
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
