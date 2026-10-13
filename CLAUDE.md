@@ -2,7 +2,7 @@
 
 ## Project overview
 
-MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.3.70** (74 tools across 11 domains).
+MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.3.70**; one tool module per API domain under `src/tools/` (the README's tool tables list them all).
 
 ## Local dev setup
 
@@ -15,15 +15,15 @@ MCP server exposing UniFi Protect's Integration API as tool calls. Built with th
 `package.json` deliberately aliases both TypeScript packages — **do not "simplify" this back to a single `typescript` entry**:
 
 ```jsonc
-"@typescript/native": "npm:typescript@7.0.2",        // real TS 7 — owns the `tsc` bin
-"typescript": "npm:@typescript/typescript6@6.0.2",   // vendors TS 6.0.3 — owns the `tsc6` bin
+"@typescript/native": "npm:typescript@<7.x>",               // real TS 7 — owns the `tsc` bin
+"typescript": "npm:@typescript/typescript6@<wrapper ver>",  // vendors a TS 6 release — owns the `tsc6` bin
 ```
 
-The `6.0.2` / `6.0.3` mismatch is **not a typo**: `@typescript/typescript6` carries its own version line (`6.0.2`), independent of the TypeScript release it vendors (`6.0.3`). Confirm with `node -e 'console.log(require("typescript/package.json").version)'` → `6.0.2` and `./node_modules/.bin/tsc6 --version` → `6.0.3`.
+The `typescript` entry's version will usually **not** match the TypeScript version `tsc6` reports, and that is not a typo: `@typescript/typescript6` carries its own version line, independent of the TypeScript release it vendors. Compare the two with `node -e 'console.log(require("typescript/package.json").version)'` (wrapper version) and `./node_modules/.bin/tsc6 --version` (vendored TypeScript).
 
 typescript-eslint cannot run on TypeScript 7: the Go port ships no JS API, so `typescript-estree` crashes at module load with `TypeError: Cannot read properties of undefined (reading 'Cjs')`. Aliasing the `typescript` *specifier* to `@typescript/typescript6` keeps a real JS API in front of the linter, while `@typescript/native` claims the `tsc` bin so `build`/`typecheck` use the v7 compiler with no script changes.
 
-- `tsc` → 7.0.2 (build, typecheck), `tsc6` → 6.0.3 (what the linter resolves)
+- `tsc` → TypeScript 7 (build, typecheck), `tsc6` → TypeScript 6 (what the linter resolves); `--version` on each shows the exact releases
 - Sanity check after dependency changes: `node -e 'console.log(require("typescript/package.json").name)'` must print `@typescript/typescript6`, and `pnpm lint` must not crash
 - Collapse the split only once [typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940) is resolved (upstream targets TS 7.1, which is expected to ship a new API)
 - Renovate PR titles for these two entries read oddly because of the aliasing — check which *specifier* moved, not just the version string
@@ -63,7 +63,7 @@ src/
   schemas/            # Zod output schemas for tools/list metadata + runtime validation
     common.ts         # passthroughObject(), hardwareModelFields(), listResultSchema()
     cameras.ts        # cameraSchema, rtspStreamSchema, talkbackSessionOutputSchema
-    devices.ts        # DEVICE_SCHEMAS map for the 11 config-driven device types
+    devices.ts        # DEVICE_SCHEMAS map for the config-driven device types
     misc.ts           # nvr, user, ulp-user, liveview, arm-profile, file, subscription schemas
     pos.ts            # posTransactionOutputSchema
   utils/

@@ -1,6 +1,6 @@
 # UniFi Protect MCP Server
 
-An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.3.70** — 74 tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, point-of-sale events, NVR status, and WebSocket subscriptions.
+An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.3.70**, with tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, point-of-sale events, NVR status, and WebSocket subscriptions.
 
 ## Prerequisites
 
@@ -143,7 +143,7 @@ These three tools are now annotated `destructiveHint: true`. MCP clients that au
 ### Output changes
 
 - The `protect_upload_file` dry-run preview reports `byteLength` (decoded size) in place of `dataLength` (base64 string length).
-- `protect_subscribe_devices` / `protect_subscribe_events` stop after 200 messages and add `truncated: true`. `duration` is now the time actually spent listening, not the requested duration.
+- `protect_subscribe_devices` / `protect_subscribe_events` stop at a message cap (stated in each tool's description) and add `truncated: true`. `duration` is now the time actually spent listening, not the requested duration.
 - The server reports its real package version to MCP clients; 2.x always reported `1.0.0`.
 - Network and TLS errors name the underlying cause, e.g. `fetch failed: connect ECONNREFUSED …`, instead of a bare `fetch failed`.
 
@@ -156,21 +156,21 @@ This server provides layered safety controls for responsible operation:
 - **Confirmation parameter** — Irreversible or security-relevant physical actions (`protect_disable_mic`, `protect_trigger_alarm_webhook`, `protect_disable_arm_alarm`, `protect_activate_relay_output`, `protect_trigger_alarm_hub_output`) require an explicit `confirm: true` parameter that must be present for the call to succeed
 - **Dry-run support** — All write tools accept an optional `dryRun: true` parameter that returns a preview of what would happen without making any changes. On the confirm-gated tools a dry run still requires `confirm: true`
 
-## Tools (74 total)
+## Tools
 
-### System (2)
+### System
 | Tool | Description |
 |---|---|
 | `protect_get_info` | Get system information and version details |
 | `protect_list_nvrs` | List all NVR devices |
 
-### Subscriptions (2)
+### Subscriptions
 | Tool | Description |
 |---|---|
 | `protect_subscribe_devices` | Subscribe via WebSocket to device state updates |
 | `protect_subscribe_events` | Subscribe via WebSocket to event notifications |
 
-### Cameras (12)
+### Cameras
 | Tool | Description |
 |---|---|
 | `protect_list_cameras` | List all cameras |
@@ -186,35 +186,35 @@ This server provides layered safety controls for responsible operation:
 | `protect_stop_ptz_patrol` | Stop PTZ patrol |
 | `protect_goto_ptz_preset` | Move PTZ to a preset position |
 
-### Lights (3)
+### Lights
 | Tool | Description |
 |---|---|
 | `protect_list_lights` | List all lights |
 | `protect_get_light` | Get light details by ID |
 | `protect_update_light` | Update light settings |
 
-### Sensors (3)
+### Sensors
 | Tool | Description |
 |---|---|
 | `protect_list_sensors` | List all sensors |
 | `protect_get_sensor` | Get sensor details by ID |
 | `protect_update_sensor` | Update sensor settings |
 
-### Chimes (3)
+### Chimes
 | Tool | Description |
 |---|---|
 | `protect_list_chimes` | List all chimes |
 | `protect_get_chime` | Get chime details by ID |
 | `protect_update_chime` | Update chime settings |
 
-### Viewers (3)
+### Viewers
 | Tool | Description |
 |---|---|
 | `protect_list_viewers` | List all viewers |
 | `protect_get_viewer` | Get viewer details by ID |
 | `protect_update_viewer` | Update viewer settings |
 
-### Sirens (6)
+### Sirens
 | Tool | Description |
 |---|---|
 | `protect_list_sirens` | List all sirens |
@@ -224,14 +224,14 @@ This server provides layered safety controls for responsible operation:
 | `protect_stop_siren` | Stop an active siren |
 | `protect_test_siren_sound` | Test the siren sound for 5 seconds at a given volume |
 
-### Fobs (3)
+### Fobs
 | Tool | Description |
 |---|---|
 | `protect_list_fobs` | List all key fobs |
 | `protect_get_fob` | Get fob details by ID |
 | `protect_update_fob` | Update fob settings |
 
-### Relays (4)
+### Relays
 | Tool | Description |
 |---|---|
 | `protect_list_relays` | List all relays |
@@ -239,7 +239,7 @@ This server provides layered safety controls for responsible operation:
 | `protect_update_relay` | Update relay settings |
 | `protect_activate_relay_output` | **DESTRUCTIVE:** Turn a relay output channel on or off, with optional pulse duration (requires `confirm: true` and an explicit `state`) |
 
-### Speakers (4)
+### Speakers
 | Tool | Description |
 |---|---|
 | `protect_list_speakers` | List all speakers |
@@ -247,21 +247,21 @@ This server provides layered safety controls for responsible operation:
 | `protect_update_speaker` | Update speaker settings (volume, mic) |
 | `protect_test_speaker_sound` | Test the speaker sound at a given volume |
 
-### Bridges (3)
+### Bridges
 | Tool | Description |
 |---|---|
 | `protect_list_bridges` | List all bridges |
 | `protect_get_bridge` | Get bridge details by ID |
 | `protect_update_bridge` | Update bridge settings |
 
-### Link Stations (3)
+### Link Stations
 | Tool | Description |
 |---|---|
 | `protect_list_link_stations` | List all link stations (non-alarm-hub gateways) |
 | `protect_get_link_station` | Get link station details by ID |
 | `protect_update_link_station` | Update link station settings |
 
-### Alarm Hubs (4)
+### Alarm Hubs
 | Tool | Description |
 |---|---|
 | `protect_list_alarm_hubs` | List all alarm hubs |
@@ -269,7 +269,7 @@ This server provides layered safety controls for responsible operation:
 | `protect_update_alarm_hub` | Update alarm hub settings |
 | `protect_trigger_alarm_hub_output` | **DESTRUCTIVE:** Turn an alarm hub output channel on or off (sirens, lights, etc.; requires `confirm: true` and an explicit `enable`) |
 
-### Arm Profiles (7) — local alarm manager
+### Arm Profiles — local alarm manager
 | Tool | Description |
 |---|---|
 | `protect_list_arm_profiles` | List all arm profiles |
@@ -280,7 +280,7 @@ This server provides layered safety controls for responsible operation:
 | `protect_enable_arm_alarm` | Arm the alarm using the current profile |
 | `protect_disable_arm_alarm` | **DESTRUCTIVE:** Disarm the alarm (requires `confirm: true`) |
 
-### Live Views (4)
+### Live Views
 | Tool | Description |
 |---|---|
 | `protect_list_liveviews` | List all live views |
@@ -288,14 +288,14 @@ This server provides layered safety controls for responsible operation:
 | `protect_create_liveview` | Create a new live view |
 | `protect_update_liveview` | Update a live view |
 
-### Alarm & Files (3)
+### Alarm & Files
 | Tool | Description |
 |---|---|
 | `protect_trigger_alarm_webhook` | **DESTRUCTIVE:** Trigger an alarm webhook (fires external alarm action; requires `confirm: true`) |
 | `protect_list_files` | List device asset files (`animations`) |
 | `protect_upload_file` | Upload a device asset file (base64 in, sent as multipart/form-data) |
 
-### Users (4)
+### Users
 | Tool | Description |
 |---|---|
 | `protect_list_users` | List Protect users (filtered by access permissions) |
@@ -303,7 +303,7 @@ This server provides layered safety controls for responsible operation:
 | `protect_list_ulp_users` | List UniFi Identity (ULP) users with enrolled credentials |
 | `protect_get_ulp_user` | Get a UniFi Identity user by ID |
 
-### Point of Sale (1)
+### Point of Sale
 | Tool | Description |
 |---|---|
 | `protect_ingest_pos_transaction` | Record a POS transaction as a camera event so it can be overlaid on recorded footage |
