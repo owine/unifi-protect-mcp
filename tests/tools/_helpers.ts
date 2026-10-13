@@ -4,8 +4,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProtectClient } from "../../src/client.js";
 
 interface ToolConfig {
+  title?: string;
   description?: string;
   inputSchema?: Record<string, unknown>;
+  outputSchema?: unknown;
   annotations?: Record<string, unknown>;
 }
 

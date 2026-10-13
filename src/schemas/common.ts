@@ -73,3 +73,30 @@ export function listResultSchema<T extends z.ZodTypeAny>(itemSchema: T) {
     result: z.array(itemSchema).describe("Array of items returned by the list endpoint"),
   };
 }
+
+/**
+ * The outputSchema to publish for a tool: always a loose object. Tool modules
+ * hand over raw shapes (`{ ...schema.shape }`), and the SDK wraps a raw shape
+ * in a plain `z.object`, whose JSON Schema says `additionalProperties: false`.
+ * SDK clients validate structuredContent against that published schema, and
+ * tools pass Protect's response through, so the first top-level field a
+ * firmware update added would fail the call for every client that validates.
+ */
+export function looseOutput(schema: z.ZodRawShape | z.ZodObject): z.ZodObject {
+  return schema instanceof z.ZodObject ? schema.loose() : z.looseObject(schema);
+}
+
+/**
+ * Fields of the preview a write tool returns for `dryRun: true` (see
+ * formatDryRun). Declared so the published outputSchema documents them; a
+ * resource field of the same name (a file's `path`) takes precedence.
+ */
+export const dryRunPreviewFields = {
+  dryRun: z
+    .literal(true)
+    .optional()
+    .describe("Present and true when this is a dry-run preview: nothing was changed"),
+  action: z.string().optional().describe("Dry run: the HTTP method that would be sent"),
+  path: z.string().optional().describe("Dry run: the request path that would be sent"),
+  body: z.unknown().optional().describe("Dry run: the request body that would be sent"),
+} as const;
