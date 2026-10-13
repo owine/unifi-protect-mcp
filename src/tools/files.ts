@@ -117,6 +117,8 @@ function defaultFileName(contentType: (typeof UPLOAD_CONTENT_TYPES)[number]): st
 }
 
 const DATA_URL_PREFIX = /^data:[^,]*;base64,/i;
+/** Base64 encodes every 3 bytes as a group of 4 characters. */
+const BASE64_GROUP_LENGTH = 4;
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$|^[A-Za-z0-9_-]+$/;
 
 /**
@@ -127,11 +129,12 @@ const BASE64 = /^[A-Za-z0-9+/]+={0,2}$|^[A-Za-z0-9_-]+$/;
  */
 function normalizeBase64(input: string): string {
   const cleaned = input.replace(DATA_URL_PREFIX, "").replace(/\s+/g, "");
-  // Padded input comes in whole 4-character groups; unpadded input can end
-  // in a 2- or 3-character group but never a lone character.
+  // Padded input comes in whole groups; unpadded input can end in a partial
+  // group of 2 or 3 characters, but never a lone character (remainder 1).
+  const remainder = cleaned.length % BASE64_GROUP_LENGTH;
   const wellFormed =
     BASE64.test(cleaned) &&
-    (cleaned.endsWith("=") ? cleaned.length % 4 === 0 : cleaned.length % 4 !== 1);
+    (cleaned.endsWith("=") ? remainder === 0 : remainder !== 1);
   if (!wellFormed) {
     throw new Error(
       "base64Data is not valid base64 (expected A-Z, a-z, 0-9, + and /, correctly = padded, or a data: URL)"
