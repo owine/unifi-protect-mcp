@@ -46,18 +46,21 @@ export function registerDeviceActionTools(
   server.registerTool(
     "protect_stop_siren",
     {
-      description: "Stop an active siren",
+      description: "Stop an active siren. Requires confirm: true: it silences an alarm siren.",
       inputSchema: {
         id: resourceId().describe("Siren ID"),
+        confirm: confirmInput("silence the siren"),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
       annotations: WRITE,
     },
-    async ({ id, dryRun }) => {
+    async ({ id, confirm, dryRun }) => {
       try {
         if (dryRun) {
           return formatDryRun("POST", safePath`/sirens/${id}/stop`);
         }
+        const denied = requireConfirmation(confirm, "silence the siren");
+        if (denied) return denied;
         const data = await client.post(safePath`/sirens/${id}/stop`);
         return formatSuccess(data);
       } catch (err) {

@@ -81,7 +81,7 @@ describe("path encoding in camera tools", () => {
   });
 
   it("protect_create_rtsp_stream encodes id", async () => {
-    await handlers.get("protect_create_rtsp_stream")!({
+    await handlers.get("protect_create_rtsp_stream")!({ confirm: true,
       id: MALICIOUS_ID,
       qualities: ["high"],
     });
@@ -97,7 +97,7 @@ describe("path encoding in camera tools", () => {
   });
 
   it("protect_create_talkback encodes id", async () => {
-    await handlers.get("protect_create_talkback")!({ id: MALICIOUS_ID });
+    await handlers.get("protect_create_talkback")!({ confirm: true, id: MALICIOUS_ID });
     assertPathContains("post", ENCODED_ID);
   });
 

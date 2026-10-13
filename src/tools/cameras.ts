@@ -183,13 +183,14 @@ export function registerCameraTools(
     "protect_create_rtsp_stream",
     {
       description:
-        "Create an RTSPS stream session for a camera. Returns: one key per requested quality (high, medium, low, package), each an rtsps:// URL. The package quality is only available on cameras with hasPackageCamera=true.",
+        "Create an RTSPS stream session for a camera. Returns: one key per requested quality (high, medium, low, package), each an rtsps:// URL. The package quality is only available on cameras with hasPackageCamera=true. Requires confirm: true: the returned URLs are bearer credentials for live video.",
       inputSchema: {
         id: resourceId().describe("Camera ID"),
         qualities: z
           .array(z.enum(["high", "medium", "low", "package"]))
           .min(1)
           .describe("Quality levels to include in the RTSPS stream (at least one)"),
+        confirm: confirmInput("open an RTSPS stream (its URL is a credential for live video)"),
         dryRun: z
           .boolean()
           .optional()
@@ -198,7 +199,7 @@ export function registerCameraTools(
       outputSchema: rtspStreamOutputSchema,
       annotations: WRITE,
     },
-    async ({ id, qualities, dryRun }) => {
+    async ({ id, qualities, confirm, dryRun }) => {
       try {
         if (dryRun) {
           return formatDryRun(
@@ -207,6 +208,8 @@ export function registerCameraTools(
             { qualities }
           );
         }
+        const denied = requireConfirmation(confirm, "open an RTSPS stream (its URL is a credential for live video)");
+        if (denied) return denied;
         const data = await client.post(safePath`/cameras/${id}/rtsps-stream`, {
           qualities,
         });
@@ -256,9 +259,10 @@ export function registerCameraTools(
     "protect_create_talkback",
     {
       description:
-        "Create a talkback (two-way audio) session for a camera. Returns: url, codec, samplingRate, bitsPerSample (the audio config for encoding outbound audio).",
+        "Create a talkback (two-way audio) session for a camera. Returns: url, codec, samplingRate, bitsPerSample (the audio config for encoding outbound audio). Requires confirm: true: the session opens two-way audio to the camera.",
       inputSchema: {
         id: resourceId().describe("Camera ID"),
+        confirm: confirmInput("open a two-way audio session"),
         dryRun: z
           .boolean()
           .optional()
@@ -267,11 +271,13 @@ export function registerCameraTools(
       outputSchema: talkbackSessionOutputSchema,
       annotations: WRITE,
     },
-    async ({ id, dryRun }) => {
+    async ({ id, confirm, dryRun }) => {
       try {
         if (dryRun) {
           return formatDryRun("POST", safePath`/cameras/${id}/talkback-session`);
         }
+        const denied = requireConfirmation(confirm, "open a two-way audio session");
+        if (denied) return denied;
         const data = await client.post(safePath`/cameras/${id}/talkback-session`);
         return formatSuccess(data);
       } catch (err) {

@@ -53,3 +53,20 @@ export function requireConfirmation(confirm: boolean | undefined, action: string
   }
   return null;
 }
+
+/**
+ * Confirmation for an update that is routine in general but, for these
+ * settings, weakens alarm coverage. Returns null when the update touches none
+ * of `fields`, or is a dry run (which changes nothing).
+ */
+export function requireConfirmationForFields(
+  settings: Record<string, unknown>,
+  fields: readonly string[],
+  confirm: boolean | undefined,
+  dryRun: boolean | undefined
+) {
+  const touched = Object.keys(settings).filter((key) => fields.includes(key));
+  return touched.length === 0 || dryRun
+    ? null
+    : requireConfirmation(confirm, `change ${touched.join(", ")}, which affects alarm coverage`);
+}

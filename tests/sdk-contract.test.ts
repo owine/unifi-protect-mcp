@@ -176,6 +176,18 @@ const CONFIRM_GATED: [string, Record<string, unknown>, "post" | "patch" | "delet
   ["protect_disable_arm_alarm", {}, "post"],
   ["protect_activate_relay_output", { id: "r1", outputId: 0, state: "on" }, "post"],
   ["protect_trigger_alarm_hub_output", { id: "h1", outputId: 0, enable: true }, "post"],
+  // Open access: each returns a credentialed stream URL.
+  ["protect_create_rtsp_stream", { id: "cam1", qualities: ["high"] }, "post"],
+  ["protect_create_talkback", { id: "cam1" }, "post"],
+  // Weaken alarm coverage.
+  ["protect_stop_siren", { id: "s1" }, "post"],
+  ["protect_delete_arm_profile", { id: "p1" }, "delete"],
+  ["protect_set_current_arm_profile", { armProfileId: "p1" }, "patch"],
+  // Field-level: only these settings need confirm (see below for the rest).
+  ["protect_update_sensor", { id: "s1", settings: { alarmSettings: { isEnabled: false } } }, "patch"],
+  ["protect_update_sensor", { id: "s1", settings: { armProfileIds: null } }, "patch"],
+  ["protect_update_fob", { id: "f1", settings: { armControlSettings: { enabled: false } } }, "patch"],
+  ["protect_update_arm_profile", { id: "p1", settings: { schedules: [] } }, "patch"],
 ];
 
 describe("confirm through the SDK", () => {
@@ -216,6 +228,30 @@ describe("confirm through the SDK", () => {
       });
     });
   }
+});
+
+describe("field-level confirm leaves routine updates alone", () => {
+  let mcpClient: Client;
+  const toolClient = createMockClient();
+
+  beforeAll(async () => {
+    mcpClient = await connect(toolClient);
+  });
+
+  afterAll(async () => {
+    await mcpClient.close();
+  });
+
+  it.each([
+    ["protect_update_sensor", { id: "s1", settings: { name: "Back door" } }],
+    ["protect_update_fob", { id: "f1", settings: { name: "Keys" } }],
+    ["protect_update_arm_profile", { id: "p1", settings: { name: "Night" } }],
+  ])("%s with only non-alarm settings acts without confirm", async (name, args) => {
+    mockFn(toolClient, "patch").mockClear().mockResolvedValueOnce({});
+    const result = await mcpClient.callTool({ name, arguments: args });
+    expect(result.isError).toBeFalsy();
+    expect(mockFn(toolClient, "patch")).toHaveBeenCalledOnce();
+  });
 });
 
 describe("hostile IDs through the SDK", () => {

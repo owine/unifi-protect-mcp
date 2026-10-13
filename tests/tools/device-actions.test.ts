@@ -60,7 +60,7 @@ describe("device action tools", () => {
   describe("protect_stop_siren", () => {
     it("stops siren", async () => {
       mockFn(client, "post").mockResolvedValue({ ok: true });
-      const result = await handlers.get("protect_stop_siren")!({ id: "s1" });
+      const result = await handlers.get("protect_stop_siren")!({ confirm: true, id: "s1" });
       expectSuccess(result, "ok");
       expect(mockFn(client, "post")).toHaveBeenCalledWith("/sirens/s1/stop");
     });
