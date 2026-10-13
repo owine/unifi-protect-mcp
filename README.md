@@ -70,6 +70,55 @@ Alternatively, add to your `~/.claude.json` under the top-level `"mcpServers"` k
 }
 ```
 
+## Upgrading to 3.0
+
+3.0 tightens the tools that act on the physical world: disarming the alarm, switching relay outputs, and triggering alarm-hub outputs.
+
+**No action is needed** if you use the server only through an LLM client (Claude Code, Claude Desktop, …) and leave `UNIFI_PROTECT_READ_ONLY` and `UNIFI_PROTECT_VERIFY_SSL` unset or set to `true`/`false`. The model reads the new required parameters from the tool schemas. Read on if you call tools from scripts or saved agent configurations, or set those variables to other values.
+
+### Check your environment variables first
+
+2.x treated only the exact string `false` as false. 3.0 also accepts `0`, `no` and `off`, in any case, so a value that 2.x silently ignored now takes effect:
+
+| Setting | 2.x | 3.0 |
+|---|---|---|
+| `UNIFI_PROTECT_READ_ONLY=0` (or `no`, `off`, `FALSE`) | Read-only | ⚠️ **Write tools enabled** |
+| `UNIFI_PROTECT_VERIFY_SSL=0` (or `no`, `off`, `FALSE`) | Certificate verified | Verification **skipped** |
+
+Any other unrecognized value keeps the safe default (read-only, verification on), as before. If you set either variable to one of these values, confirm that the 3.0 behavior is what you want.
+
+### Tool input changes (breaking)
+
+| Tool | 2.x | 3.0 |
+|---|---|---|
+| `protect_disable_arm_alarm` | No confirmation | Requires `confirm: true` |
+| `protect_activate_relay_output` | Omitting `state` toggled the output | Requires `confirm: true` **and** `state` (`"on"` / `"off"`) |
+| `protect_trigger_alarm_hub_output` | Omitting `enable` toggled the output | Requires `confirm: true` **and** `enable` (`true` / `false`) |
+
+Calls without these fields now fail input validation. Toggling was removed because it is not safe to retry: a repeated toggle flips a gate or lock back to where it started. To act on the current state, read it first: each entry in `outputs` from `protect_get_relay` carries a `state`, and `protect_get_alarm_hub` reports `alarmHub.output` keyed by channel.
+
+```jsonc
+// 2.x: toggles output 0
+{ "id": "<relay id>", "outputId": 0 }
+// 3.0: explicit and safe to retry
+{ "id": "<relay id>", "outputId": 0, "state": "on", "confirm": true }
+```
+
+These three tools are now annotated `destructiveHint: true`. MCP clients that auto-approve non-destructive tools will now ask before running them.
+
+### Stricter validation
+
+- **`UNIFI_PROTECT_HOST`** is parsed as a URL authority. A pasted `https://192.168.1.1/` now works, and `:443` is dropped. A path, credentials, a non-numeric or out-of-range port, or an unbracketed IPv6 address now fails at startup instead of at the first request. Write IPv6 as `[2001:db8::1]` or `[2001:db8::1]:7443`.
+- **`protect_upload_file`** rejects `base64Data` that is not valid base64 (bad characters, length or padding), and empty input, where 2.x uploaded corrupt bytes without an error. A `data:` URL prefix and line breaks are accepted.
+- **`protect_update_liveview`** rejects a body whose `settings.id` differs from `id`.
+
+### Output changes
+
+- The `protect_upload_file` dry-run preview reports `byteLength` (decoded size) in place of `dataLength` (base64 string length).
+- `protect_subscribe_devices` / `protect_subscribe_events` stop after 200 messages and add `truncated: true`. `duration` is now the time actually spent listening, not the requested duration.
+- The server reports its real package version to MCP clients; 2.x always reported `1.0.0`.
+- Network and TLS errors name the underlying cause, e.g. `fetch failed: connect ECONNREFUSED …`, instead of a bare `fetch failed`.
+
 ## Safety Features
 
 This server provides layered safety controls for responsible operation:
