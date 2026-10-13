@@ -44,10 +44,10 @@ claude mcp add-json unifi-protect '{"command":"node","args":["/path/to/unifi-pro
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `UNIFI_PROTECT_HOST` | Yes | — | IP or hostname of your UniFi Protect console |
+| `UNIFI_PROTECT_HOST` | Yes | — | IP or hostname of your UniFi Protect console, optionally with `:port`. A leading `https://` and trailing `/` are stripped |
 | `UNIFI_PROTECT_API_KEY` | Yes | — | API key from Protect integration settings |
-| `UNIFI_PROTECT_VERIFY_SSL` | No | `true` | Set to `false` to skip TLS certificate verification (needed for self-signed certs) |
-| `UNIFI_PROTECT_READ_ONLY` | No | `true` | Set to `false` to enable write/mutating tools (default is monitoring-only mode) |
+| `UNIFI_PROTECT_VERIFY_SSL` | No | `true` | Set to `false` (or `0`/`no`/`off`, any case) to skip TLS certificate verification (needed for self-signed certs). Unrecognized values keep the default |
+| `UNIFI_PROTECT_READ_ONLY` | No | `true` | Set to `false` (or `0`/`no`/`off`, any case) to enable write/mutating tools (default is monitoring-only mode). Unrecognized values keep the default |
 | `UNIFI_PROTECT_CONSOLE_ID` | No | — | Cloud Connector console ID. Only used when `UNIFI_PROTECT_HOST` is `api.ui.com`; ignored (with a warning on stderr) otherwise |
 
 ### Manual Configuration
