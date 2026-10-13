@@ -91,6 +91,52 @@ describe("loadConfig", () => {
     loadConfig();
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
+  it("strips a scheme and trailing slash from the host", () => {
+    process.env.UNIFI_PROTECT_HOST = "https://192.168.1.1/";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    expect(loadConfig().host).toBe("192.168.1.1");
+  });
+
+  it("keeps a port on the host", () => {
+    process.env.UNIFI_PROTECT_HOST = "nvr.local:7443";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    expect(loadConfig().host).toBe("nvr.local:7443");
+  });
+
+  it("calls process.exit(1) when the host includes a path", () => {
+    process.env.UNIFI_PROTECT_HOST = "192.168.1.1/protect";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    const exitSpy = vi
+      .spyOn(process, "exit")
+      .mockImplementation(() => undefined as never);
+    loadConfig();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it.each(["FALSE", "0", "no", "off", " false "])(
+    "parses verifySsl=false for %j",
+    (value) => {
+      process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+      process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+      process.env.UNIFI_PROTECT_VERIFY_SSL = value;
+      expect(loadConfig().verifySsl).toBe(false);
+    }
+  );
+
+  it("parses readOnly=false for '0'", () => {
+    process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    process.env.UNIFI_PROTECT_READ_ONLY = "0";
+    expect(loadConfig().readOnly).toBe(false);
+  });
+
+  it("keeps readOnly on for an unrecognized value", () => {
+    process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    process.env.UNIFI_PROTECT_READ_ONLY = "disabled";
+    expect(loadConfig().readOnly).toBe(true);
+  });
+
   it("accepts a Cloud Connector console ID", () => {
     process.env.UNIFI_PROTECT_HOST = "api.ui.com";
     process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
