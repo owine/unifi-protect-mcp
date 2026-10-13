@@ -132,6 +132,17 @@ describe("liveview tools", () => {
       expect(data.path).toBe("/liveviews/lv1");
       expect(mockFn(client, "patch")).not.toHaveBeenCalled();
     });
+
+    it("rejects a body whose id does not match the path id", async () => {
+      mockFn(client, "patch").mockClear();
+      const result = await handlers.get("protect_update_liveview")!({
+        id: "lv2",
+        settings: fullBody,
+      });
+      expectError(result);
+      expect(result.content[0].text).toContain("lv2");
+      expect(mockFn(client, "patch")).not.toHaveBeenCalled();
+    });
   });
 
   for (const tool of ["protect_create_liveview", "protect_update_liveview"]) {
