@@ -156,7 +156,7 @@ export const subscriptionOutputSchema = {
     .array(z.unknown())
     .optional()
     .describe("Captured WebSocket messages (add/update/remove or event envelopes)"),
-  duration: unknownField("Actual listen duration in seconds (number)"),
+  duration: unknownField("Seconds actually spent listening, to 0.1s (number); shorter than requested when the message cap or an error ends the listen early"),
   error: nullableString("Connection error, if any"),
   truncated: unknownField(
     "true when listening stopped early at the message cap (boolean, absent otherwise)"

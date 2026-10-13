@@ -70,7 +70,7 @@ describe("subscription tools", () => {
       const result = await promise;
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed.messages).toEqual([]);
-      expect(parsed.duration).toBe(1);
+      expect(parsed.duration).toBeCloseTo(1, 0);
     });
 
     it("handles WebSocket error gracefully", async () => {
@@ -207,6 +207,8 @@ describe("subscription tools", () => {
       expect(parsed.messages).toHaveLength(MAX_SUBSCRIPTION_MESSAGES);
       expect(parsed.truncated).toBe(true);
       expect(ws.close).toHaveBeenCalled();
+      // Reports the time actually spent listening, not the 30s requested.
+      expect(parsed.duration).toBeLessThan(5);
     });
 
     it("omits the truncated flag when under the cap", async () => {
