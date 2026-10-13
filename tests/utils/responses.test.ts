@@ -9,7 +9,7 @@ describe("formatSuccess", () => {
       content: [
         {
           type: "text",
-          text: JSON.stringify(data, null, 2),
+          text: JSON.stringify(data),
         },
       ],
       structuredContent: data,
@@ -18,7 +18,7 @@ describe("formatSuccess", () => {
 
   it("wraps arrays under `result` so structuredContent stays an object", () => {
     const result = formatSuccess([1, 2, 3]);
-    expect(result.content[0].text).toBe(JSON.stringify([1, 2, 3], null, 2));
+    expect(result.content[0].text).toBe(JSON.stringify([1, 2, 3]));
     expect(result.structuredContent).toEqual({ result: [1, 2, 3] });
   });
 
@@ -55,5 +55,11 @@ describe("formatError", () => {
   it("converts numbers to string", () => {
     const result = formatError(404);
     expect(result.content[0].text).toBe("Error: 404");
+  });
+
+  // Indentation is whitespace the model pays for in tokens on every result;
+  // pretty-printing added 25-101% to measured payloads.
+  it("emits compact JSON", () => {
+    expect(formatSuccess({ a: { b: [1, 2] } }).content[0].text).toBe('{"a":{"b":[1,2]}}');
   });
 });
