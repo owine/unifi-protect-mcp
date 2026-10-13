@@ -1,4 +1,5 @@
 import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/sdk/shared/stdio.js";
+import { DEFAULT_REQUEST_TIMEOUT_MSEC } from "@modelcontextprotocol/sdk/shared/protocol.js";
 
 /**
  * Payload ceilings, all derived from what one MCP stdio message can carry.
@@ -44,3 +45,20 @@ export const SERVER_READ_BUFFER_BYTES = STDIO_DEFAULT_MAX_BUFFER_SIZE * READ_HEA
  * proxy's error page or a runaway body is not buffered whole.
  */
 export const MAX_ERROR_BODY_BYTES = 64 * 1024;
+
+/** Protect answers JSON calls quickly; a longer wait means something is wrong. */
+export const REQUEST_TIMEOUT_MS = 25_000;
+
+/**
+ * Time left for the MCP client between our timeout and its own, so the
+ * server's error (which names the call, and says whether a write may have
+ * landed) reaches the model instead of a bare client-side timeout.
+ */
+const CLIENT_TIMEOUT_MARGIN_MS = 15_000;
+
+/**
+ * Snapshots and uploads get the longest budget that still ends before the MCP
+ * SDK client's default request timeout. It used to equal that timeout, so a
+ * slow snapshot always lost the race.
+ */
+export const BINARY_TIMEOUT_MS = DEFAULT_REQUEST_TIMEOUT_MSEC - CLIENT_TIMEOUT_MARGIN_MS;
