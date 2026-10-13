@@ -126,6 +126,7 @@ async function parseBody(
 
 export class ProtectClient {
   private baseUrl: string;
+  private basePath: string;
   private headers: Record<string, string>;
   private usingConnector: boolean;
 
@@ -145,6 +146,7 @@ export class ProtectClient {
       : "";
     this.usingConnector = useConnector;
     this.baseUrl = `https://${config.host}${consolePath}/proxy/protect/integration/v1`;
+    this.basePath = new URL(this.baseUrl).pathname;
     this.headers = {
       "X-API-KEY": config.apiKey,
       "Content-Type": "application/json",
@@ -153,6 +155,23 @@ export class ProtectClient {
     if (!config.verifySsl) {
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     }
+  }
+
+  /**
+   * Model-supplied IDs become path segments. safePath encodes `/ ? # % \`, but
+   * a bare `.` or `..` survives encoding and URL parsing then folds it out of
+   * the path, so the request would reach a different endpoint than the tool
+   * built. Refuse any path that parsing would rewrite. The ID schemas reject
+   * these first; this is the backstop for a tool that forgets one.
+   */
+  private resolve(path: string): string {
+    const url = `${this.baseUrl}${path}`;
+    const parsed = new URL(url);
+    const pathname = path.split("?", 1)[0];
+    if (!path.startsWith("/") || parsed.hash !== "" || parsed.pathname !== `${this.basePath}${pathname}`) {
+      throw new Error(`Refusing a request path outside the Integration API: ${pathname}`);
+    }
+    return url;
   }
 
   /**
@@ -165,7 +184,7 @@ export class ProtectClient {
     path: string,
     init: { body?: BodyInit; headers: Record<string, string>; timeoutMs: number; errorLimit: number }
   ): Promise<Response> {
-    const response = await fetchWithCause(`${this.baseUrl}${path}`, {
+    const response = await fetchWithCause(this.resolve(path), {
       method,
       headers: init.headers,
       ...(init.body !== undefined ? { body: init.body } : {}),

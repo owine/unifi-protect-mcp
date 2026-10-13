@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { armProfileId } from "../utils/params.js";
 import {
   armProfileListOutputSchema,
   armProfileOutputSchema,
@@ -78,7 +79,7 @@ export function registerArmProfileTools(
     {
       description: "Set the current arm profile to be used when enabling the arm alarm. Only available when using local alarm manager.",
       inputSchema: {
-        armProfileId: z.string().describe("The arm profile ID to set as current"),
+        armProfileId: armProfileId().describe("The arm profile ID to set as current"),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
       annotations: WRITE,
@@ -102,7 +103,7 @@ export function registerArmProfileTools(
     {
       description: "Update an existing arm profile (partial update via PATCH). Only available when using local alarm manager.",
       inputSchema: {
-        id: z.string().describe("Arm profile ID"),
+        id: armProfileId().describe("Arm profile ID"),
         settings: z
           .object(armProfileFields)
           .partial()
@@ -132,7 +133,7 @@ export function registerArmProfileTools(
     {
       description: "Delete an arm profile by ID. Only available when using local alarm manager.",
       inputSchema: {
-        id: z.string().describe("Arm profile ID"),
+        id: armProfileId().describe("Arm profile ID"),
         dryRun: z.boolean().optional().describe("If true, return what would happen without making changes"),
       },
       annotations: DESTRUCTIVE,
