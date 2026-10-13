@@ -9,15 +9,18 @@ import { z } from "zod";
  * `undefined` but REJECTS `null`, which fails SDK output validation and breaks
  * the tool call. So:
  *
- * - Only `id` is strictly typed (`z.string()`) — it is always a present,
- *   non-null string on every resource, and keeps one real validation guard.
+ * - `id` is typed as a string: Protect always sends one on a resource. It is
+ *   optional like every other field, so a dry-run preview or an empty 204
+ *   result still validates.
  * - Every other string uses `nullableString()` = string | null | undefined.
  *   The LLM still sees "this is a string" in the published schema, but null
  *   can never fail validation.
  * - Non-string fields (booleans, numbers, nested objects whose shape we have
  *   not verified) use `unknownField()` — name + description published, no
  *   runtime type constraint at all.
- * - Every object uses `.loose()` so unverified/extra fields flow through.
+ * - Every object uses `.loose()` so unverified/extra fields flow through. The
+ *   top level is published loose by instrumentTools (see looseOutput), since
+ *   a raw shape would publish `additionalProperties: false`.
  */
 
 /** Create an object schema with `.loose()` to allow unknown fields. */
@@ -33,7 +36,7 @@ export function unknownField(description: string) {
   return z.unknown().optional().describe(description);
 }
 
-/** The one strictly-typed field: `id` is always a present non-null string. */
+/** A resource `id`: a string when present (optional, like every field). */
 export function idField(description = "Resource ID") {
   return z.string().optional().describe(description);
 }
