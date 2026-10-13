@@ -4,6 +4,7 @@ import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, formatDryRun } from "../utils/safety.js";
 import { safePath } from "../utils/url.js";
+import { MAX_UPLOAD_BASE64_CHARS } from "../utils/limits.js";
 import { fileListOutputSchema, fileOutputSchema } from "../schemas/misc.js";
 
 // The only asset file type the API accepts (path param `assetFileType`).
@@ -57,6 +58,7 @@ export function registerFileTools(
         base64Data: z
           .string()
           .min(1)
+          .max(MAX_UPLOAD_BASE64_CHARS, "File too large to send in one MCP message")
           .describe("Base64-encoded file content (a data: URL prefix is accepted and stripped)"),
         contentType: z
           .enum(UPLOAD_CONTENT_TYPES)

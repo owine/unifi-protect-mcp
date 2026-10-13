@@ -7,6 +7,8 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { registerAllTools } from "../src/tools/index.js";
 import { ProtectClient } from "../src/client.js";
 import { formatDryRun } from "../src/utils/safety.js";
+import { MAX_SNAPSHOT_BYTES, MAX_UPLOAD_BASE64_CHARS } from "../src/utils/limits.js";
+import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/sdk/shared/stdio.js";
 import { createMockServer, createMockClient, mockFn } from "./tools/_helpers.js";
 
 /**
@@ -114,6 +116,53 @@ describe("dry-run preview against every write tool's published outputSchema", ()
       expect(schema.safeParse(preview.structuredContent).success).toBe(true);
     });
   }
+});
+
+describe("payload sizes through the SDK", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  async function snapshot(bytes: number) {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async () =>
+      new Response(new Uint8Array(bytes), { headers: { "content-type": "image/jpeg" } })
+    ));
+    const mcpClient = await connect(
+      new ProtectClient({ host: "192.168.1.1", apiKey: "k", verifySsl: true, readOnly: true }),
+      true
+    );
+    const result = await mcpClient.callTool({ name: "protect_get_snapshot", arguments: { id: "cam1" } });
+    await mcpClient.close();
+    return result;
+  }
+
+  // An SDK stdio client drops the connection on a message over its read
+  // buffer, which a high-resolution snapshot used to exceed once base64-encoded.
+  it("returns the largest allowed snapshot in a message an stdio peer can read", async () => {
+    const result = await snapshot(MAX_SNAPSHOT_BYTES);
+    expect(result.isError).toBeFalsy();
+    expect(JSON.stringify(result).length).toBeLessThan(STDIO_DEFAULT_MAX_BUFFER_SIZE);
+  });
+
+  it("refuses a larger snapshot with an error instead of an unreadable message", async () => {
+    const result = await snapshot(MAX_SNAPSHOT_BYTES + 1);
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result).length).toBeLessThan(STDIO_DEFAULT_MAX_BUFFER_SIZE);
+  });
+
+  it("rejects an upload over the base64 ceiling at input validation", async () => {
+    const postFile = vi.fn();
+    const toolClient = createMockClient();
+    mockFn(toolClient, "postFile").mockImplementation(postFile);
+    const mcpClient = await connect(toolClient);
+    const result = await mcpClient.callTool({
+      name: "protect_upload_file",
+      arguments: { fileType: "animations", base64Data: "A".repeat(MAX_UPLOAD_BASE64_CHARS + 4) },
+    });
+    await mcpClient.close();
+    expect(result.isError).toBe(true);
+    expect(postFile).not.toHaveBeenCalled();
+  });
 });
 
 describe("hostile IDs through the SDK", () => {

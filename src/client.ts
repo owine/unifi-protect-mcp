@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import WebSocket from "ws";
 import { Config } from "./config.js";
-import { MAX_BINARY_BYTES, MAX_ERROR_BODY_BYTES, MAX_JSON_BYTES } from "./utils/limits.js";
+import { MAX_ERROR_BODY_BYTES, MAX_JSON_BYTES, MAX_SNAPSHOT_BYTES } from "./utils/limits.js";
 
 /**
  * The abort signal of the MCP tool call a request is made for. Without it a
@@ -258,7 +258,7 @@ export class ProtectClient {
 
   async getBinary(
     path: string,
-    maxBytes: number = MAX_BINARY_BYTES
+    maxBytes: number = MAX_SNAPSHOT_BYTES
   ): Promise<{ data: Buffer; mimeType: string }> {
     const response = await this.send("GET", path, {
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
