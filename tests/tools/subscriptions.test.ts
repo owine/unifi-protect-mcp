@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { EventEmitter } from "events";
 import {
   createMockServer,
@@ -12,12 +12,14 @@ import {
   MAX_SUBSCRIPTION_MESSAGES,
   MAX_SUBSCRIPTION_TEXT_CHARS,
 } from "../../src/tools/subscriptions.js";
+import { withCallSignal } from "../../src/client.js";
 
 /** Minimal mock that quacks like a ws.WebSocket */
 function createMockWebSocket() {
   const emitter = new EventEmitter();
   return Object.assign(emitter, {
     close: vi.fn(() => emitter.emit("close")),
+    terminate: vi.fn(() => emitter.emit("close")),
     readyState: 1, // OPEN
   });
 }
@@ -286,6 +288,37 @@ describe("subscription tools", () => {
       const result = await promise;
       expectError(result);
       expect(result.content[0].text).toContain("401");
+    });
+  });
+
+  describe("timers and cancellation", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    // A socket that reports "close" synchronously from close() used to run the
+    // close handler before the grace timer was armed, so the timer outlived the
+    // call and fired later (as unhandled errors in an unrelated test).
+    it("leaves no timer running once the listen has ended", async () => {
+      vi.useFakeTimers();
+      const ws = createMockWebSocket();
+      mockFn(client, "connectWebSocket").mockReturnValue(ws);
+      const promise = handlers.get("protect_subscribe_events")!({ duration: 1 });
+      ws.emit("open");
+      await vi.advanceTimersByTimeAsync(1_000);
+      await promise;
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("stops at once for a call that was cancelled before it started", async () => {
+      const ws = createMockWebSocket();
+      mockFn(client, "connectWebSocket").mockReturnValue(ws);
+      const cancelled = new AbortController();
+      cancelled.abort();
+      const started = Date.now();
+      await withCallSignal(cancelled.signal, () => handlers.get("protect_subscribe_events")!({ duration: 30 }));
+      expect(Date.now() - started).toBeLessThan(1_000);
+      expect(ws.terminate).toHaveBeenCalled();
     });
   });
 });
