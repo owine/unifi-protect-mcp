@@ -10,6 +10,8 @@ function holdsCertificate(pem: string): boolean {
   }
 }
 
+const CLOUD_CONNECTOR_HOST = "api.ui.com";
+
 const ConfigSchema = z.object({
   // The client builds https://<host>/..., so accept the URL people paste from
   // a browser and reduce it to host[:port]. Parsing it as a URL validates the
@@ -73,7 +75,12 @@ const ConfigSchema = z.object({
 }).refine((config) => config.verifySsl || config.caCert === undefined, {
   path: ["caCert"],
   message: "UNIFI_PROTECT_CA_CERT pins a certificate to verify against; it cannot be combined with UNIFI_PROTECT_VERIFY_SSL=false",
-}).refine((config) => config.verifySsl || config.host !== "api.ui.com", {
+}).refine((config) => config.caCert === undefined || !isCloudConnectorHost(config.host), {
+  // Node's `ca` option replaces the public roots, so pinning a certificate
+  // can only break the connection to Ubiquiti's properly certified cloud.
+  path: ["caCert"],
+  message: "UNIFI_PROTECT_CA_CERT is for local consoles; unset it for api.ui.com",
+}).refine((config) => config.verifySsl || !isCloudConnectorHost(config.host), {
   // Turning verification off is for local consoles with self-signed
   // certificates. A Site Manager key reaches every console on the account and
   // crosses the internet, so it never goes out unverified.
@@ -82,6 +89,14 @@ const ConfigSchema = z.object({
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
+
+/**
+ * Whether host is Ubiquiti's Cloud Connector, however it was written: the
+ * TLS rules below must not be dodged by a trailing dot or an explicit port.
+ */
+export function isCloudConnectorHost(host: string): boolean {
+  return new URL(`https://${host}`).hostname.replace(/\.$/, "") === CLOUD_CONNECTOR_HOST;
+}
 
 const FALSE_VALUES = new Set(["false", "0", "no", "off"]);
 const TRUE_VALUES = new Set(["true", "1", "yes", "on"]);

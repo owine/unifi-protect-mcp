@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import WebSocket from "ws";
 import type { Agent } from "undici";
-import { Config } from "./config.js";
+import { Config, isCloudConnectorHost } from "./config.js";
 import { consoleDispatcher, consoleTlsOptions } from "./tls.js";
 import {
   BINARY_TIMEOUT_MS,
@@ -190,7 +190,7 @@ export class ProtectClient {
     // a local console is ignored rather than fatal: every tool still works
     // against that console, and refusing to start helps nobody.
     const useConnector =
-      config.consoleId !== undefined && config.host === "api.ui.com";
+      config.consoleId !== undefined && isCloudConnectorHost(config.host);
     if (config.consoleId !== undefined && !useConnector) {
       console.error(
         `Ignoring UNIFI_PROTECT_CONSOLE_ID: Cloud Connector requires host api.ui.com, but host is ${config.host}.`

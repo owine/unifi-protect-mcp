@@ -187,7 +187,7 @@ describe("loadConfig", () => {
 
   // A Site Manager key reaches every console on the account and crosses the
   // internet; it never goes out over unverified TLS.
-  it.each(["api.ui.com", "https://API.UI.COM/"])(
+  it.each(["api.ui.com", "https://API.UI.COM/", "api.ui.com.", "api.ui.com:8443"])(
     "calls process.exit(1) for Cloud Connector host %j with VERIFY_SSL=false",
     (host) => {
       process.env.UNIFI_PROTECT_HOST = host;
@@ -285,6 +285,14 @@ describe("loadConfig", () => {
       const notACert = join(dir, "notes.txt");
       writeFileSync(notACert, "not a certificate");
       process.env.UNIFI_PROTECT_CA_CERT = notACert;
+      expectExit();
+    });
+
+    // Node's `ca` option replaces the public roots, so a pin can only break the
+    // connection to Ubiquiti's properly certified cloud.
+    it("calls process.exit(1) when combined with the Cloud Connector host", () => {
+      process.env.UNIFI_PROTECT_HOST = "api.ui.com";
+      process.env.UNIFI_PROTECT_CA_CERT = certPath;
       expectExit();
     });
 
