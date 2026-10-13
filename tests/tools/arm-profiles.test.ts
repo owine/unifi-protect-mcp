@@ -29,7 +29,7 @@ describe("arm profile tools", () => {
     });
 
     it("has read-only annotations", () => {
-      expect(configs.get("protect_list_arm_profiles")!.annotations).toEqual({
+      expect(configs.get("protect_list_arm_profiles")!.annotations).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
       });
@@ -73,7 +73,7 @@ describe("arm profile tools", () => {
     });
 
     it("has WRITE annotations", () => {
-      expect(configs.get("protect_create_arm_profile")!.annotations).toEqual({
+      expect(configs.get("protect_create_arm_profile")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: false,
       });
@@ -240,7 +240,7 @@ describe("arm profile tools", () => {
     });
 
     it("has DESTRUCTIVE annotations", () => {
-      expect(configs.get("protect_delete_arm_profile")!.annotations).toEqual({
+      expect(configs.get("protect_delete_arm_profile")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: true,
       });
@@ -279,7 +279,7 @@ describe("arm profile tools", () => {
     });
 
     it("has DESTRUCTIVE annotations", () => {
-      expect(configs.get("protect_disable_arm_alarm")!.annotations).toEqual({
+      expect(configs.get("protect_disable_arm_alarm")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: true,
       });

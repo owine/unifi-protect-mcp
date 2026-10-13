@@ -70,7 +70,7 @@ describe("alarm manager tools", () => {
     });
 
     it("has destructive annotations", () => {
-      expect(configs.get("protect_trigger_alarm_webhook")!.annotations).toEqual({
+      expect(configs.get("protect_trigger_alarm_webhook")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: true,
       });

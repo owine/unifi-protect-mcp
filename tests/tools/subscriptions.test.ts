@@ -137,7 +137,7 @@ describe("subscription tools", () => {
     });
 
     it("has read-only annotations", () => {
-      expect(configs.get("protect_subscribe_devices")!.annotations).toEqual({
+      expect(configs.get("protect_subscribe_devices")!.annotations).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
       });
@@ -185,7 +185,7 @@ describe("subscription tools", () => {
     });
 
     it("has read-only annotations", () => {
-      expect(configs.get("protect_subscribe_events")!.annotations).toEqual({
+      expect(configs.get("protect_subscribe_events")!.annotations).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
       });

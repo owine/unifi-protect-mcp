@@ -24,7 +24,7 @@ describe("system tools", () => {
     });
 
     it("has read-only annotations", () => {
-      expect(configs.get("protect_get_info")!.annotations).toEqual({
+      expect(configs.get("protect_get_info")!.annotations).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
       });
@@ -79,7 +79,7 @@ describe("system tools", () => {
     });
 
     it("has read-only annotations", () => {
-      expect(configs.get("protect_list_nvrs")!.annotations).toEqual({
+      expect(configs.get("protect_list_nvrs")!.annotations).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
       });

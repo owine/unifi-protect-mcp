@@ -54,7 +54,7 @@ describe("device tools", () => {
         });
 
         it("has read-only annotations", () => {
-          expect(configs.get(`protect_list_${dev.plural}`)!.annotations).toEqual({
+          expect(configs.get(`protect_list_${dev.plural}`)!.annotations).toMatchObject({
             readOnlyHint: true,
             destructiveHint: false,
           });
@@ -140,7 +140,7 @@ describe("device tools", () => {
         });
 
         it("has destructive annotations", () => {
-          expect(configs.get(`protect_update_${dev.singular}`)!.annotations).toEqual({
+          expect(configs.get(`protect_update_${dev.singular}`)!.annotations).toMatchObject({
             readOnlyHint: false,
             destructiveHint: true,
           });

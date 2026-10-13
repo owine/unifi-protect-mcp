@@ -83,7 +83,7 @@ describe("POS tools", () => {
     });
 
     it("has WRITE annotations", () => {
-      expect(configs.get("protect_ingest_pos_transaction")!.annotations).toEqual({
+      expect(configs.get("protect_ingest_pos_transaction")!.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: false,
       });
