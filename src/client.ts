@@ -3,7 +3,13 @@ import WebSocket from "ws";
 import type { Agent } from "undici";
 import { Config } from "./config.js";
 import { consoleDispatcher, consoleTlsOptions } from "./tls.js";
-import { MAX_ERROR_BODY_BYTES, MAX_JSON_BYTES, MAX_SNAPSHOT_BYTES } from "./utils/limits.js";
+import {
+  BINARY_TIMEOUT_MS,
+  MAX_ERROR_BODY_BYTES,
+  MAX_JSON_BYTES,
+  MAX_SNAPSHOT_BYTES,
+  REQUEST_TIMEOUT_MS,
+} from "./utils/limits.js";
 
 /**
  * The abort signal of the MCP tool call a request is made for. Without it a
@@ -29,10 +35,6 @@ function requestSignal(timeoutMs: number): AbortSignal {
   return caller ? AbortSignal.any([caller, timeout]) : timeout;
 }
 
-/** Protect answers JSON calls quickly; a longer wait means something is wrong. */
-const REQUEST_TIMEOUT_MS = 25_000;
-/** Snapshots and file uploads are larger, so they get a longer budget. */
-const BINARY_TIMEOUT_MS = 60_000;
 const MS_PER_SECOND = 1000;
 /** Error text is forwarded to the MCP client, so keep it context-sized. */
 const MAX_ERROR_BODY_CHARS = 2_000;
