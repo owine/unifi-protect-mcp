@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun } from "../utils/safety.js";
@@ -35,7 +35,7 @@ const liveviewBody = z
   .loose();
 
 export function registerLiveviewTools(
-  server: McpServer,
+  server: ToolRegistrar,
   client: ProtectClient,
   readOnly: boolean
 ) {

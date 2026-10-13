@@ -1,4 +1,4 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY } from "../utils/safety.js";
@@ -11,7 +11,7 @@ import {
   ulpUserOutputSchema,
 } from "../schemas/misc.js";
 
-export function registerUserTools(server: McpServer, client: ProtectClient) {
+export function registerUserTools(server: ToolRegistrar, client: ProtectClient) {
   server.registerTool(
     "protect_list_users",
     {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { WRITE, formatDryRun } from "../utils/safety.js";
@@ -17,7 +17,7 @@ import { posTransactionOutputSchema } from "../schemas/pos.js";
  * to be positive (fractional quantities such as weights are allowed).
  */
 export function registerPosTools(
-  server: McpServer,
+  server: ToolRegistrar,
   client: ProtectClient,
   readOnly: boolean
 ) {

@@ -1,4 +1,4 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { ToolRegistrar } from "./registrar.js";
 import { z } from "zod";
 import { ProtectClient, currentCallSignal } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
@@ -150,7 +150,7 @@ function listenResult(data: CollectResult) {
 }
 
 export function registerSubscriptionTools(
-  server: McpServer,
+  server: ToolRegistrar,
   client: ProtectClient
 ) {
   server.registerTool(

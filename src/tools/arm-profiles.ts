@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { ToolRegistrar } from "./registrar.js";
 import { ProtectClient } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY, WRITE, DESTRUCTIVE, formatDryRun, requireConfirmation, requireConfirmationForFields, confirmInput } from "../utils/safety.js";
@@ -28,7 +28,7 @@ const armProfileFields = {
 const ARM_PROFILE_CONFIRM_FIELDS = ["schedules", "automations"] as const;
 
 export function registerArmProfileTools(
-  server: McpServer,
+  server: ToolRegistrar,
   client: ProtectClient,
   readOnly: boolean
 ) {
