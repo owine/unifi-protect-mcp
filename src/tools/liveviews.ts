@@ -125,6 +125,13 @@ export function registerLiveviewTools(
     },
     async ({ id, settings, dryRun }) => {
       try {
+        // The body is a full liveview object, so it carries its own id. A
+        // mismatch means the caller copied the wrong liveview's body.
+        if (settings.id !== id) {
+          throw new Error(
+            `settings.id (${settings.id}) does not match the liveview being updated (${id})`
+          );
+        }
         if (dryRun) {
           return formatDryRun("PATCH", safePath`/liveviews/${id}`, settings);
         }

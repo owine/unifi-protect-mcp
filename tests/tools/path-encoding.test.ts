@@ -194,7 +194,7 @@ describe("path encoding in liveview tools", () => {
   it("protect_update_liveview encodes id", async () => {
     await handlers.get("protect_update_liveview")!({
       id: MALICIOUS_ID,
-      settings: { name: "test" },
+      settings: { id: MALICIOUS_ID, name: "test" },
     });
     assertPathContains("patch", ENCODED_ID);
   });
