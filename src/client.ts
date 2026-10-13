@@ -33,6 +33,7 @@ function requestSignal(timeoutMs: number): AbortSignal {
 const REQUEST_TIMEOUT_MS = 25_000;
 /** Snapshots and file uploads are larger, so they get a longer budget. */
 const BINARY_TIMEOUT_MS = 60_000;
+const MS_PER_SECOND = 1000;
 /** Error text is forwarded to the MCP client, so keep it context-sized. */
 const MAX_ERROR_BODY_CHARS = 2_000;
 
@@ -141,9 +142,37 @@ async function parseBody(
         `Protect returned an empty body for ${method} ${path} with a JSON content type`
       );
     }
-    return JSON.parse(text);
+    try {
+      return JSON.parse(text) as unknown;
+    } catch (err) {
+      throw new Error(
+        `Protect returned malformed JSON for ${method} ${path}: ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err }
+      );
+    }
   }
   return text;
+}
+
+/**
+ * Run a request so that its timeout reads as what it is, naming the call. A
+ * write that timed out may still have reached the console, so retrying it
+ * blindly could, say, switch a relay twice. A cancellation (AbortError) is left
+ * alone: the caller asked for it.
+ */
+async function explainTimeout<T>(method: string, path: string, timeoutMs: number, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (err) {
+    if (!(err instanceof DOMException) || err.name !== "TimeoutError") throw err;
+    const hint = method === "GET"
+      ? "Retry when the console responds."
+      : "The change may still have been applied; check before retrying.";
+    throw new Error(
+      `${method} ${path}: Protect did not respond within ${(timeoutMs / MS_PER_SECOND).toString()} s. ${hint}`,
+      { cause: err }
+    );
+  }
 }
 
 export class ProtectClient {
@@ -228,6 +257,10 @@ export class ProtectClient {
     path: string,
     body?: unknown
   ): Promise<unknown> {
+    return explainTimeout(method, path, REQUEST_TIMEOUT_MS, () => this.sendJson(method, path, body));
+  }
+
+  private async sendJson(method: string, path: string, body?: unknown): Promise<unknown> {
     const response = await this.send(method, path, {
       headers: this.headers,
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
@@ -264,6 +297,10 @@ export class ProtectClient {
     path: string,
     maxBytes: number = MAX_SNAPSHOT_BYTES
   ): Promise<{ data: Buffer; mimeType: string }> {
+    return explainTimeout("GET", path, BINARY_TIMEOUT_MS, () => this.download(path, maxBytes));
+  }
+
+  private async download(path: string, maxBytes: number): Promise<{ data: Buffer; mimeType: string }> {
     const response = await this.send("GET", path, {
       headers: { "X-API-KEY": this.headers["X-API-KEY"] },
       timeoutMs: BINARY_TIMEOUT_MS,
@@ -289,12 +326,14 @@ export class ProtectClient {
   ): Promise<unknown> {
     const form = new FormData();
     form.append("file", new Blob([new Uint8Array(data)], { type: contentType }), fileName);
-    const response = await this.send("POST", path, {
-      headers: { "X-API-KEY": this.headers["X-API-KEY"] },
-      body: form,
-      timeoutMs: BINARY_TIMEOUT_MS,
+    return explainTimeout("POST", path, BINARY_TIMEOUT_MS, async () => {
+      const response = await this.send("POST", path, {
+        headers: { "X-API-KEY": this.headers["X-API-KEY"] },
+        body: form,
+        timeoutMs: BINARY_TIMEOUT_MS,
+      });
+      return parseBody(response, "POST", path);
     });
-    return parseBody(response, "POST", path);
   }
 
   connectWebSocket(path: string, options: { maxPayload?: number } = {}): WebSocket {

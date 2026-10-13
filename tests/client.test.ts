@@ -275,6 +275,34 @@ describe("ProtectClient", () => {
     });
   });
 
+  describe("error messages name the call", () => {
+    const timeout = () => vi.fn().mockRejectedValue(new DOMException("The operation was aborted due to timeout", "TimeoutError"));
+
+    it("says a timed-out read can be retried", async () => {
+      vi.stubGlobal("fetch", timeout());
+      await expect(client.get("/nvrs")).rejects.toThrow(/^GET \/nvrs: Protect did not respond within \d+ s\. Retry/);
+    });
+
+    // A write that timed out may have reached the console; retrying blindly
+    // could, say, fire a relay twice.
+    it("says a timed-out write may still have been applied", async () => {
+      vi.stubGlobal("fetch", timeout());
+      await expect(client.patch("/cameras/c1", { name: "x" })).rejects.toThrow(
+        /^PATCH \/cameras\/c1: Protect did not respond within \d+ s\. The change may still have been applied/
+      );
+    });
+
+    it("leaves a cancellation's error alone", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new DOMException("This operation was aborted", "AbortError")));
+      await expect(client.get("/nvrs")).rejects.toThrow("This operation was aborted");
+    });
+
+    it("names the call when Protect returns malformed JSON", async () => {
+      vi.stubGlobal("fetch", mockFetch("{not json", { contentType: "application/json" }));
+      await expect(client.get("/nvrs")).rejects.toThrow(/^Protect returned malformed JSON for GET \/nvrs/);
+    });
+  });
+
   describe("path guard", () => {
     // A bare `.` or `..` survives safePath and URL parsing folds it out of the
     // path, so the request would reach a different endpoint.
