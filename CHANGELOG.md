@@ -7,7 +7,7 @@
 
 * protect_stop_siren, protect_set_current_arm_profile, protect_create_rtsp_stream and protect_create_talkback are now annotated destructiveHint: true. MCP clients that prompt before destructive tools will now ask before running them.
 * protect_update_camera, protect_update_<device> (light, sensor, chime, viewer, siren, fob, relay, speaker, bridge, link_station, alarm_hub), protect_update_arm_profile and protect_update_liveview are now annotated destructiveHint: true. MCP clients that prompt before destructive tools will now ask before running them; allow-lists keyed on the annotation need updating.
-* these calls now need confirm: true (a dryRun: true preview does not): protect_create_rtsp_stream, protect_create_talkback, protect_stop_siren, protect_delete_arm_profile, protect_set_current_arm_profile; protect_update_sensor when settings include alarmSettings, motionSettings, glassBreakSettings, armProfileIds or scheduleMode; protect_update_fob when settings include armControlSettings; protect_update_arm_profile when settings include schedules or automations.
+* these calls now need confirm: true (a dryRun: true preview does not): protect_create_rtsp_stream, protect_create_talkback, protect_stop_siren, protect_delete_arm_profile, protect_set_current_arm_profile; protect_update_sensor when settings include alarmSettings, motionSettings, glassBreakSettings, armProfileIds or scheduleMode; protect_update_fob when settings include armControlSettings; protect_update_arm_profile when settings include schedules, automations, activationDelay or recordEverything; protect_update_siren when settings include volume.
 * UNIFI_PROTECT_HOST=api.ui.com together with UNIFI_PROTECT_VERIFY_SSL=false (or 0/no/off) now fails at startup. Unset UNIFI_PROTECT_VERIFY_SSL for Cloud Connector.
 * protect_activate_relay_output now requires state and protect_trigger_alarm_hub_output now requires enable; the toggle-on-omit behavior is removed.
 * protect_disable_arm_alarm, protect_activate_relay_output and protect_trigger_alarm_hub_output now require confirm: true; calls without it fail input validation.
@@ -36,7 +36,6 @@
 * **config:** normalize the host and accept common boolean spellings ([b45177c](https://github.com/owine/unifi-protect-mcp/commit/b45177c7c2eb68d758943870d2b5e00bddec1a45))
 * **config:** validate the host as a URL authority ([96edf96](https://github.com/owine/unifi-protect-mcp/commit/96edf965d15112c2706e6f6e929bf962ab422209))
 * correct tool descriptions and server instructions from the docs audit ([4b0897f](https://github.com/owine/unifi-protect-mcp/commit/4b0897fa2d551fc36f477f7ad09e142f7af71c61))
-* declare the relay and alarm-hub output tools idempotent ([a43a6b3](https://github.com/owine/unifi-protect-mcp/commit/a43a6b3bd1078cc3675e08f3a574c550822305a4))
 * **files:** reject base64 with an impossible length or padding ([967ca7c](https://github.com/owine/unifi-protect-mcp/commit/967ca7c64bb80012c63e14471e91b5a9d104a9c0))
 * **files:** reject invalid base64 instead of uploading corrupt bytes ([9dcb612](https://github.com/owine/unifi-protect-mcp/commit/9dcb612b193f8a8a19880629b31b25877b56d594))
 * keep 2.x transport behaviour on undici's fetch ([e6dd762](https://github.com/owine/unifi-protect-mcp/commit/e6dd7620f693d9fbcac14bbd87b0f05a6ca86be1))
@@ -57,7 +56,6 @@
 * report the package version to MCP clients ([35d352d](https://github.com/owine/unifi-protect-mcp/commit/35d352df16eadc07fb8b3a3fc7ad8a36bf276a6e))
 * require confirm for writes that open stream access or weaken alarm coverage ([aa3bf02](https://github.com/owine/unifi-protect-mcp/commit/aa3bf02efd4e70ed7321e49a526ba7e16d442bbe))
 * return compact JSON instead of pretty-printed results ([df1c641](https://github.com/owine/unifi-protect-mcp/commit/df1c641a38862a55aeedc235e600144f0f4ed7d5))
-* stop marking pulsed relay and alarm-hub outputs idempotent ([b39704e](https://github.com/owine/unifi-protect-mcp/commit/b39704eedb3a9b7ec425a93816a7b3a44e32aab9))
 * **subscriptions:** report the elapsed listen time ([67eb083](https://github.com/owine/unifi-protect-mcp/commit/67eb0834e8bfb237516a2b468cb0428978e9f842))
 * **subscriptions:** stop listening after 200 messages ([ffbbd94](https://github.com/owine/unifi-protect-mcp/commit/ffbbd94b91b6065e13cb8d801a94e19cc66c711f))
 * time out snapshots and uploads before the MCP client gives up ([81b4352](https://github.com/owine/unifi-protect-mcp/commit/81b4352fef1aee0164c0d2af8809f662be527c9a))
