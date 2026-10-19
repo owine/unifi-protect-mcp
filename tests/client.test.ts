@@ -355,6 +355,13 @@ describe("ProtectClient", () => {
       fetchMock.mockRejectedValue(new TypeError("fetch failed", { cause }));
     }
 
+    it("identifies itself rather than as undici", async () => {
+      mockFetch({});
+      await client.get("/nvrs");
+      const init = fetchMock.mock.calls[0][1] as RequestInit;
+      expect((init.headers as Record<string, string>)["User-Agent"]).toMatch(/^unifi-protect-mcp\/\d+\.\d+\.\d+/);
+    });
+
     it("includes the underlying cause in the error message", async () => {
       failWith("connect ECONNREFUSED 192.168.1.1:443", "ECONNREFUSED");
       await expect(client.get("/nvrs")).rejects.toThrow(

@@ -3,9 +3,10 @@ import WebSocket from "ws";
 // undici's own fetch and FormData, not the globals: Node's built-in fetch
 // bundles an older undici whose handlers the Agent from tls.ts (undici 8)
 // rejects, and undici's fetch sends a global FormData as "[object FormData]".
-import { fetch, FormData, type Agent, type BodyInit, type RequestInit, type Response } from "undici";
+import { fetch, FormData, type BodyInit, type Dispatcher, type RequestInit, type Response } from "undici";
 import { Config, isCloudConnectorHost } from "./config.js";
 import { consoleDispatcher, consoleTlsOptions } from "./tls.js";
+import { SERVER_VERSION } from "./version.js";
 import {
   BINARY_TIMEOUT_MS,
   MAX_ERROR_BODY_BYTES,
@@ -188,7 +189,7 @@ export class ProtectClient {
   private baseUrl: string;
   private basePath: string;
   private tls: ReturnType<typeof consoleTlsOptions>;
-  private dispatcher: Agent;
+  private dispatcher: Dispatcher;
   private headers: Record<string, string>;
   private usingConnector: boolean;
 
@@ -212,6 +213,8 @@ export class ProtectClient {
     this.headers = {
       "X-API-KEY": config.apiKey,
       "Content-Type": "application/json",
+      // undici's fetch would otherwise announce itself as "undici".
+      "User-Agent": `unifi-protect-mcp/${SERVER_VERSION}`,
     };
 
     this.tls = consoleTlsOptions(config);
@@ -233,6 +236,11 @@ export class ProtectClient {
       throw new Error(`Refusing a request path outside the Integration API: ${pathname}`);
     }
     return url;
+  }
+
+  /** Every header but Content-Type, for a request whose body sets its own. */
+  private authHeaders(): Record<string, string> {
+    return Object.fromEntries(Object.entries(this.headers).filter(([name]) => name !== "Content-Type"));
   }
 
   /**
@@ -311,7 +319,7 @@ export class ProtectClient {
 
   private async download(path: string, maxBytes: number): Promise<{ data: Buffer; mimeType: string }> {
     const response = await this.send("GET", path, {
-      headers: { "X-API-KEY": this.headers["X-API-KEY"] },
+      headers: this.authHeaders(),
       timeoutMs: BINARY_TIMEOUT_MS,
     });
 
@@ -337,7 +345,7 @@ export class ProtectClient {
     form.append("file", new Blob([new Uint8Array(data)], { type: contentType }), fileName);
     return explainTimeout("POST", path, BINARY_TIMEOUT_MS, async () => {
       const response = await this.send("POST", path, {
-        headers: { "X-API-KEY": this.headers["X-API-KEY"] },
+        headers: this.authHeaders(),
         body: form,
         timeoutMs: BINARY_TIMEOUT_MS,
       });
@@ -356,7 +364,7 @@ export class ProtectClient {
     }
     const url = `wss://${this.baseUrl.replace(/^https?:\/\//, "")}${path}`;
     return new WebSocket(url, {
-      headers: { "X-API-KEY": this.headers["X-API-KEY"] },
+      headers: this.authHeaders(),
       ...this.tls,
       ...options,
     });

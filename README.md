@@ -209,7 +209,10 @@ Toggling was removed because it is not safe to retry: a repeated toggle flips a 
 
 ### For packagers
 
-`undici` is a new runtime dependency (scoped TLS and connection keep-alive).
+`undici` is a new runtime dependency (scoped TLS and connection keep-alive). Requests go through undici's own `fetch` rather than Node's, so:
+
+- They speak HTTP/1.1, as before, and send `User-Agent: unifi-protect-mcp/<version>`.
+- An HTTP proxy is used as Node's built-in `fetch` would: from `HTTPS_PROXY` / `HTTP_PROXY`, minus `NO_PROXY`, only when `NODE_USE_ENV_PROXY=1` or `--use-env-proxy` is set. A dispatcher installed with undici's `setGlobalDispatcher` no longer applies. The subscription WebSocket never used a proxy, and still does not.
 
 ## Safety Features
 
