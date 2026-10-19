@@ -335,7 +335,7 @@ describe("read-only mode through the SDK", () => {
     // socket that closes at once, so no connection is attempted.
     vi.spyOn(protect, "connectWebSocket").mockImplementation(() => {
       const ws = Object.assign(new EventEmitter(), { close: vi.fn(), terminate: vi.fn() });
-      setTimeout(() => ws.emit("close"), 0);
+      setTimeout(() => ws.emit("close", 1000, Buffer.alloc(0)), 0);
       return ws as never;
     });
     const mcpClient = await connect(protect, true);
@@ -585,7 +585,7 @@ describe("cancellation through the SDK", () => {
   it("drops the subscription WebSocket when the MCP client cancels the call", async () => {
     const ws = Object.assign(new EventEmitter(), {
       close: vi.fn(),
-      terminate: vi.fn(function (this: EventEmitter) { this.emit("close"); }),
+      terminate: vi.fn(function (this: EventEmitter) { this.emit("close", 1006, Buffer.alloc(0)); }),
     });
     const toolClient = createMockClient();
     mockFn(toolClient, "connectWebSocket").mockReturnValue(ws);
