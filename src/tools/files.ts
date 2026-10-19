@@ -111,16 +111,18 @@ function defaultFileName(contentType: (typeof UPLOAD_CONTENT_TYPES)[number]): st
 const DATA_URL_PREFIX = /^data:[^,]*;base64,/i;
 /** Base64 encodes every 3 bytes as a group of 4 characters. */
 const BASE64_GROUP_LENGTH = 4;
-const BASE64 = /^[A-Za-z0-9+/]+={0,2}$|^[A-Za-z0-9_-]+$/;
+/** Standard or URL-safe base64 (one alphabet, not mixed), padded or not. */
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$|^[A-Za-z0-9_-]+={0,2}$/;
 
 /**
- * Strip a data: URL prefix and whitespace, then reject anything that is not
+ * Strip whitespace and a data: URL prefix, then reject anything that is not
  * well-formed base64. Buffer.from(x, "base64") skips characters it cannot
  * decode and ignores a dangling final character, so malformed input would
- * otherwise upload as corrupt bytes with no error.
+ * otherwise upload as corrupt bytes with no error. Whitespace goes first, so
+ * a prefix after a leading line break is still found.
  */
 function normalizeBase64(input: string): string {
-  const cleaned = input.replace(DATA_URL_PREFIX, "").replace(/\s+/g, "");
+  const cleaned = input.replace(/\s+/g, "").replace(DATA_URL_PREFIX, "");
   // Padded input comes in whole groups; unpadded input can end in a partial
   // group of 2 or 3 characters, but never a lone character (remainder 1).
   const remainder = cleaned.length % BASE64_GROUP_LENGTH;
@@ -129,7 +131,7 @@ function normalizeBase64(input: string): string {
     (cleaned.endsWith("=") ? remainder === 0 : remainder !== 1);
   if (!wellFormed) {
     throw new Error(
-      "base64Data is not valid base64 (expected A-Z, a-z, 0-9, + and /, correctly = padded, or a data: URL)"
+      "base64Data is not valid base64 (expected A-Z, a-z, 0-9 with + and / or - and _, correctly = padded, or a data: URL)"
     );
   }
   return cleaned;
