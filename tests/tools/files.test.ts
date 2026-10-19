@@ -159,6 +159,18 @@ describe("file tools", () => {
       expect(sent.subarray(0, 6).toString()).toBe("GIF89a");
     });
 
+    // Buffer decodes both, and 2.x uploaded them.
+    it.each([
+      ["padded URL-safe base64", "R0lGODlh-_8="],
+      ["a data URL after a leading line break", "\ndata:image/gif;base64,R0lGODlhAQABAAAAACw="],
+    ])("accepts %s", async (_kind, base64Data) => {
+      mockFn(client, "postFile").mockClear().mockResolvedValue({ id: "f1" });
+      const result = await handlers.get("protect_upload_file")!({ fileType: "animations", base64Data, contentType: "image/gif" });
+      expect(result.isError).toBeUndefined();
+      const sent = mockFn(client, "postFile").mock.calls[0][1] as Buffer;
+      expect(sent.subarray(0, 6).toString()).toBe("GIF89a");
+    });
+
     it("rejects data that is not base64 instead of uploading garbage", async () => {
       mockFn(client, "postFile").mockClear();
       const result = await handlers.get("protect_upload_file")!({
