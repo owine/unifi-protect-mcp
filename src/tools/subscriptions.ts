@@ -1,6 +1,6 @@
 import type { ToolRegistrar } from "./registrar.js";
 import { z } from "zod";
-import { ProtectClient, currentCallSignal } from "../client.js";
+import { ProtectClient, currentCallSignal, errorReason } from "../client.js";
 import { formatSuccess, formatError } from "../utils/responses.js";
 import { READ_ONLY } from "../utils/safety.js";
 import { subscriptionOutputSchema } from "../schemas/misc.js";
@@ -21,11 +21,24 @@ export const MAX_SUBSCRIPTION_MESSAGES = 200;
 /**
  * The most JSON text one listen returns, about 25k tokens: the scale at which
  * MCP hosts commonly cap or warn about a tool result. The count cap alone
- * allowed results several times that size. Also the largest single
- * WebSocket frame accepted, since a frame bigger than the whole budget could
- * never be returned.
+ * allowed results several times that size.
  */
 export const MAX_SUBSCRIPTION_TEXT_CHARS = 100_000;
+
+/**
+ * The most bytes a UTF-16 code unit takes in UTF-8 (a surrogate pair is four
+ * bytes for two units). A frame larger than the budget times this could never
+ * be returned, so it is not accepted; a smaller one is measured as parsed.
+ */
+const MAX_UTF8_BYTES_PER_CHAR = 3;
+const MAX_FRAME_BYTES = MAX_SUBSCRIPTION_TEXT_CHARS * MAX_UTF8_BYTES_PER_CHAR;
+
+/** ws's error code for a frame over maxPayload. */
+const FRAME_TOO_LARGE = "WS_ERR_UNSUPPORTED_MESSAGE_LENGTH";
+
+/** The text a message that cannot fit the budget is reported with. */
+const TOO_LARGE =
+  `a message larger than the ${MAX_SUBSCRIPTION_TEXT_CHARS.toLocaleString("en-US")}-character limit for one listen arrived, and cannot be returned`;
 
 /**
  * How long a closing socket may wait for the peer's close frame before it is
@@ -54,12 +67,13 @@ function collectMessages(
     const messages: unknown[] = [];
     let error: string | undefined;
     let truncated = false;
+    let opened = false;
     let finishedAt: number | undefined;
     // Start with the result's own envelope ({"messages":[],"duration":…}).
     let textChars = JSON.stringify({ messages: [], duration, truncated: true }).length;
 
     const startedAt = Date.now();
-    const ws = client.connectWebSocket(path, { maxPayload: MAX_SUBSCRIPTION_TEXT_CHARS });
+    const ws = client.connectWebSocket(path, { maxPayload: MAX_FRAME_BYTES });
     let grace: ReturnType<typeof setTimeout> | undefined;
 
     /**
@@ -77,7 +91,22 @@ function collectMessages(
       ws.close();
     };
 
-    const window = setTimeout(finish, duration * MS_PER_SECOND);
+    /**
+     * A message too large for the budget ends the listen as truncated. When
+     * nothing was collected before it, say why the result is empty.
+     */
+    const tooLarge = () => {
+      truncated = true;
+      if (messages.length === 0) error = TOO_LARGE;
+      finish();
+    };
+
+    // A window that ends before the socket opened listened to nothing, which
+    // an empty result would report as a quiet site.
+    const window = setTimeout(() => {
+      if (!opened) error = `the connection was not established within ${duration.toString()} s; try a longer duration`;
+      finish();
+    }, duration * MS_PER_SECOND);
 
     // A cancelled call gets no result, so drop the socket at once rather than
     // holding it open for the rest of the listen window.
@@ -86,6 +115,10 @@ function collectMessages(
       finish();
       ws.terminate();
     };
+
+    ws.on("open", () => {
+      opened = true;
+    });
 
     ws.on("message", (data: unknown) => {
       if (finishedAt !== undefined) return;
@@ -99,8 +132,7 @@ function collectMessages(
       // The comma between array elements counts too.
       const chars = JSON.stringify(message).length + 1;
       if (textChars + chars > MAX_SUBSCRIPTION_TEXT_CHARS) {
-        truncated = true;
-        finish();
+        tooLarge();
         return;
       }
       textChars += chars;
@@ -112,11 +144,24 @@ function collectMessages(
     });
 
     ws.on("error", (err: Error) => {
-      error = err.message;
+      // After finish(), an error is the close it started: closing a socket
+      // that is still connecting aborts the handshake with an error.
+      if (finishedAt !== undefined) return;
+      if ((err as NodeJS.ErrnoException).code === FRAME_TOO_LARGE) {
+        tooLarge();
+        return;
+      }
+      error = errorReason(err);
       finish();
     });
 
-    ws.on("close", () => {
+    ws.on("close", (code: number, reason: Buffer) => {
+      // A close this listen did not start (the console refusing the
+      // subscription, or a dropped connection) ended it early.
+      if (finishedAt === undefined && error === undefined) {
+        const why = reason.length > 0 ? `: ${reason.toString("utf8")}` : "";
+        error = `the console closed the connection (code ${code.toString()}${why})`;
+      }
       clearTimeout(window);
       clearTimeout(grace);
       signal?.removeEventListener("abort", onAbort);
