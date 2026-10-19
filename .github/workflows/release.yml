@@ -74,7 +74,7 @@ jobs:
           ref: ${{ needs.release-please.outputs.sha }}
       # Node from .nvmrc; no dependency cache, since what is built here is
       # what gets published.
-      - uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           install: false
       # No lifecycle scripts: the build needs none of them.
