@@ -45,16 +45,17 @@ const ConfigSchema = z.object({
       }
       return url.host;
     }),
-  // Trimmed, because a key pasted with its trailing newline is common; any
-  // control character left inside is refused, since fetch would reject the
-  // header and echo the whole key into every tool error. The message never
-  // repeats the value.
+  // Trimmed, because a key pasted with its trailing newline is common. Any
+  // character left that is not printable ASCII is refused: fetch rejects a
+  // control character in a header and echoes the whole key into every tool
+  // error, and rejects anything past U+00FF (a zero-width space, a smart
+  // quote) with an error that never names the variable. Keys are ASCII. The
+  // message never repeats the value.
   apiKey: z
     .string({ error: "UNIFI_PROTECT_API_KEY is required" })
     .trim()
     .min(1, "UNIFI_PROTECT_API_KEY is required")
-    // eslint-disable-next-line no-control-regex -- matching control characters is the point
-    .refine((key) => !/[\u0000-\u001f\u007f]/.test(key), "UNIFI_PROTECT_API_KEY contains a control character (a line break or similar); paste the key again"),
+    .refine((key) => !/[^\x20-\x7e]/.test(key), "UNIFI_PROTECT_API_KEY contains a character that is not printable ASCII (a line break, a zero-width space, a smart quote or similar); paste the key again"),
   // Console IDs are hex, UUID- or colon-shaped depending on vintage. The
   // charset excludes anything that could escape the URL path segment it is
   // interpolated into.
@@ -95,6 +96,10 @@ export type Config = z.infer<typeof ConfigSchema>;
  * TLS rules below must not be dodged by a trailing dot or an explicit port.
  */
 export function isCloudConnectorHost(host: string): boolean {
+  // The schema's refinements run even when host itself failed validation,
+  // so a value that is not a host is simply not api.ui.com; its own issue
+  // reports it.
+  if (!URL.canParse(`https://${host}`)) return false;
   return new URL(`https://${host}`).hostname.replace(/\.$/, "") === CLOUD_CONNECTOR_HOST;
 }
 
