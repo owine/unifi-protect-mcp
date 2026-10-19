@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { createServer as createHttpServer } from "node:http";
+import { createSecureServer } from "node:http2";
 import { createServer, type Server } from "node:https";
-import type { AddressInfo } from "node:net";
+import { connect as netConnect, type AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { WebSocketServer } from "ws";
@@ -187,5 +189,96 @@ describe("TLS settings stay with the client", () => {
   it("leaves other requests verifying certificates", async () => {
     await client({ verifySsl: false }).get("/meta/info");
     await expect(fetch(`https://${host}/meta/info`)).rejects.toThrow("fetch failed");
+  });
+});
+
+describe("HTTP version", () => {
+  // undici offers HTTP/2 by default; Node's built-in fetch, which 2.x used,
+  // spoke only HTTP/1.1. A console that offers h2 must still get HTTP/1.1.
+  it("speaks HTTP/1.1 to a server that also offers HTTP/2", async () => {
+    const { cert, key } = selfSigned("h2");
+    const h2 = createSecureServer({ cert, key, allowHTTP1: true }, (req, res) => {
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ httpVersion: req.httpVersion }));
+    });
+    await new Promise<void>((resolve) => h2.listen(0, "127.0.0.1", resolve));
+    const h2Host = `127.0.0.1:${(h2.address() as AddressInfo).port.toString()}`;
+    try {
+      const protect = new ProtectClient({ host: h2Host, apiKey: "k", verifySsl: false, readOnly: true });
+      await expect(protect.get("/meta/info")).resolves.toEqual({ httpVersion: "1.1" });
+    } finally {
+      await new Promise((resolve) => h2.close(resolve));
+    }
+  });
+});
+
+describe("HTTP proxy", () => {
+  // Node's built-in fetch uses HTTPS_PROXY only when NODE_USE_ENV_PROXY=1
+  // (or --use-env-proxy) is set; the client must do the same, no more.
+  const PROXY_ENV = ["NODE_USE_ENV_PROXY", "HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "NO_PROXY", "no_proxy"];
+  let saved: Record<string, string | undefined>;
+  let proxy: ReturnType<typeof createHttpServer>;
+  let tunnelled: string[];
+
+  beforeAll(async () => {
+    tunnelled = [];
+    // A CONNECT proxy: records the target and splices the two sockets.
+    proxy = createHttpServer();
+    proxy.on("connect", (req: { url?: string }, socket: NodeJS.ReadWriteStream & { end(): void; write(s: string): void }, head: Buffer) => {
+      tunnelled.push(req.url ?? "");
+      const [targetHost, targetPort] = (req.url ?? "").split(":");
+      const upstream = netConnect(Number(targetPort), targetHost, () => {
+        socket.write("HTTP/1.1 200 Connection Established\r\n\r\n");
+        upstream.write(head);
+        upstream.pipe(socket as never);
+        socket.pipe(upstream);
+      });
+      upstream.on("error", () => { socket.end(); });
+    });
+    await new Promise<void>((resolve) => proxy.listen(0, "127.0.0.1", resolve));
+  });
+
+  afterAll(async () => {
+    await new Promise((resolve) => proxy.close(resolve));
+  });
+
+  function withEnv(env: Record<string, string>, fn: () => Promise<void>): Promise<void> {
+    saved = Object.fromEntries(PROXY_ENV.map((name) => [name, process.env[name]]));
+    for (const name of PROXY_ENV) Reflect.deleteProperty(process.env, name);
+    Object.assign(process.env, env);
+    return fn().finally(() => {
+      for (const name of PROXY_ENV) {
+        const value = saved[name];
+        if (value === undefined) Reflect.deleteProperty(process.env, name);
+        else process.env[name] = value;
+      }
+    });
+  }
+
+  const proxyUrl = () => `http://127.0.0.1:${(proxy.address() as AddressInfo).port.toString()}`;
+
+  it("goes through HTTPS_PROXY when NODE_USE_ENV_PROXY=1", async () => {
+    tunnelled = [];
+    await withEnv({ NODE_USE_ENV_PROXY: "1", HTTPS_PROXY: proxyUrl() }, async () => {
+      await expect(client({ verifySsl: false }).get("/meta/info")).resolves.toEqual({ ok: true });
+    });
+    expect(tunnelled).toEqual([host]);
+  });
+
+  it("ignores HTTPS_PROXY without NODE_USE_ENV_PROXY", async () => {
+    tunnelled = [];
+    await withEnv({ HTTPS_PROXY: proxyUrl() }, async () => {
+      await expect(client({ verifySsl: false }).get("/meta/info")).resolves.toEqual({ ok: true });
+    });
+    expect(tunnelled).toEqual([]);
+  });
+
+  it("keeps the pinned certificate through the proxy", async () => {
+    tunnelled = [];
+    await withEnv({ NODE_USE_ENV_PROXY: "1", HTTPS_PROXY: proxyUrl() }, async () => {
+      await expect(client({ caCert: consoleCert }).get("/meta/info")).resolves.toEqual({ ok: true });
+      await expect(client({ caCert: otherCert }).get("/meta/info")).rejects.toThrow("fetch failed");
+    });
+    expect(tunnelled.length).toBe(2);
   });
 });
