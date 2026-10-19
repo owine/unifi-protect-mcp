@@ -98,6 +98,24 @@ async function readErrorBody(response: Response): Promise<string> {
     : text;
 }
 
+/**
+ * The reason an error carries, for a message the model reads. A connection
+ * that tried several addresses (a name with both IPv4 and IPv6 records) fails
+ * with an AggregateError whose own message is empty; its reasons are in
+ * `errors`, and its code in `code`.
+ */
+export function errorReason(err: Error): string {
+  if (err.message !== "") return err.message;
+  if (err instanceof AggregateError) {
+    const reasons = new Set(
+      (err.errors as unknown[]).map((inner) => (inner instanceof Error ? errorReason(inner) : String(inner)))
+    );
+    reasons.delete("");
+    if (reasons.size > 0) return [...reasons].join("; ");
+  }
+  return (err as NodeJS.ErrnoException).code ?? err.name;
+}
+
 /** Node TLS error codes for a certificate the client could not verify. */
 const CERT_ERROR_CODES = new Set([
   "DEPTH_ZERO_SELF_SIGNED_CERT",
@@ -128,7 +146,7 @@ async function fetchWithCause(url: string, init: RequestInit): Promise<Response>
       ? ". The certificate for api.ui.com could not be verified; check for a proxy or firewall intercepting TLS"
       : ". The console's TLS certificate could not be verified; for a console with a self-signed certificate, save the certificate and point UNIFI_PROTECT_CA_CERT at it (or, on a trusted network only, set UNIFI_PROTECT_VERIFY_SSL=false)";
     const hint = code !== undefined && CERT_ERROR_CODES.has(code) ? certificateHint : "";
-    throw new Error(`${err.message}: ${cause.message}${hint}`, { cause: err });
+    throw new Error(`${err.message}: ${errorReason(cause)}${hint}`, { cause: err });
   }
 }
 

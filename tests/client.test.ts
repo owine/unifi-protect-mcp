@@ -369,6 +369,25 @@ describe("ProtectClient", () => {
       );
     });
 
+    // A host with IPv4 and IPv6 addresses fails on each, and undici's cause is
+    // then an AggregateError whose own message is empty.
+    it("names the reasons when every address of the host failed", async () => {
+      const cause = Object.assign(
+        new AggregateError([new Error("connect ECONNREFUSED 192.168.1.1:443"), new Error("connect ECONNREFUSED ::1:443")], ""),
+        { code: "ECONNREFUSED" }
+      );
+      fetchMock.mockRejectedValue(new TypeError("fetch failed", { cause }));
+      await expect(client.get("/nvrs")).rejects.toThrow(
+        "fetch failed: connect ECONNREFUSED 192.168.1.1:443; connect ECONNREFUSED ::1:443"
+      );
+    });
+
+    it("falls back to the cause's code when no reason has a message", async () => {
+      const cause = Object.assign(new AggregateError([], ""), { code: "ETIMEDOUT" });
+      fetchMock.mockRejectedValue(new TypeError("fetch failed", { cause }));
+      await expect(client.get("/nvrs")).rejects.toThrow("fetch failed: ETIMEDOUT");
+    });
+
     // Cloud Connector refuses a pin and verification-off, so its hint must not
     // suggest them.
     it("points at interception, not a pin, for a Cloud Connector certificate error", async () => {
