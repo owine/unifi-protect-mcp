@@ -60,4 +60,4 @@ npm deprecate @owine/unifi-protect-mcp@<bad> "Broken: <reason>. Use <last-good>,
 # 3. Fix forward with a fix: PR; publishing the next release moves @latest again
 ```
 
-If a release run failed partway (tag and GitHub Release created, nothing on npm), re-run the failed jobs of that Release workflow run. The publish step skips a version that already reached npm, so a re-run is safe.
+Publishing runs in the Release workflow run that the GitHub Release's `published` event starts, so its npm provenance names the tagged commit. If that run failed partway (tag and GitHub Release created, nothing on npm), re-run it: the failed jobs only, or all jobs once the built package's artifact has expired, which rebuilds the same tagged commit. The publish step skips a version that already reached npm, so a re-run is safe.
