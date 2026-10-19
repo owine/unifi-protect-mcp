@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach, afterAll, afterEach } from "vitest";
 import { EventEmitter } from "node:events";
 import type { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -16,6 +16,13 @@ import {
 } from "../src/utils/limits.js";
 import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/sdk/shared/stdio.js";
 import { createMockServer, createMockClient, mockFn } from "./tools/_helpers.js";
+
+const fetchMock = vi.hoisted(() => vi.fn());
+vi.mock("undici", async (importOriginal) => ({ ...await importOriginal<typeof import("undici")>(), fetch: fetchMock }));
+
+beforeEach(() => {
+  fetchMock.mockReset();
+});
 
 /**
  * Contract tests through the real MCP SDK. The per-domain tests capture
@@ -132,14 +139,10 @@ describe("dry-run preview against every write tool's published outputSchema", ()
 });
 
 describe("payload sizes through the SDK", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   async function snapshot(bytes: number) {
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(() => Promise.resolve(
+    fetchMock.mockImplementation(() => Promise.resolve(
       new Response(new Uint8Array(bytes), { headers: { "content-type": "image/jpeg" } })
-    )));
+    ));
     const mcpClient = await connect(
       new ProtectClient({ host: "192.168.1.1", apiKey: "k", verifySsl: true, readOnly: true }),
       true
@@ -319,15 +322,11 @@ function minimalArgs(schema: { properties?: Record<string, Record<string, unknow
 }
 
 describe("read-only mode through the SDK", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   // Behaviour, not annotations: every tool the server lists in read-only mode
   // is called, and the console must see nothing but GETs.
   it("lists only read-only tools, and none of them sends anything but GET", async () => {
     const methods: string[] = [];
-    vi.stubGlobal("fetch", (_url: string, init: RequestInit) => {
+    fetchMock.mockImplementation((_url: string, init: RequestInit) => {
       methods.push(init.method ?? "GET");
       return Promise.resolve(new Response("{}", { headers: { "content-type": "application/json" } }));
     });
@@ -428,7 +427,6 @@ describe("every alarm-related field is gated", () => {
 describe("request timeouts inside an MCP call", () => {
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.unstubAllGlobals();
   });
 
   // The caller's abort signal is combined with the request timeout; using the
@@ -444,7 +442,7 @@ describe("request timeouts inside an MCP call", () => {
       timers.push({ ms, controller });
       return controller.signal;
     });
-    vi.stubGlobal("fetch", (_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
+    fetchMock.mockImplementation((_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
       init.signal?.addEventListener("abort", () => { reject(init.signal?.reason as Error); });
     }));
     const mcpClient = await connect(
@@ -465,7 +463,7 @@ describe("request timeouts inside an MCP call", () => {
   it("cancels only the call that was cancelled", async () => {
     const NVRS_DELAY_MS = 500;
     const signals = new Map<string, AbortSignal>();
-    vi.stubGlobal("fetch", (url: string, init: RequestInit) => {
+    fetchMock.mockImplementation((url: string, init: RequestInit) => {
       signals.set(url.replace(/.*\/v1/, ""), init.signal!);
       return new Promise((resolve, reject) => {
         init.signal?.addEventListener("abort", () => { reject(init.signal?.reason as Error); });
@@ -539,10 +537,6 @@ describe("list paging through the SDK", () => {
 });
 
 describe("hostile IDs through the SDK", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it.each([
     ["protect_get_camera", { id: ".." }],
     ["protect_update_light", { id: "..", settings: { name: "x" } }],
@@ -550,26 +544,20 @@ describe("hostile IDs through the SDK", () => {
     ["protect_update_arm_profile", { id: "settings", settings: { armProfileId: "p1" } }],
     ["protect_ingest_pos_transaction", { id: "..", type: "sale", externalId: "t1", amount: 1 }],
   ])("%s with a path-changing ID sends nothing", async (name, args) => {
-    const fetchSpy = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
     const mcpClient = await connect(
       new ProtectClient({ host: "192.168.1.1", apiKey: "k", verifySsl: true, readOnly: false })
     );
     const result = await mcpClient.callTool({ name, arguments: args });
     expect(result.isError).toBe(true);
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
     await mcpClient.close();
   });
 });
 
 describe("cancellation through the SDK", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("aborts the Protect request when the MCP client cancels the call", async () => {
     let requestSignal: AbortSignal | undefined;
-    vi.stubGlobal("fetch", (_url: string, options: RequestInit) => {
+    fetchMock.mockImplementation((_url: string, options: RequestInit) => {
       requestSignal = options.signal ?? undefined;
       // A console that never answers: settle only when the request aborts.
       return new Promise((_resolve, reject) => {

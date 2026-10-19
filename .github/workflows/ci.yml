@@ -42,7 +42,7 @@ jobs:
       matrix:
         node-version:
           # The lowest Node package.json "engines" allows; keep the two in step.
-          - '22.13.0'
+          - '22.19.0'
           - '22.23.3' # renovate: datasource=node-version depName=node-lts-22 packageName=node
           - '24.22.0' # renovate: datasource=node-version depName=node-lts-24 packageName=node
     steps:

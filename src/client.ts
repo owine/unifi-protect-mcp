@@ -1,6 +1,9 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import WebSocket from "ws";
-import type { Dispatcher } from "undici";
+// undici's own fetch and FormData, not the globals: Node's built-in fetch
+// bundles an older undici whose handlers the Agent from tls.ts (undici 8)
+// rejects, and undici's fetch sends a global FormData as "[object FormData]".
+import { fetch, FormData, type Agent, type BodyInit, type RequestInit, type Response } from "undici";
 import { Config, isCloudConnectorHost } from "./config.js";
 import { consoleDispatcher, consoleTlsOptions } from "./tls.js";
 import {
@@ -58,7 +61,8 @@ async function readBounded(
     throw new Error(`${what} is ${declared.toString()} bytes, which exceeds the ${limit.toString()}-byte limit`);
   }
   if (response.body === null) return { data: Buffer.alloc(0), truncated: false };
-  const reader = response.body.getReader();
+  // undici types the body as an untyped stream; a fetch body is always bytes.
+  const reader = (response.body as ReadableStream<Uint8Array>).getReader();
   const chunks: Uint8Array[] = [];
   let bytes = 0;
   try {
@@ -109,7 +113,7 @@ const CERT_ERROR_CODES = new Set([
  * so fold the cause into it — and name the setting that fixes the most common
  * first-run failure, a console's self-signed certificate.
  */
-async function fetchWithCause(url: string, init: RequestInit & { dispatcher: Dispatcher }): Promise<Response> {
+async function fetchWithCause(url: string, init: RequestInit): Promise<Response> {
   try {
     return await fetch(url, init);
   } catch (err) {
@@ -184,7 +188,7 @@ export class ProtectClient {
   private baseUrl: string;
   private basePath: string;
   private tls: ReturnType<typeof consoleTlsOptions>;
-  private dispatcher: Dispatcher;
+  private dispatcher: Agent;
   private headers: Record<string, string>;
   private usingConnector: boolean;
 
