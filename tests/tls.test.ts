@@ -137,13 +137,16 @@ describe("TLS with a pinned CA", () => {
   }
 
   let rightServer: Server;
+  let wrongNameLeaf: string;
 
   beforeAll(async () => {
     execFileSync("openssl", ["req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1", "-subj", "/CN=Protect test CA",
       "-addext", "basicConstraints=critical,CA:TRUE", "-addext", "keyUsage=critical,keyCertSign",
       "-keyout", join(dir, "ca.key"), "-out", join(dir, "ca.pem")], { stdio: "ignore" });
     caCert = readFileSync(join(dir, "ca.pem"), "utf8");
-    const wrong = await serve(issued("wrong-name", false));
+    const wrongLeaf = issued("wrong-name", false);
+    wrongNameLeaf = wrongLeaf.cert;
+    const wrong = await serve(wrongLeaf);
     caServer = wrong.server;
     wrongNameHost = wrong.host;
     const right = await serve(issued("right-name", true));
@@ -161,6 +164,15 @@ describe("TLS with a pinned CA", () => {
   it("rejects a certificate issued by the pinned CA for another name", async () => {
     const protect = new ProtectClient({ host: wrongNameHost, apiKey: "k", verifySsl: true, readOnly: true, caCert });
     await expect(protect.get("/meta/info")).rejects.toThrow("fetch failed");
+  });
+
+  // A console with a certificate from the owner's own CA, reached by IP: the
+  // README's openssl command saves only the leaf, and pinning it must work
+  // without the CA. `ca` replaces the public roots, so this needs the chain
+  // to be allowed to end at the pinned leaf.
+  it("accepts a CA-issued certificate pinned on its own, though its name does not match the IP", async () => {
+    const protect = new ProtectClient({ host: wrongNameHost, apiKey: "k", verifySsl: true, readOnly: true, caCert: wrongNameLeaf });
+    await expect(protect.get("/meta/info")).resolves.toEqual({ ok: true });
   });
 
   it("accepts a certificate issued by the pinned CA for the host reached", async () => {
