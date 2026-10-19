@@ -12,9 +12,21 @@ pre-commit:
       # GITGUARDIAN_API_KEY or the keychain (`ggshield auth login`), so don't gate
       # on the env var. Skipped only when ggshield isn't installed, so contributors
       # without it aren't blocked. Not run in CI, so this is the only GG check.
+      # When the API rejects a chunk with a 4xx, ggshield prints "Scanning
+      # failed" and still exits 0 with that chunk unscanned, so the hook fails
+      # on the message itself.
       run: |
         if command -v ggshield >/dev/null 2>&1; then
-          ggshield secret scan pre-commit
+          log=$(mktemp)
+          ggshield secret scan pre-commit 2>"$log"
+          status=$?
+          cat "$log" >&2
+          if [ "$status" -eq 0 ] && grep -q "Scanning failed" "$log"; then
+            echo "ggshield: some staged files were not scanned; fix the error above, or skip this check with LEFTHOOK_EXCLUDE=ggshield" >&2
+            status=1
+          fi
+          rm -f "$log"
+          exit "$status"
         else
           echo "ggshield: skipped (ggshield not installed)"
         fi
