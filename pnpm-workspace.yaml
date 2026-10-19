@@ -16,6 +16,11 @@ preferFrozenLockfile: true
 # trustPolicyExclude rather than loosening the policy.
 trustPolicy: no-downgrade
 trustPolicyIgnoreAfter: 525600
+trustPolicyExclude:
+  # Published by hand from the maintainer's account alongside the first
+  # release of lefthook-android-arm64; the tarball matches 2.2.1 bar version
+  # strings, and the platform binaries kept their provenance.
+  - lefthook@2.2.2
 
 # `pnpm add` writes exact versions (caret/tilde ranges already in package.json
 # are still fine for a library — this only controls what `pnpm add` writes).
