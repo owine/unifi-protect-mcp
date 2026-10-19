@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import WebSocket from "ws";
-import type { Agent } from "undici";
+import type { Dispatcher } from "undici";
 import { Config, isCloudConnectorHost } from "./config.js";
 import { consoleDispatcher, consoleTlsOptions } from "./tls.js";
 import {
@@ -109,7 +109,7 @@ const CERT_ERROR_CODES = new Set([
  * so fold the cause into it — and name the setting that fixes the most common
  * first-run failure, a console's self-signed certificate.
  */
-async function fetchWithCause(url: string, init: RequestInit & { dispatcher: Agent }): Promise<Response> {
+async function fetchWithCause(url: string, init: RequestInit & { dispatcher: Dispatcher }): Promise<Response> {
   try {
     return await fetch(url, init);
   } catch (err) {
@@ -184,7 +184,7 @@ export class ProtectClient {
   private baseUrl: string;
   private basePath: string;
   private tls: ReturnType<typeof consoleTlsOptions>;
-  private dispatcher: Agent;
+  private dispatcher: Dispatcher;
   private headers: Record<string, string>;
   private usingConnector: boolean;
 
