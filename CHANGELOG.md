@@ -1,5 +1,77 @@
 # Changelog
 
+## [3.0.0](https://github.com/owine/unifi-protect-mcp/compare/2.15.0...3.0.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* protect_stop_siren, protect_set_current_arm_profile, protect_create_rtsp_stream and protect_create_talkback are now annotated destructiveHint: true. MCP clients that prompt before destructive tools will now ask before running them.
+* protect_update_camera, protect_update_<device> (light, sensor, chime, viewer, siren, fob, relay, speaker, bridge, link_station, alarm_hub), protect_update_arm_profile and protect_update_liveview are now annotated destructiveHint: true. MCP clients that prompt before destructive tools will now ask before running them; allow-lists keyed on the annotation need updating.
+* these calls now need confirm: true (a dryRun: true preview does not): protect_create_rtsp_stream, protect_create_talkback, protect_stop_siren, protect_delete_arm_profile, protect_set_current_arm_profile; protect_update_sensor when settings include alarmSettings, motionSettings, glassBreakSettings, armProfileIds or scheduleMode; protect_update_fob when settings include armControlSettings; protect_update_arm_profile when settings include schedules or automations.
+* UNIFI_PROTECT_HOST=api.ui.com together with UNIFI_PROTECT_VERIFY_SSL=false (or 0/no/off) now fails at startup. Unset UNIFI_PROTECT_VERIFY_SSL for Cloud Connector.
+* protect_activate_relay_output now requires state and protect_trigger_alarm_hub_output now requires enable; the toggle-on-omit behavior is removed.
+* protect_disable_arm_alarm, protect_activate_relay_output and protect_trigger_alarm_hub_output now require confirm: true; calls without it fail input validation.
+
+### Features
+
+* page list tools with optional limit and offset ([b251e4f](https://github.com/owine/unifi-protect-mcp/commit/b251e4f4f54871607c8a20aaa182ccc59990a726))
+* require an explicit state for relay and alarm-hub outputs ([2dfc9ec](https://github.com/owine/unifi-protect-mcp/commit/2dfc9ec795e47830c867f115a9780baa2e0539fc))
+* require confirm for disarm, relay and alarm-hub output tools ([bd5e27c](https://github.com/owine/unifi-protect-mcp/commit/bd5e27c66aec455f95e2f98b8f59b146c4e36efb))
+* send server instructions, tool titles and openWorldHint ([c825e98](https://github.com/owine/unifi-protect-mcp/commit/c825e98f48917d5e7cece99a80cc5bb60c10f8d6))
+* verify self-signed consoles with UNIFI_PROTECT_CA_CERT and scope TLS to the client ([a6afdb1](https://github.com/owine/unifi-protect-mcp/commit/a6afdb15fb5a420523f5482efb6c4ccfb5f210ab))
+
+
+### Bug Fixes
+
+* abort the Protect request when the MCP call is cancelled ([cb2901c](https://github.com/owine/unifi-protect-mcp/commit/cb2901c53b2509466c072e7d5564ecee2e3272f9))
+* accept a pinned CA-issued console certificate ([7133e9a](https://github.com/owine/unifi-protect-mcp/commit/7133e9a52a5a6ca5e1ef540f4fe6799194fe84d1))
+* accept padded URL-safe base64 and a data: URL after whitespace ([bd9898f](https://github.com/owine/unifi-protect-mcp/commit/bd9898facf998ee16c3fa6fd0dd58cfff624d424))
+* annotate every confirm-gated tool as destructive ([9116da0](https://github.com/owine/unifi-protect-mcp/commit/9116da0344d1bb4f87dc66b637fefcd41dc314c0))
+* annotate update tools as destructive ([ddacb6c](https://github.com/owine/unifi-protect-mcp/commit/ddacb6c0a4f0a0baabf265dffa99433b7e358bea))
+* bound every response body while reading it, not only by content-length ([300757d](https://github.com/owine/unifi-protect-mcp/commit/300757dc520a35adaa3b87710a324012707452a9))
+* bound subscription results by size and stop waiting on a silent peer ([9525413](https://github.com/owine/unifi-protect-mcp/commit/95254139cb865ac624e81f620fb04aa4ffa119f4))
+* clear the subscription close timer and honour a call cancelled before it starts ([1e287e8](https://github.com/owine/unifi-protect-mcp/commit/1e287e89a399e0e8a4815f871a49b5e4438e91a7))
+* **client:** include the network failure cause in request errors ([8c46562](https://github.com/owine/unifi-protect-mcp/commit/8c4656202f288dddf09098a0e59cafe742536d36))
+* close gaps in the alarm-coverage confirm gates ([70c2fa5](https://github.com/owine/unifi-protect-mcp/commit/70c2fa520d7c75a0cd52c2f64ab8fa9339b4d680))
+* **config:** normalize the host and accept common boolean spellings ([b45177c](https://github.com/owine/unifi-protect-mcp/commit/b45177c7c2eb68d758943870d2b5e00bddec1a45))
+* **config:** validate the host as a URL authority ([96edf96](https://github.com/owine/unifi-protect-mcp/commit/96edf965d15112c2706e6f6e929bf962ab422209))
+* correct tool descriptions and server instructions from the docs audit ([4b0897f](https://github.com/owine/unifi-protect-mcp/commit/4b0897fa2d551fc36f477f7ad09e142f7af71c61))
+* declare the relay and alarm-hub output tools idempotent ([a43a6b3](https://github.com/owine/unifi-protect-mcp/commit/a43a6b3bd1078cc3675e08f3a574c550822305a4))
+* **files:** reject base64 with an impossible length or padding ([967ca7c](https://github.com/owine/unifi-protect-mcp/commit/967ca7c64bb80012c63e14471e91b5a9d104a9c0))
+* **files:** reject invalid base64 instead of uploading corrupt bytes ([9dcb612](https://github.com/owine/unifi-protect-mcp/commit/9dcb612b193f8a8a19880629b31b25877b56d594))
+* keep 2.x transport behaviour on undici's fetch ([e6dd762](https://github.com/owine/unifi-protect-mcp/commit/e6dd7620f693d9fbcac14bbd87b0f05a6ca86be1))
+* keep every payload within what one MCP stdio message can carry ([d62e359](https://github.com/owine/unifi-protect-mcp/commit/d62e359e5275ace790b1bd025bbd32e676d5e8ec))
+* let a dry run preview a confirm-gated action without confirming it ([e66624e](https://github.com/owine/unifi-protect-mcp/commit/e66624ea761c7ecb63cb89e7aeae1f2ac4d68325))
+* **liveviews:** reject an update whose body id does not match the path ([854784b](https://github.com/owine/unifi-protect-mcp/commit/854784b4d0854d8638b72fe18e14eececa1d1301))
+* log the effective mode and name the failing variable at startup ([0517ee9](https://github.com/owine/unifi-protect-mcp/commit/0517ee94f4ab787e612e1af55fc4fc5f91b6110d))
+* name the call in timeout and malformed-JSON errors ([d891598](https://github.com/owine/unifi-protect-mcp/commit/d89159853ad47f92b5c44da75ffb33c802c7fc8e))
+* name the reasons when every address of the console failed ([b0fe7c3](https://github.com/owine/unifi-protect-mcp/commit/b0fe7c307b8ce8d0b25fd1f9bbf41bd37be4516f))
+* publish loose output schemas so new fields and dry-run previews validate ([59802bb](https://github.com/owine/unifi-protect-mcp/commit/59802bb9b897c6675eccdf62e25bb1537a42f6c4))
+* read list responses larger than one message so paging works ([8e22b9e](https://github.com/owine/unifi-protect-mcp/commit/8e22b9e99787d0b350d2780ebce0d8455c174d6d))
+* recognise Cloud Connector however its host is written, and refuse a CA pin for it ([feccb41](https://github.com/owine/unifi-protect-mcp/commit/feccb4197a45d4dbe84c54a331d6dc6f817d962c))
+* refuse a result too large for one stdio message, measured after serialisation ([734a172](https://github.com/owine/unifi-protect-mcp/commit/734a172063d4f9cb9c6f38f2d15599a95f86987d))
+* refuse to turn off TLS verification for api.ui.com ([6f2d00c](https://github.com/owine/unifi-protect-mcp/commit/6f2d00c243ccd323e4ccc948a5445e4bdf733884))
+* reject IDs that would change which endpoint a request reaches ([58f419b](https://github.com/owine/unifi-protect-mcp/commit/58f419b981cf762d7a0e56c0c99da18fc32c7dcc))
+* report bad host and API key values as configuration errors ([6f5106c](https://github.com/owine/unifi-protect-mcp/commit/6f5106c108793184203bf8c14a206c8ba4845dfc))
+* report subscription failures instead of empty results ([f2ef238](https://github.com/owine/unifi-protect-mcp/commit/f2ef238ba1487d7a8beeb7a9a1e6f1fb0855a486))
+* report the package version to MCP clients ([35d352d](https://github.com/owine/unifi-protect-mcp/commit/35d352df16eadc07fb8b3a3fc7ad8a36bf276a6e))
+* require confirm for writes that open stream access or weaken alarm coverage ([aa3bf02](https://github.com/owine/unifi-protect-mcp/commit/aa3bf02efd4e70ed7321e49a526ba7e16d442bbe))
+* return compact JSON instead of pretty-printed results ([df1c641](https://github.com/owine/unifi-protect-mcp/commit/df1c641a38862a55aeedc235e600144f0f4ed7d5))
+* stop marking pulsed relay and alarm-hub outputs idempotent ([b39704e](https://github.com/owine/unifi-protect-mcp/commit/b39704eedb3a9b7ec425a93816a7b3a44e32aab9))
+* **subscriptions:** report the elapsed listen time ([67eb083](https://github.com/owine/unifi-protect-mcp/commit/67eb0834e8bfb237516a2b468cb0428978e9f842))
+* **subscriptions:** stop listening after 200 messages ([ffbbd94](https://github.com/owine/unifi-protect-mcp/commit/ffbbd94b91b6065e13cb8d801a94e19cc66c711f))
+* time out snapshots and uploads before the MCP client gives up ([81b4352](https://github.com/owine/unifi-protect-mcp/commit/81b4352fef1aee0164c0d2af8809f662be527c9a))
+* trim the API key and refuse control characters instead of echoing it ([04e5928](https://github.com/owine/unifi-protect-mcp/commit/04e592847c5be0645dfb6a8612ee24336fbdf2be))
+* use undici's own fetch instead of wrapping the agent for Node's fetch ([5a172d2](https://github.com/owine/unifi-protect-mcp/commit/5a172d28e28cf4a623f928dd12e888b40072ddfd))
+* wrap the undici agent so Node's built-in fetch can drive it ([054e0dc](https://github.com/owine/unifi-protect-mcp/commit/054e0dcf8d1a21423f23760d44c3a1cebac33e1b))
+
+
+### Dependencies
+
+* update all non-major dependencies ([#324](https://github.com/owine/unifi-protect-mcp/issues/324)) ([3b1ee85](https://github.com/owine/unifi-protect-mcp/commit/3b1ee8568f1e203d567897e1d5baaa12ba6436db))
+* update dependency undici to v8 ([2fb6a60](https://github.com/owine/unifi-protect-mcp/commit/2fb6a601602c6e96d9ad247673cd1f7c7ad7d0a9))
+* update dependency undici to v8.12.2 ([#326](https://github.com/owine/unifi-protect-mcp/issues/326)) ([a74b09b](https://github.com/owine/unifi-protect-mcp/commit/a74b09b255041d50fc837d42a938b058f5068671))
+
 ## [2.15.0](https://github.com/owine/unifi-protect-mcp/compare/2.14.2...2.15.0) (2026-10-13)
 
 
