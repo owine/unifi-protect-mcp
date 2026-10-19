@@ -150,7 +150,7 @@ Read on if you call tools from scripts or saved agent configurations, or keep al
 | `UNIFI_PROTECT_HOST=api.ui.com` with `UNIFI_PROTECT_VERIFY_SSL=false` (or `0`/`no`/`off`) | Verification skipped | ⚠️ **Startup fails**: "TLS verification cannot be disabled for api.ui.com". Unset `UNIFI_PROTECT_VERIFY_SSL` |
 | `UNIFI_PROTECT_VERIFY_SSL=false` | Turned verification off for **every** TLS connection in the process | Applies only to this server's connections to the console. Prefer the new `UNIFI_PROTECT_CA_CERT` |
 | `UNIFI_PROTECT_API_KEY` pasted with a trailing newline or spaces | Sent as is; every call failed and the error quoted the key | Trimmed |
-| `UNIFI_PROTECT_API_KEY` with a control character inside | Same | Startup fails with a message that does not repeat the key |
+| `UNIFI_PROTECT_API_KEY` with a control character, or any character that is not printable ASCII (a zero-width space, a smart quote), inside | Same | Startup fails with a message that does not repeat the key |
 
 Any other unrecognized value keeps the safe default (read-only, verification on), as before. New: `UNIFI_PROTECT_CA_CERT` verifies a console's self-signed certificate (see [Self-signed console certificates](#self-signed-console-certificates)). Configuration errors now name the variable at fault, and the startup log line says whether the server is read-only or read-write.
 

@@ -208,7 +208,9 @@ describe("loadConfig", () => {
     expect(loadConfig().apiKey).toBe("test-api-key");
   });
 
-  it.each(["key\r\nX-Injected: 1", "key\u0000rest"])("calls process.exit(1) for an API key with control characters (%j)", (key) => {
+  // fetch refuses a header character past U+00FF with an error that never
+  // names the variable, so these must fail at startup too.
+  it.each(["key\r\nX-Injected: 1", "key\u0000rest", "key\u200brest", "\u201ckey\u201d", "kéy"])("calls process.exit(1) for an API key that is not printable ASCII (%j)", (key) => {
     process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
     process.env.UNIFI_PROTECT_API_KEY = key;
     const errors: string[] = [];
@@ -233,6 +235,18 @@ describe("loadConfig", () => {
       process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
       expect(errorOutput()).toMatch(/UNIFI_PROTECT_HOST/);
     });
+
+    // The TLS rules look at the host even when it failed its own check; an
+    // empty one used to escape as "TypeError: Invalid URL".
+    it.each([["UNIFI_PROTECT_VERIFY_SSL", "false"], ["UNIFI_PROTECT_HOST", ""]])(
+      "reports an empty host as missing, with %s=%j",
+      (name, value) => {
+        process.env.UNIFI_PROTECT_HOST = "";
+        process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+        process.env[name] = value;
+        expect(errorOutput()).toMatch(/UNIFI_PROTECT_HOST is required/);
+      }
+    );
 
     // The old trailer listed the two required variables after every error,
     // pointing at the wrong fix when the problem was elsewhere.
