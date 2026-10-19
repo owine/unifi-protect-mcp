@@ -1,18 +1,30 @@
 name: Release
 
+# Two triggers, two halves. CI passing on main runs release-please, which
+# opens the release PR and, once it is merged, tags the release and publishes
+# the GitHub Release. That Release event then builds and publishes the tagged
+# commit. Publishing runs under its own event because npm provenance records
+# the run's GITHUB_SHA: under workflow_run that is main's head when the event
+# fires, which a later push can move past the tagged commit, so the
+# attestation would name a commit other than the one built. Under a release
+# event it is the tagged commit itself.
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
     branches: [main]
+  release:
+    types: [published]
 
 # Nothing by default: release-please acts through the GitHub App token, and
 # publish asks for what it needs.
 permissions: {}
 
-# One release at a time: a second run must wait, not race the first to npm.
+# One release-please run at a time, and one publish per tag. Separate groups:
+# a group holds one pending run and a newer one replaces it, so a shared group
+# could drop a queued publish in favour of the next release-please run.
 concurrency:
-  group: release
+  group: ${{ github.event_name == 'release' && format('publish-{0}', github.ref_name) || 'release-please' }}
   cancel-in-progress: false
 
 jobs:
@@ -22,16 +34,11 @@ jobs:
     # workflow_run's branch filter matches the head branch name, which a fork
     # PR can also call main; release only after a push to this repo's main.
     if: >-
+      github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-26.04
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      # The commit the release was tagged at. release-please tags main as it
-      # is when the job runs, which need not be the commit this run was
-      # triggered for.
-      sha: ${{ steps.release.outputs.sha }}
     steps:
       # Mint a GitHub App installation token so release-please's PRs/tags are
       # authored by the App, not the default GITHUB_TOKEN. PRs created by the
@@ -43,8 +50,10 @@ jobs:
           client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
+      # The App token also matters for the GitHub Release this publishes: a
+      # release made with the default token would not trigger the publish
+      # half of this workflow.
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
-        id: release
         with:
           token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
@@ -55,8 +64,7 @@ jobs:
   # test, whose `npm install` of the tarball resolves the SDK's transitive
   # ranges fresh from the registry. It hands publish one tarball and its hash.
   build:
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: github.event_name == 'release'
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
@@ -67,17 +75,26 @@ jobs:
       version: ${{ steps.pack.outputs.version }}
       node-version: ${{ steps.pack.outputs.node-version }}
     steps:
-      # Build exactly the tagged commit, so the npm version matches its tag
-      # and changelog.
+      # Build exactly the tagged commit (the release event's GITHUB_SHA), so
+      # the npm version matches its tag, changelog and provenance.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ needs.release-please.outputs.sha }}
       # Node from .nvmrc; no dependency cache, since what is built here is
       # what gets published.
       - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           install: false
       # No lifecycle scripts: the build needs none of them.
+      # A Release can also be published by hand; publish only the version its
+      # tag names (tags are bare versions, see release-please-config.json).
+      - name: Check the tag names this version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version=$(node -p 'require("./package.json").version')
+          if [ "$TAG" != "$version" ]; then
+            echo "::error::Release tag $TAG does not match package.json version $version"
+            exit 1
+          fi
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm run build
       - run: pnpm test
@@ -104,7 +121,7 @@ jobs:
   # Can mint an npm OIDC token, so it runs no code from the dependency tree:
   # it only checks the tarball's hash and publishes it.
   publish:
-    needs: [release-please, build]
+    needs: build
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
