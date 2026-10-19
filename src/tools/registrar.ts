@@ -94,7 +94,7 @@ function fitsOneMessage(result: CallToolResult): CallToolResult {
   return bytes <= MAX_RESULT_BYTES
     ? result
     : formatError(new Error(
-      `Result too large to send in one MCP message (${bytes.toString()} bytes); narrow the request`
+      `Result too large to send in one MCP message (${bytes.toString()} bytes); narrow the request, or page a list tool with limit and offset`
     ));
 }
 

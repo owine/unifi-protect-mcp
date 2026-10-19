@@ -23,13 +23,25 @@ const MAX_PAYLOAD = STDIO_DEFAULT_MAX_BUFFER_SIZE - ENVELOPE_BYTES;
 /**
  * The largest serialised tool result. The ceilings below keep payloads near
  * this, but a result's text copy is JSON-escaped again inside the JSON-RPC
- * line (quotes double at each level), so registerAllTools measures the final
+ * line (quotes double at each level), so instrumentTools measures the final
  * result against this and refuses one that would not fit.
  */
 export const MAX_RESULT_BYTES = MAX_PAYLOAD;
 
-/** A result carries a JSON response twice: as text and as structuredContent. */
-export const MAX_JSON_BYTES = Math.floor(MAX_PAYLOAD / 2);
+/**
+ * How many times one message a JSON response may be. A list tool returns
+ * only the page it was asked for, so the response it pages can be larger than
+ * any result; instrumentTools still refuses a result that would not fit.
+ */
+const RESPONSE_HEADROOM = 4;
+
+/**
+ * The most of a JSON response that is read. The bound is on memory, not on
+ * what is returned (a result carries its JSON twice, as text and as
+ * structuredContent, so half a message): bounding the response by that would
+ * fail a large site's list call however small a page it asked for.
+ */
+export const MAX_RESPONSE_BYTES = STDIO_DEFAULT_MAX_BUFFER_SIZE * RESPONSE_HEADROOM;
 
 /** Room for a result's own wrapping around a payload (content type, mimeType). */
 const RESULT_WRAPPER_BYTES = 1024;

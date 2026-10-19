@@ -3,7 +3,7 @@ import type { File } from "node:buffer";
 import { FormData, type RequestInit } from "undici";
 import { ProtectClient } from "../src/client.js";
 import type { Config } from "../src/config.js";
-import { MAX_ERROR_BODY_BYTES, MAX_JSON_BYTES } from "../src/utils/limits.js";
+import { MAX_ERROR_BODY_BYTES, MAX_RESPONSE_BYTES } from "../src/utils/limits.js";
 
 // The client calls undici's fetch rather than the global one, so mock that;
 // the real Agent and FormData stay, since the client still builds them.
@@ -257,10 +257,19 @@ describe("ProtectClient", () => {
     // content-length is optional: a chunked body has none, so the size limit
     // has to be enforced while reading, not only from the header.
     it("stops reading a chunked JSON body at the limit", async () => {
-      const body = chunkedResponse(MAX_JSON_BYTES + 4 * MiB, { headers: { "content-type": "application/json" } });
+      const body = chunkedResponse(MAX_RESPONSE_BYTES + 4 * MiB, { headers: { "content-type": "application/json" } });
       fetchMock.mockResolvedValue(body.response);
       await expect(client.get("/nvrs")).rejects.toThrow(/exceeds the .*-byte limit/);
       expect(body.pulled()).toBeLessThan(body.chunks);
+    });
+
+    // A list tool pages what it reads, so a site whose whole list is larger
+    // than one result must still be readable (2.x read up to one message).
+    it("reads a JSON body larger than one MCP message, for a list tool to page", async () => {
+      const items = Array.from({ length: 12_000 }, (_, i) => ({ id: `cam${i.toString()}`, notes: "x".repeat(1_000) }));
+      mockFetch(items);
+      const data = (await client.get("/cameras")) as unknown[];
+      expect(data).toHaveLength(items.length);
     });
 
     it("stops reading a chunked binary body at the caller's limit", async () => {

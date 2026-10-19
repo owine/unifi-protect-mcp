@@ -10,7 +10,7 @@ import { SERVER_VERSION } from "./version.js";
 import {
   BINARY_TIMEOUT_MS,
   MAX_ERROR_BODY_BYTES,
-  MAX_JSON_BYTES,
+  MAX_RESPONSE_BYTES,
   MAX_SNAPSHOT_BYTES,
   REQUEST_TIMEOUT_MS,
 } from "./utils/limits.js";
@@ -160,7 +160,7 @@ async function parseBody(
   path: string
 ): Promise<unknown> {
   const contentType = response.headers.get("content-type") ?? "";
-  const { data } = await readBounded(response, MAX_JSON_BYTES, `${method} ${path} response`);
+  const { data } = await readBounded(response, MAX_RESPONSE_BYTES, `${method} ${path} response`);
   const text = data.toString("utf8");
   if (contentType.includes("application/json")) {
     if (text.trim() === "") {
@@ -239,6 +239,11 @@ export class ProtectClient {
     this.dispatcher = consoleDispatcher(config);
   }
 
+  /** Every header but Content-Type, for a request whose body sets its own. */
+  private authHeaders(): Record<string, string> {
+    return Object.fromEntries(Object.entries(this.headers).filter(([name]) => name !== "Content-Type"));
+  }
+
   /**
    * Model-supplied IDs become path segments. safePath encodes `/ ? # % \`, but
    * a bare `.` or `..` survives encoding and URL parsing then folds it out of
@@ -254,11 +259,6 @@ export class ProtectClient {
       throw new Error(`Refusing a request path outside the Integration API: ${pathname}`);
     }
     return url;
-  }
-
-  /** Every header but Content-Type, for a request whose body sets its own. */
-  private authHeaders(): Record<string, string> {
-    return Object.fromEntries(Object.entries(this.headers).filter(([name]) => name !== "Content-Type"));
   }
 
   /**
