@@ -25,8 +25,12 @@ const armProfileFields = {
   activationDelay,
 };
 
-/** Arm profile settings that change what the alarm protects, and when. */
-export const ARM_PROFILE_CONFIRM_FIELDS = ["schedules", "automations"] as const;
+/**
+ * Arm profile settings that change what the alarm protects, and when: a
+ * longer activationDelay leaves the site unprotected for longer after arming,
+ * and recordEverything decides whether an armed site records at all.
+ */
+export const ARM_PROFILE_CONFIRM_FIELDS = ["schedules", "automations", "activationDelay", "recordEverything"] as const;
 
 // Each gate's confirm input and handler check share one action text.
 const DELETE_PROFILE = confirmGate("delete the arm profile");
@@ -102,7 +106,7 @@ export function registerArmProfileTools(
   server.registerTool(
     "protect_update_arm_profile",
     {
-      description: "Update an existing arm profile (partial update via PATCH). Changing schedules or automations affects alarm coverage and requires confirm: true. Only available when using local alarm manager.",
+      description: `Update an existing arm profile (partial update via PATCH). Changing ${ARM_PROFILE_CONFIRM_FIELDS.join(", ")} affects alarm coverage and requires confirm: true. Only available when using local alarm manager.`,
       inputSchema: {
         id: armProfileId().describe("Arm profile ID"),
         settings: z
@@ -111,7 +115,7 @@ export function registerArmProfileTools(
           .loose()
           .refine((o) => Object.keys(o).length > 0, "settings must include at least one field")
           .describe("Partial arm profile settings to update"),
-        confirm: confirmInput("change schedules or automations"),
+        confirm: confirmInput(`change ${ARM_PROFILE_CONFIRM_FIELDS.join(", ")}`),
         dryRun: dryRunInput(),
       },
       outputSchema: armProfileOutputSchema,

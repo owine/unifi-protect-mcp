@@ -20,10 +20,13 @@ export function resourceId() {
  */
 const ARM_PROFILE_ROUTES = new Set(["settings", "enable", "disable"]);
 
-/** An arm profile ID: a resource ID that is not one of the literal routes beside it. */
+/**
+ * An arm profile ID: a resource ID that is not one of the literal routes
+ * beside it, in any case, since a router may match paths case-insensitively.
+ */
 export function armProfileId() {
   return resourceId().refine(
-    (id) => !ARM_PROFILE_ROUTES.has(id),
+    (id) => !ARM_PROFILE_ROUTES.has(id.toLowerCase()),
     "Use an arm profile ID from protect_list_arm_profiles"
   );
 }

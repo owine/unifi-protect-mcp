@@ -166,8 +166,9 @@ Any other unrecognized value keeps the safe default (read-only, verification on)
 | `protect_delete_arm_profile`, `protect_set_current_arm_profile` | No confirmation | Requires `confirm: true` |
 | `protect_update_sensor` | No confirmation | Requires `confirm: true` when `settings` include `alarmSettings`, `motionSettings`, `glassBreakSettings`, `armProfileIds` or `scheduleMode` |
 | `protect_update_fob` | No confirmation | Requires `confirm: true` when `settings` include `armControlSettings` |
-| `protect_update_arm_profile` | No confirmation | Requires `confirm: true` when `settings` include `schedules` or `automations` |
-| Every tool that takes an ID | Any string | Only IDs as list and get tools return them: letters, digits, `-` and `_`. An arm profile ID cannot be `settings`, `enable` or `disable`; an alarm webhook ID cannot be `.` or `..` |
+| `protect_update_arm_profile` | No confirmation | Requires `confirm: true` when `settings` include `schedules`, `automations`, `activationDelay` or `recordEverything` |
+| `protect_update_siren` | No confirmation | Requires `confirm: true` when `settings` include `volume` |
+| Every tool that takes an ID | Any string | Only IDs as list and get tools return them: letters, digits, `-` and `_`. An arm profile ID cannot be `settings`, `enable` or `disable`, in any case; an alarm webhook ID cannot be `.` or `..` |
 
 A call that leaves out `state` or `enable`, or passes a malformed ID, fails input validation. A call without `confirm: true` returns an error result ("This action requires confirmation: …"), so the agent can ask you and call again.
 
@@ -221,7 +222,7 @@ Toggling was removed because it is not safe to retry: a repeated toggle flips a 
 - **Tool annotations.** Every tool declares `readOnlyHint`, `destructiveHint` and `openWorldHint: false` (each talks only to your console), plus a readable `title`, so MCP clients such as Claude Code can decide when to ask you. `destructiveHint: true` marks every tool that deletes or replaces existing state, which includes every `protect_update_*` tool, and every tool that takes `confirm`. Clients that auto-approve non-destructive tools ask before those. The tool tables below mark them **DESTRUCTIVE**.
 - **Server instructions.** On connect, the server gives the MCP host a short guide for the model, matched to read-only or read-write mode. It says to treat names and event text from the console as data, not instructions; that RTSPS and talkback URLs are credentials; and, when writes are enabled, to preview with `dryRun` and ask you before passing `confirm`.
 - **Read-only mode.** On by default. Only the read tools (list, get, snapshot, subscriptions) are registered; write tools do not exist for the model, and registering one in read-only mode fails at startup. Set `UNIFI_PROTECT_READ_ONLY=false` to enable writes. Read-only mode still returns RTSPS URLs from `protect_get_rtsp_streams`, and those are credentials for live video.
-- **Confirmation parameter.** Tools that are irreversible, switch physical outputs, trigger the alarm webhook, stop a siren, disarm or weaken alarm coverage, or open live video or two-way audio refuse to act unless the call carries `confirm: true`. Without it the tool returns an error naming the action, so the agent can ask you first. `protect_update_sensor`, `protect_update_fob` and `protect_update_arm_profile` need it only when the change touches alarm-related settings (each tool's description names them); renames and LED changes do not. `confirm` is filled in by the model, so it is a prompt for the model to ask you, not a lock; for a human gate, keep your MCP client's approval prompts on for destructive tools.
+- **Confirmation parameter.** Tools that are irreversible, switch physical outputs, trigger the alarm webhook, stop a siren, disarm or weaken alarm coverage, or open live video or two-way audio refuse to act unless the call carries `confirm: true`. Without it the tool returns an error naming the action, so the agent can ask you first. `protect_update_sensor`, `protect_update_fob`, `protect_update_siren` and `protect_update_arm_profile` need it only when the change touches alarm-related settings (each tool's description names them); renames and LED changes do not. `confirm` is filled in by the model, so it is a prompt for the model to ask you, not a lock; for a human gate, keep your MCP client's approval prompts on for destructive tools.
 - **Dry-run support.** Every write tool accepts `dryRun: true` and returns the request it would send (`dryRun`, `action`, `path`, `body`) without changing anything. A dry run never needs `confirm`.
 - **Request safety.** IDs must be IDs returned by list and get tools, and a request path that would resolve outside the Integration API is refused before it is sent. Redirects are refused, so the API key is never forwarded. Cancelling a tool call aborts its request to Protect.
 
@@ -296,7 +297,7 @@ Read tools, and write tools that return the resource, declare an `outputSchema`,
 |---|---|
 | `protect_list_sirens` | List all sirens (pages with `limit`/`offset`) |
 | `protect_get_siren` | Get siren details by ID |
-| `protect_update_siren` | **DESTRUCTIVE:** Update siren settings (name, volume, LED) |
+| `protect_update_siren` | **DESTRUCTIVE:** Update siren settings: name, volume, LED (requires `confirm: true` to change the volume) |
 | `protect_play_siren` | Activate the siren alarm for a given duration (5/10/20/30s) |
 | `protect_stop_siren` | **DESTRUCTIVE:** Stop an active siren; it silences an alarm (requires `confirm: true`) |
 | `protect_test_siren_sound` | Test the siren sound for 5 seconds at a given volume |
@@ -352,7 +353,7 @@ Read tools, and write tools that return the resource, declare an `outputSchema`,
 | `protect_list_arm_profiles` | List all arm profiles (pages with `limit`/`offset`) |
 | `protect_create_arm_profile` | Create a new arm profile |
 | `protect_set_current_arm_profile` | **DESTRUCTIVE:** Set the active profile used when arming (requires `confirm: true`) |
-| `protect_update_arm_profile` | **DESTRUCTIVE:** Update an arm profile (requires `confirm: true` to change schedules or automations) |
+| `protect_update_arm_profile` | **DESTRUCTIVE:** Update an arm profile (requires `confirm: true` to change schedules, automations, activation delay or recording) |
 | `protect_delete_arm_profile` | **DESTRUCTIVE:** Delete an arm profile by ID (requires `confirm: true`) |
 | `protect_enable_arm_alarm` | Arm the alarm using the current profile |
 | `protect_disable_arm_alarm` | **DESTRUCTIVE:** Disarm the alarm (requires `confirm: true`) |

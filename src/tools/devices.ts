@@ -75,6 +75,8 @@ const DEVICES: DeviceConfig[] = [
   {
     urlPath: "sirens",
     singular: "siren",
+    // A lower volume weakens the alarm as surely as stopping the siren does.
+    confirmFields: ["volume"],
     plural: "sirens",
     label: "Siren",
     hint: "Known fields: name (string), volume (integer 1-100), ledSettings (object with isEnabled boolean)",

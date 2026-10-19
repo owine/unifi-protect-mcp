@@ -218,6 +218,7 @@ const CONFIRM_GATED: [string, Record<string, unknown>, "post" | "patch" | "delet
   ["protect_update_sensor", { id: "s1", settings: { armProfileIds: null } }, "patch"],
   ["protect_update_fob", { id: "f1", settings: { armControlSettings: { enabled: false } } }, "patch"],
   ["protect_update_arm_profile", { id: "p1", settings: { schedules: [] } }, "patch"],
+  ["protect_update_siren", { id: "s1", settings: { volume: 1 } }, "patch"],
 ];
 
 describe("confirm through the SDK", () => {
@@ -404,6 +405,9 @@ describe("every alarm-related field is gated", () => {
     ["protect_update_fob", "armControlSettings", { enabled: false }],
     ["protect_update_arm_profile", "schedules", []],
     ["protect_update_arm_profile", "automations", []],
+    ["protect_update_arm_profile", "activationDelay", 600000],
+    ["protect_update_arm_profile", "recordEverything", false],
+    ["protect_update_siren", "volume", 1],
   ];
   let mcpClient: Client;
   const toolClient = createMockClient();

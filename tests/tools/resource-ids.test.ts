@@ -52,7 +52,8 @@ describe("arm profile IDs", () => {
     it(`${tool} rejects the literal routes beside /arm-profiles/{id}`, () => {
       const input = configs.get(tool)?.inputSchema as Record<string, z.ZodType>;
       const schema = input.id ?? input.armProfileId;
-      for (const route of ["settings", "enable", "disable"]) {
+      // In any case: a router may match paths case-insensitively.
+      for (const route of ["settings", "enable", "disable", "Settings", "ENABLE", "Disable"]) {
         expect(schema.safeParse(route).success, route).toBe(false);
       }
     });
