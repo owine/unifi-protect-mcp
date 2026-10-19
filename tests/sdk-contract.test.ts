@@ -9,7 +9,7 @@ import { ProtectClient } from "../src/client.js";
 import { formatDryRun } from "../src/utils/safety.js";
 import {
   BINARY_TIMEOUT_MS,
-  MAX_JSON_BYTES,
+  MAX_RESULT_BYTES,
   MAX_SNAPSHOT_BYTES,
   MAX_UPLOAD_BASE64_CHARS,
   REQUEST_TIMEOUT_MS,
@@ -167,11 +167,11 @@ describe("payload sizes through the SDK", () => {
   });
 
   // A result's text copy is JSON-escaped again inside the JSON-RPC line, so
-  // a JSON response under MAX_JSON_BYTES can still make an unreadable message
-  // (quotes double at each level). The final result is what must fit.
+  // a JSON response that fits half a message can still make an unreadable
+  // one (quotes double at each level). The final result is what must fit.
   it("refuses a JSON result that would not fit one stdio message once serialised", async () => {
     const toolClient = createMockClient();
-    mockFn(toolClient, "get").mockResolvedValueOnce({ applicationVersion: "7.3.70", notes: '"'.repeat(MAX_JSON_BYTES / 2) });
+    mockFn(toolClient, "get").mockResolvedValueOnce({ applicationVersion: "7.3.70", notes: '"'.repeat(Math.floor(MAX_RESULT_BYTES / 4)) });
     const mcpClient = await connect(toolClient, true);
     const result = await mcpClient.callTool({ name: "protect_get_info", arguments: {} });
     await mcpClient.close();
