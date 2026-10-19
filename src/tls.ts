@@ -1,6 +1,6 @@
 import { X509Certificate } from "node:crypto";
 import { checkServerIdentity, type PeerCertificate } from "node:tls";
-import { Agent, Dispatcher1Wrapper, type Dispatcher } from "undici";
+import { Agent } from "undici";
 
 /** Every certificate in a PEM bundle. Throws on a malformed certificate block. */
 export function pemCertificates(pem: string): X509Certificate[] {
@@ -40,12 +40,8 @@ const KEEP_ALIVE_MS = 60_000;
 /**
  * The dispatcher for requests to the console: its TLS settings, and
  * connections kept open across the gaps between a model's calls instead of
- * paying a new TLS handshake each time. Node's built-in fetch drives a
- * dispatcher through the undici v7 handler callbacks, which v8 dispatchers no
- * longer accept, so the agent is wrapped to speak them.
+ * paying a new TLS handshake each time.
  */
-export function consoleDispatcher(tls: TlsSettings): Dispatcher {
-  return new Dispatcher1Wrapper(
-    new Agent({ keepAliveTimeout: KEEP_ALIVE_MS, connect: consoleTlsOptions(tls) })
-  );
+export function consoleDispatcher(tls: TlsSettings): Agent {
+  return new Agent({ keepAliveTimeout: KEEP_ALIVE_MS, connect: consoleTlsOptions(tls) });
 }

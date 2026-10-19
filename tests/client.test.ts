@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { File } from "node:buffer";
+import { FormData, type RequestInit } from "undici";
 import { ProtectClient } from "../src/client.js";
 import type { Config } from "../src/config.js";
 import { MAX_ERROR_BODY_BYTES, MAX_JSON_BYTES } from "../src/utils/limits.js";
+
+// The client calls undici's fetch rather than the global one, so mock that;
+// the real Agent and FormData stay, since the client still builds them.
+const fetchMock = vi.hoisted(() => vi.fn());
+vi.mock("undici", async (importOriginal) => ({ ...await importOriginal<typeof import("undici")>(), fetch: fetchMock }));
 
 const { wsUrls, wsOptions } = vi.hoisted(() => ({
   wsUrls: [] as string[],
@@ -19,7 +26,7 @@ function mockFetch(body: unknown, options?: { status?: number; contentType?: str
   const status = options?.status ?? 200;
   const contentType = options?.contentType ?? "application/json";
   // A fresh real Response per call: a body can be read only once.
-  return vi.fn().mockImplementation(() => Promise.resolve(new Response(
+  fetchMock.mockImplementation(() => Promise.resolve(new Response(
     status === 204 ? null : typeof body === "string" ? body : JSON.stringify(body),
     { status, headers: { "content-type": contentType } }
   )));
@@ -57,11 +64,11 @@ describe("ProtectClient", () => {
   beforeEach(() => {
     savedTlsEnv = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
     delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    fetchMock.mockReset();
     client = new ProtectClient(baseConfig);
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     if (savedTlsEnv === undefined) {
       delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
     } else {
@@ -72,23 +79,23 @@ describe("ProtectClient", () => {
   describe("get", () => {
     it("makes GET request and returns JSON", async () => {
       const data = { id: "nvr1" };
-      vi.stubGlobal("fetch", mockFetch(data));
+      mockFetch(data);
       const result = await client.get("/nvrs");
       expect(result).toEqual(data);
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         "https://192.168.1.1/proxy/protect/integration/v1/nvrs",
         expect.objectContaining({ method: "GET" })
       );
     });
 
     it("returns text for non-JSON responses", async () => {
-      vi.stubGlobal("fetch", mockFetch("plain text", { contentType: "text/plain" }));
+      mockFetch("plain text", { contentType: "text/plain" });
       const result = await client.get("/status");
       expect(result).toBe("plain text");
     });
 
     it("throws on HTTP errors", async () => {
-      vi.stubGlobal("fetch", mockFetch("Not Found", { status: 404, contentType: "text/plain" }));
+      mockFetch("Not Found", { status: 404, contentType: "text/plain" });
       await expect(client.get("/missing")).rejects.toThrow("HTTP 404: Not Found");
     });
   });
@@ -96,19 +103,19 @@ describe("ProtectClient", () => {
   describe("post", () => {
     it("makes POST request with JSON body", async () => {
       const data = { created: true };
-      vi.stubGlobal("fetch", mockFetch(data));
+      mockFetch(data);
       const result = await client.post("/cameras/1/rtsps-stream");
       expect(result).toEqual(data);
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         expect.stringContaining("/cameras/1/rtsps-stream"),
         expect.objectContaining({ method: "POST" })
       );
     });
 
     it("sends body when provided", async () => {
-      vi.stubGlobal("fetch", mockFetch({ ok: true }));
+      mockFetch({ ok: true });
       await client.post("/liveviews", { name: "test" });
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           method: "POST",
@@ -120,10 +127,10 @@ describe("ProtectClient", () => {
 
   describe("patch", () => {
     it("makes PATCH request with body", async () => {
-      vi.stubGlobal("fetch", mockFetch({ updated: true }));
+      mockFetch({ updated: true });
       const result = await client.patch("/cameras/1", { name: "new" });
       expect(result).toEqual({ updated: true });
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           method: "PATCH",
@@ -135,10 +142,10 @@ describe("ProtectClient", () => {
 
   describe("delete", () => {
     it("makes DELETE request", async () => {
-      vi.stubGlobal("fetch", mockFetch({ deleted: true }));
+      mockFetch({ deleted: true });
       const result = await client.delete("/cameras/1/rtsps-stream");
       expect(result).toEqual({ deleted: true });
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ method: "DELETE" })
       );
@@ -148,9 +155,9 @@ describe("ProtectClient", () => {
   describe("getBinary", () => {
     it("returns Buffer and mimeType", async () => {
       const imageBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      fetchMock.mockResolvedValue(
         new Response(imageBytes, { headers: { "content-type": "image/jpeg" } })
-      ));
+      );
       const result = await client.getBinary("/cameras/1/snapshot");
       expect(result.mimeType).toBe("image/jpeg");
       expect(Buffer.isBuffer(result.data)).toBe(true);
@@ -160,13 +167,13 @@ describe("ProtectClient", () => {
     it("defaults mimeType when content-type is missing", async () => {
       const response = new Response(new Uint8Array(0));
       response.headers.delete("content-type");
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+      fetchMock.mockResolvedValue(response);
       const result = await client.getBinary("/cameras/1/snapshot");
       expect(result.mimeType).toBe("application/octet-stream");
     });
 
     it("throws on HTTP errors", async () => {
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("Server Error", { status: 500 })));
+      fetchMock.mockResolvedValue(new Response("Server Error", { status: 500 }));
       await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(
         "HTTP 500: Server Error"
       );
@@ -175,11 +182,11 @@ describe("ProtectClient", () => {
 
   describe("postFile", () => {
     function lastInit() {
-      return (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      return fetchMock.mock.calls[0][1] as RequestInit;
     }
 
     it("sends the file as multipart/form-data under the 'file' part", async () => {
-      vi.stubGlobal("fetch", mockFetch({ name: "abc", type: "animations" }));
+      mockFetch({ name: "abc", type: "animations" });
       const buf = Buffer.from("GIF89a-bytes");
       const result = await client.postFile(
         "/files/animations",
@@ -188,7 +195,7 @@ describe("ProtectClient", () => {
         "welcome.gif"
       );
       expect(result).toEqual({ name: "abc", type: "animations" });
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         "https://192.168.1.1/proxy/protect/integration/v1/files/animations",
         expect.objectContaining({ method: "POST" })
       );
@@ -204,7 +211,7 @@ describe("ProtectClient", () => {
     });
 
     it("sends only the API key header and lets fetch set the multipart Content-Type", async () => {
-      vi.stubGlobal("fetch", mockFetch({ ok: true }));
+      mockFetch({ ok: true });
       await client.postFile("/files/animations", Buffer.from("x"), "audio/mpeg", "a.mp3");
       const headers = lastInit().headers as Record<string, string>;
       expect(headers["X-API-KEY"]).toBe("test-key");
@@ -212,10 +219,7 @@ describe("ProtectClient", () => {
     });
 
     it("returns text for non-JSON responses", async () => {
-      vi.stubGlobal(
-        "fetch",
-        mockFetch("upload ok", { contentType: "text/plain" })
-      );
+      mockFetch("upload ok", { contentType: "text/plain" });
       const result = await client.postFile(
         "/files/animations",
         Buffer.from("data"),
@@ -226,29 +230,23 @@ describe("ProtectClient", () => {
     });
 
     it("throws on HTTP errors", async () => {
-      vi.stubGlobal(
-        "fetch",
-        mockFetch("Bad Request", { status: 400, contentType: "text/plain" })
-      );
+      mockFetch("Bad Request", { status: 400, contentType: "text/plain" });
       await expect(
         client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
       ).rejects.toThrow("HTTP 400: Bad Request");
     });
 
     it("reports an empty JSON body distinctly from a parse failure", async () => {
-      vi.stubGlobal("fetch", mockFetch("", { contentType: "application/json" }));
+      mockFetch("", { contentType: "application/json" });
       await expect(
         client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
       ).rejects.toThrow(/empty body/i);
     });
 
     it("rejects a response whose content-length exceeds the JSON limit", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue(new Response("{}", {
+      fetchMock.mockResolvedValue(new Response("{}", {
           headers: { "content-type": "application/json", "content-length": "99999999" },
-        }))
-      );
+        }));
       await expect(
         client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
       ).rejects.toThrow(/exceeds/i);
@@ -260,50 +258,50 @@ describe("ProtectClient", () => {
     // has to be enforced while reading, not only from the header.
     it("stops reading a chunked JSON body at the limit", async () => {
       const body = chunkedResponse(MAX_JSON_BYTES + 4 * MiB, { headers: { "content-type": "application/json" } });
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(body.response));
+      fetchMock.mockResolvedValue(body.response);
       await expect(client.get("/nvrs")).rejects.toThrow(/exceeds the .*-byte limit/);
       expect(body.pulled()).toBeLessThan(body.chunks);
     });
 
     it("stops reading a chunked binary body at the caller's limit", async () => {
       const body = chunkedResponse(6 * MiB, { headers: { "content-type": "image/jpeg" } });
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(body.response));
+      fetchMock.mockResolvedValue(body.response);
       await expect(client.getBinary("/cameras/1/snapshot", 2 * MiB)).rejects.toThrow(/exceeds the .*-byte limit/);
       expect(body.pulled()).toBeLessThan(body.chunks);
     });
 
     it("reads only the start of a chunked error body", async () => {
       const body = chunkedResponse(MAX_ERROR_BODY_BYTES + 4 * MiB, { status: 502 }, "<html>gateway error</html>");
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(body.response));
+      fetchMock.mockResolvedValue(body.response);
       await expect(client.get("/nvrs")).rejects.toThrow(/^HTTP 502: <html>gateway error<\/html>/);
       expect(body.pulled()).toBeLessThan(body.chunks);
     });
   });
 
   describe("error messages name the call", () => {
-    const timeout = () => vi.fn().mockRejectedValue(new DOMException("The operation was aborted due to timeout", "TimeoutError"));
+    const timeout = () => fetchMock.mockRejectedValue(new DOMException("The operation was aborted due to timeout", "TimeoutError"));
 
     it("says a timed-out read can be retried", async () => {
-      vi.stubGlobal("fetch", timeout());
+      timeout();
       await expect(client.get("/nvrs")).rejects.toThrow(/^GET \/nvrs: Protect did not respond within \d+ s\. Retry/);
     });
 
     // A write that timed out may have reached the console; retrying blindly
     // could, say, fire a relay twice.
     it("says a timed-out write may still have been applied", async () => {
-      vi.stubGlobal("fetch", timeout());
+      timeout();
       await expect(client.patch("/cameras/c1", { name: "x" })).rejects.toThrow(
         /^PATCH \/cameras\/c1: Protect did not respond within \d+ s\. The change may still have been applied/
       );
     });
 
     it("leaves a cancellation's error alone", async () => {
-      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new DOMException("This operation was aborted", "AbortError")));
+      fetchMock.mockRejectedValue(new DOMException("This operation was aborted", "AbortError"));
       await expect(client.get("/nvrs")).rejects.toThrow("This operation was aborted");
     });
 
     it("names the call when Protect returns malformed JSON", async () => {
-      vi.stubGlobal("fetch", mockFetch("{not json", { contentType: "application/json" }));
+      mockFetch("{not json", { contentType: "application/json" });
       await expect(client.get("/nvrs")).rejects.toThrow(/^Protect returned malformed JSON for GET \/nvrs/);
     });
   });
@@ -316,35 +314,35 @@ describe("ProtectClient", () => {
     it.each(["/cameras/..", "/cameras/.", "/cameras/a/../nvrs", "/cameras/%2E%2E", "/cameras/x#y", "cameras"])(
       "refuses %s without sending it",
       async (path) => {
-        vi.stubGlobal("fetch", mockFetch({}));
+        mockFetch({});
         await expect(client.get(path)).rejects.toThrow(/outside the Integration API/);
-        expect(fetch).not.toHaveBeenCalled();
+        expect(fetchMock).not.toHaveBeenCalled();
       }
     );
 
     it.each(["/cameras/abc/snapshot?highQuality=true", "/alarm-manager/webhook/Front%20door", "/cameras/%252E%252E"])(
       "sends %s",
       async (path) => {
-        vi.stubGlobal("fetch", mockFetch({}));
+        mockFetch({});
         await client.get(path);
-        expect(fetch).toHaveBeenCalledOnce();
+        expect(fetchMock).toHaveBeenCalledOnce();
       }
     );
   });
 
   describe("network failures", () => {
     it("propagates fetch TypeError on network failure", async () => {
-      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+      fetchMock.mockRejectedValue(new TypeError("fetch failed"));
       await expect(client.get("/nvrs")).rejects.toThrow("fetch failed");
     });
 
     it("propagates fetch TypeError for getBinary", async () => {
-      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+      fetchMock.mockRejectedValue(new TypeError("fetch failed"));
       await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow("fetch failed");
     });
 
     it("propagates fetch TypeError for postFile", async () => {
-      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+      fetchMock.mockRejectedValue(new TypeError("fetch failed"));
       await expect(
         client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
       ).rejects.toThrow("fetch failed");
@@ -354,11 +352,11 @@ describe("ProtectClient", () => {
     // actual reason (refused, DNS, TLS) on `cause`.
     function failWith(message: string, code: string) {
       const cause = Object.assign(new Error(message), { code });
-      return vi.fn().mockRejectedValue(new TypeError("fetch failed", { cause }));
+      fetchMock.mockRejectedValue(new TypeError("fetch failed", { cause }));
     }
 
     it("includes the underlying cause in the error message", async () => {
-      vi.stubGlobal("fetch", failWith("connect ECONNREFUSED 192.168.1.1:443", "ECONNREFUSED"));
+      failWith("connect ECONNREFUSED 192.168.1.1:443", "ECONNREFUSED");
       await expect(client.get("/nvrs")).rejects.toThrow(
         "fetch failed: connect ECONNREFUSED 192.168.1.1:443"
       );
@@ -367,7 +365,7 @@ describe("ProtectClient", () => {
     // Cloud Connector refuses a pin and verification-off, so its hint must not
     // suggest them.
     it("points at interception, not a pin, for a Cloud Connector certificate error", async () => {
-      vi.stubGlobal("fetch", failWith("unable to verify the first certificate", "UNABLE_TO_VERIFY_LEAF_SIGNATURE"));
+      failWith("unable to verify the first certificate", "UNABLE_TO_VERIFY_LEAF_SIGNATURE");
       const cloud = new ProtectClient({ ...baseConfig, host: "api.ui.com", consoleId: "abc" });
       const error = (await cloud.get("/nvrs").catch((err: unknown) => err)) as Error;
       expect(error.message).toMatch(/intercepting TLS/);
@@ -375,41 +373,41 @@ describe("ProtectClient", () => {
     });
 
     it("points to UNIFI_PROTECT_VERIFY_SSL on a certificate error", async () => {
-      vi.stubGlobal("fetch", failWith("self-signed certificate", "DEPTH_ZERO_SELF_SIGNED_CERT"));
+      failWith("self-signed certificate", "DEPTH_ZERO_SELF_SIGNED_CERT");
       await expect(client.get("/nvrs")).rejects.toThrow(/UNIFI_PROTECT_VERIFY_SSL=false/);
     });
 
     it("includes the cause for getBinary", async () => {
-      vi.stubGlobal("fetch", failWith("self-signed certificate", "DEPTH_ZERO_SELF_SIGNED_CERT"));
+      failWith("self-signed certificate", "DEPTH_ZERO_SELF_SIGNED_CERT");
       await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(
         /self-signed certificate.*UNIFI_PROTECT_VERIFY_SSL=false/
       );
     });
 
     it("includes the cause for postFile", async () => {
-      vi.stubGlobal("fetch", failWith("getaddrinfo ENOTFOUND nvr.local", "ENOTFOUND"));
+      failWith("getaddrinfo ENOTFOUND nvr.local", "ENOTFOUND");
       await expect(
         client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif")
       ).rejects.toThrow("fetch failed: getaddrinfo ENOTFOUND nvr.local");
     });
 
     it("does not add the TLS hint to non-certificate failures", async () => {
-      vi.stubGlobal("fetch", failWith("connect ECONNREFUSED 192.168.1.1:443", "ECONNREFUSED"));
+      failWith("connect ECONNREFUSED 192.168.1.1:443", "ECONNREFUSED");
       await expect(client.get("/nvrs")).rejects.not.toThrow(/VERIFY_SSL/);
     });
   });
 
   describe("edge cases", () => {
     it("handles empty response body as text", async () => {
-      vi.stubGlobal("fetch", mockFetch("", { contentType: "text/plain" }));
+      mockFetch("", { contentType: "text/plain" });
       const result = await client.get("/status");
       expect(result).toBe("");
     });
 
     it("does not set body key when post body is undefined", async () => {
-      vi.stubGlobal("fetch", mockFetch({ ok: true }));
+      mockFetch({ ok: true });
       await client.post("/cameras/1/rtsps-stream");
-      const callArgs = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      const callArgs = fetchMock.mock.calls[0];
       expect(callArgs[1]).not.toHaveProperty("body");
     });
   });
@@ -420,73 +418,61 @@ describe("ProtectClient", () => {
     }
 
     it("rejects redirects on JSON requests", async () => {
-      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      mockFetch({ id: "nvr1" });
       await client.get("/nvrs");
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ redirect: "error" })
       );
     });
 
     it("applies an abort signal to JSON requests", async () => {
-      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      mockFetch({ id: "nvr1" });
       await client.get("/nvrs");
-      const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      const init = fetchMock.mock.calls[0][1] as RequestInit;
       expect(init.signal).toBeInstanceOf(AbortSignal);
     });
 
     it("rejects a JSON response whose content-length exceeds the limit", async () => {
-      vi.stubGlobal(
-        "fetch",
-        rawFetch({ "content-type": "application/json", "content-length": "99999999" })
-      );
+      fetchMock.mockImplementation(rawFetch({ "content-type": "application/json", "content-length": "99999999" }));
       await expect(client.get("/nvrs")).rejects.toThrow(/exceeds/i);
     });
 
     it("reports an empty JSON body distinctly from a parse failure", async () => {
-      vi.stubGlobal("fetch", mockFetch("", { contentType: "application/json" }));
+      mockFetch("", { contentType: "application/json" });
       await expect(client.get("/nvrs")).rejects.toThrow(/empty body/i);
     });
 
     it("treats 204 No Content as an empty success even with a JSON content-type", async () => {
-      vi.stubGlobal("fetch", mockFetch("", { status: 204, contentType: "application/json" }));
+      mockFetch("", { status: 204, contentType: "application/json" });
       await expect(client.post("/sirens/s1/play")).resolves.toBe("");
     });
 
     it("does not read the body of a 204 response", async () => {
       const response = new Response(null, { status: 204, headers: { "content-type": "application/json" } });
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+      fetchMock.mockResolvedValue(response);
       await expect(client.post("/relays/r1/activate")).resolves.toBe("");
       expect(response.bodyUsed).toBe(false);
     });
 
     it("rejects redirects on binary downloads", async () => {
-      vi.stubGlobal(
-        "fetch",
-        rawFetch({ "content-type": "image/jpeg" }, new Uint8Array(4))
-      );
+      fetchMock.mockImplementation(rawFetch({ "content-type": "image/jpeg" }, new Uint8Array(4)));
       await client.getBinary("/cameras/1/snapshot");
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ redirect: "error" })
       );
     });
 
     it("applies an abort signal to binary downloads", async () => {
-      vi.stubGlobal(
-        "fetch",
-        rawFetch({ "content-type": "image/jpeg" }, new Uint8Array(4))
-      );
+      fetchMock.mockImplementation(rawFetch({ "content-type": "image/jpeg" }, new Uint8Array(4)));
       await client.getBinary("/cameras/1/snapshot");
-      const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      const init = fetchMock.mock.calls[0][1] as RequestInit;
       expect(init.signal).toBeInstanceOf(AbortSignal);
     });
 
     it("rejects a binary download whose content-length exceeds the limit", async () => {
-      vi.stubGlobal(
-        "fetch",
-        rawFetch({ "content-type": "video/mp4", "content-length": "999999999" }, new Uint8Array(4))
-      );
+      fetchMock.mockImplementation(rawFetch({ "content-type": "video/mp4", "content-length": "999999999" }, new Uint8Array(4)));
       await expect(client.getBinary("/cameras/1/snapshot")).rejects.toThrow(/exceeds/i);
     });
 
@@ -499,32 +485,32 @@ describe("ProtectClient", () => {
         status: 500,
         headers: { "content-length": "999999999" },
       }, "upstream failure");
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(body.response));
+      fetchMock.mockResolvedValue(body.response);
       await expect(call()).rejects.toThrow(/^HTTP 500: upstream failure.*\(truncated\)$/s);
       expect(body.pulled()).toBeLessThan(body.chunks);
     });
 
     it("truncates a long error body in the thrown message", async () => {
       const long = "x".repeat(50_000);
-      vi.stubGlobal("fetch", vi.fn().mockImplementation(() => Promise.resolve(new Response(long, { status: 500 }))));
+      fetchMock.mockImplementation(() => Promise.resolve(new Response(long, { status: 500 })));
       await expect(client.get("/nvrs")).rejects.toThrow(/truncated/);
       const err = (await client.get("/nvrs").catch((e: unknown) => e)) as Error;
       expect(err.message.length).toBeLessThan(3000);
     });
 
     it("rejects redirects on binary uploads", async () => {
-      vi.stubGlobal("fetch", mockFetch({ ok: true }));
+      mockFetch({ ok: true });
       await client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif");
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ redirect: "error" })
       );
     });
 
     it("applies an abort signal to binary uploads", async () => {
-      vi.stubGlobal("fetch", mockFetch({ ok: true }));
+      mockFetch({ ok: true });
       await client.postFile("/files/animations", Buffer.from("data"), "image/gif", "upload.gif");
-      const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      const init = fetchMock.mock.calls[0][1] as RequestInit;
       expect(init.signal).toBeInstanceOf(AbortSignal);
     });
   });
@@ -539,18 +525,15 @@ describe("ProtectClient", () => {
       "https://api.ui.com/v1/connector/consoles/CONSOLE1/proxy/protect/integration/v1";
 
     it("prefixes JSON requests with the console path", async () => {
-      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      mockFetch({ id: "nvr1" });
       await new ProtectClient(connectorConfig).get("/nvrs");
-      expect(fetch).toHaveBeenCalledWith(`${connectorBase}/nvrs`, expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(`${connectorBase}/nvrs`, expect.anything());
     });
 
     it("prefixes binary downloads with the console path", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue(new Response(new Uint8Array(4), { headers: { "content-type": "image/jpeg" } }))
-      );
+      fetchMock.mockResolvedValue(new Response(new Uint8Array(4), { headers: { "content-type": "image/jpeg" } }));
       await new ProtectClient(connectorConfig).getBinary("/cameras/1/snapshot");
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         `${connectorBase}/cameras/1/snapshot`,
         expect.anything()
       );
@@ -574,9 +557,9 @@ describe("ProtectClient", () => {
 
     it("ignores the console ID when the host is not api.ui.com", async () => {
       const warn = vi.spyOn(console, "error").mockImplementation(() => undefined);
-      vi.stubGlobal("fetch", mockFetch({ id: "nvr1" }));
+      mockFetch({ id: "nvr1" });
       await new ProtectClient({ ...baseConfig, consoleId: "CONSOLE1" }).get("/nvrs");
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         "https://192.168.1.1/proxy/protect/integration/v1/nvrs",
         expect.anything()
       );
@@ -596,9 +579,9 @@ describe("ProtectClient", () => {
 
   describe("binary requests", () => {
     it("authenticate snapshots with the API key", async () => {
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new Uint8Array(4), { headers: { "content-type": "image/jpeg" } })));
+      fetchMock.mockResolvedValue(new Response(new Uint8Array(4), { headers: { "content-type": "image/jpeg" } }));
       await client.getBinary("/cameras/1/snapshot");
-      const init = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      const init = fetchMock.mock.calls[0][1] as RequestInit;
       expect((init.headers as Record<string, string>)["X-API-KEY"]).toBe("test-key");
     });
   });
