@@ -158,4 +158,6 @@ jobs:
       - if: steps.published.outputs.already != 'true'
         env:
           TARBALL: ${{ needs.build.outputs.tarball }}
-        run: npm publish "package/$TARBALL" --provenance --access public --ignore-scripts
+        # ./ is load-bearing: npm reads a bare "package/<file>.tgz" as GitHub
+        # shorthand (user/repo) and tries to clone github.com/package/….
+        run: npm publish "./package/$TARBALL" --provenance --access public --ignore-scripts
