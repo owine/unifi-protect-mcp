@@ -176,7 +176,7 @@ Toggling was removed because it is not safe to retry: a repeated toggle flips a 
 ```jsonc
 // 2.x: toggles output 0
 { "id": "<relay id>", "outputId": 0 }
-// 3.0: explicit and safe to retry
+// 3.0: explicit, so a repeat leaves the output as asked (a pulseDuration pulses again)
 { "id": "<relay id>", "outputId": 0, "state": "on", "confirm": true }
 ```
 
@@ -187,7 +187,7 @@ Toggling was removed because it is not safe to retry: a repeated toggle flips a 
 ### Annotation changes (breaking for allow-lists)
 
 - `protect_update_camera`, every `protect_update_<device>` tool, `protect_update_arm_profile` and `protect_update_liveview` are now `destructiveHint: true`, and so is every tool that takes `confirm` (`protect_stop_siren`, `protect_set_current_arm_profile`, `protect_create_rtsp_stream`, `protect_create_talkback`, `protect_disable_arm_alarm`, `protect_activate_relay_output`, `protect_trigger_alarm_hub_output` among them). MCP clients that auto-approve non-destructive tools will now ask before running them, and allow-lists keyed on the annotation need updating.
-- Every tool now has a `title` and `openWorldHint: false`; the relay and alarm-hub output tools declare `idempotentHint: true`.
+- Every tool now has a `title` and `openWorldHint: false`.
 
 ### Stricter validation
 

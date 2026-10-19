@@ -301,9 +301,10 @@ describe("device action tools - annotations", () => {
     "protect_stop_siren",
   ]);
 
-  // They take an explicit state, never a toggle, so a retried call is safe.
-  it.each(["protect_activate_relay_output", "protect_trigger_alarm_hub_output"])("%s is idempotent", (name) => {
-    expect(configs.get(name)!.annotations).toMatchObject({ idempotentHint: true });
+  // An explicit state is safe to repeat, but a pulse or duration is not: a
+  // repeated call fires the output again, so a host must not retry it.
+  it.each(["protect_activate_relay_output", "protect_trigger_alarm_hub_output"])("%s is not idempotent", (name) => {
+    expect(configs.get(name)!.annotations?.idempotentHint).not.toBe(true);
   });
 
   for (const name of tools) {

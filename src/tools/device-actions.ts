@@ -124,8 +124,9 @@ export function registerDeviceActionTools(
         confirm: SWITCH_RELAY.input,
         dryRun: dryRunInput(),
       },
-      // An explicit state, never a toggle: repeating a call has no further effect.
-      annotations: { ...DESTRUCTIVE, idempotentHint: true },
+      // Not idempotent: an explicit state is safe to repeat, but a timed one
+      // is not, since a repeated call starts the timer, and the output, again.
+      annotations: DESTRUCTIVE,
     },
     async ({ id, outputId, state, pulseDuration, confirm, dryRun }) => {
       const body: Record<string, unknown> = { state };
@@ -156,8 +157,9 @@ export function registerDeviceActionTools(
         confirm: TRIGGER_HUB_OUTPUT.input,
         dryRun: dryRunInput(),
       },
-      // An explicit state, never a toggle: repeating a call has no further effect.
-      annotations: { ...DESTRUCTIVE, idempotentHint: true },
+      // Not idempotent: an explicit state is safe to repeat, but a timed one
+      // is not, since a repeated call starts the timer, and the output, again.
+      annotations: DESTRUCTIVE,
     },
     async ({ id, outputId, enable, delay, duration, confirm, dryRun }) => {
       const body: Record<string, unknown> = { enable };
