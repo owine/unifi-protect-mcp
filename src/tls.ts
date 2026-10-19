@@ -29,6 +29,11 @@ export function consoleTlsOptions({ verifySsl, caCert }: TlsSettings) {
   const pinned = new Set(pemCertificates(caCert).map((cert) => cert.fingerprint256));
   return {
     ca: caCert,
+    // `ca` replaces the public roots, and OpenSSL otherwise accepts a chain
+    // only when it ends at a self-signed root. A pinned leaf or intermediate
+    // issued by a CA would then never verify, and checkServerIdentity (which
+    // runs only after the chain has) would never see the pin.
+    allowPartialTrustChain: true,
     checkServerIdentity: (host: string, cert: PeerCertificate) =>
       pinned.has(cert.fingerprint256) ? undefined : checkServerIdentity(host, cert),
   };
