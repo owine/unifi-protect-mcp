@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/owine/unifi-protect-mcp/compare/3.0.0...3.0.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **deps:** update body-parser to 2.4.0 (GHSA-27r3-jxmh-p828) ([#335](https://github.com/owine/unifi-protect-mcp/issues/335)) ([129fe9c](https://github.com/owine/unifi-protect-mcp/commit/129fe9c8d41dea5c49f026f6e8ce8aa308d2ba4b))
+
 ## [3.0.0](https://github.com/owine/unifi-protect-mcp/compare/2.15.0...3.0.0) (2026-10-19)
 
 
