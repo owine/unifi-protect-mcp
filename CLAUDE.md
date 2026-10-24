@@ -137,19 +137,18 @@ For updating tools to match a new UniFi Protect API version, follow the skill at
 
 ## Releases
 
-Versioning and npm publishing are automated via [release-please](https://github.com/googleapis/release-please).
+Releases are drafted by [release-drafter](https://github.com/release-drafter/release-drafter) and published by a maintainer. There is no release PR.
 
-- Use **conventional commits** — release-please reads these to determine semver bumps and generate changelogs
+- Every push to `main` refreshes one **draft** GitHub Release (`.github/workflows/release-drafter.yml`). Its version and notes come from the **PR titles** merged since the last release, sorted by the shared config in `owine/renovate-config` (`.github/release-drafter.yml` extends it and sets bare `X.Y.Z` tags)
+- PR titles must be **conventional commits**; merge with a **squash merge**, so the PR title is the commit subject
   - `feat: ...` → minor bump
-  - `fix: ...` → patch bump
+  - `fix: ...`, `perf: ...`, `revert: ...` → patch bump
   - `deps: ...` → patch bump (production dependency updates)
-  - `feat!: ...` or `BREAKING CHANGE:` footer → major bump
-  - `chore:`, `docs:`, `ci:`, `refactor:`, `test:` → no release
-- **Dependency commits**: Only `feat`, `fix`, and `deps` are "releasable units" in release-please. Renovate's commit types come from the shared `owine/renovate-config` presets: package bumps are `deps:` (patch release), lock file maintenance is `chore:` and GitHub Actions/workflow updates are `ci:` (no release), and security updates are `fix:`. Those presets keep `ci:` and `deps:` updates on separate group branches, because a branch takes one commit type and a mixed group once shipped a runtime bump (`ws`, #284) as `ci:` with no release
-- On push to `main`, release-please opens/updates a "Release PR" that bumps `package.json` version and updates `CHANGELOG.md`
-- Merging the Release PR triggers `npm publish` to `@owine/unifi-protect-mcp` with provenance attestation. release-please publishes the GitHub Release, and that Release's `published` event (not `workflow_run`, so provenance names the tagged commit) runs the build: it builds, tests and smoke-tests the tagged commit in a job without the npm token, then a separate publish job checks the tarball's hash and publishes it; a re-run skips a version already on npm. Dist-tag and deprecate fixes need a maintainer login (see SECURITY.md)
-- Merge PRs with a **rebase merge**, so each conventional commit (and any `BREAKING CHANGE` footer) reaches the changelog
-- To override the version number, add `Release-As: x.x.x` in the **commit body** (not the title):
-  ```
-  git commit --allow-empty -m "chore: release 2.0.0" -m "Release-As: 2.0.0"
-  ```
+  - `feat!: ...` (any type with `!` **in the title**) → major bump. A `BREAKING CHANGE:` footer is ignored
+  - `chore:`, `ci:`, `docs:`, `test:`, `refactor:`, `build:`, `style:` → hidden, no bump
+  - a non-conventional title is listed unsectioned and bumps patch
+- **Dependency commits**: Renovate's commit types come from the shared `owine/renovate-config` presets: package bumps are `deps:` (patch release), lock file maintenance is `chore:` and GitHub Actions/workflow updates are `ci:` (no release), and security updates are `fix:`. Those presets keep `ci:` and `deps:` updates on separate group branches, because a branch takes one commit type and a mixed group once shipped a runtime bump (`ws`, #284) as `ci:` with no release
+- If only hidden types merged, the draft reads `_No user-facing changes._`; don't publish it
+- `package.json` reads `0.0.0-development` in the repo. Publishing the draft fires `release: published`, which runs `.github/workflows/release.yml` (keep the filename: npm trusted publishing is bound to it). The build job requires a bare `X.Y.Z` tag, stamps it into `package.json` with `npm version --no-git-tag-version`, then builds, tests and smoke-tests the tagged commit without the npm token; a separate publish job checks the tarball's hash and runs `npm publish --provenance` to `@owine/unifi-protect-mcp`. Provenance names the tagged commit, and a re-run skips a version already on npm. Dist-tag and deprecate fixes need a maintainer login (see SECURITY.md)
+- To release a different version than the draft proposes, edit the draft's tag and title before publishing
+- `CHANGELOG.md` is frozen at 3.0.0; later release notes live in GitHub Releases

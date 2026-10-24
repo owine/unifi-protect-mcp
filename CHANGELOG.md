@@ -1,5 +1,7 @@
 # Changelog
 
+Releases after 3.0.0 are documented in [GitHub Releases](https://github.com/owine/unifi-protect-mcp/releases). All notable changes up to 3.0.0 are documented in this file.
+
 ## [3.0.0](https://github.com/owine/unifi-protect-mcp/compare/2.15.0...3.0.0) (2026-10-19)
 
 

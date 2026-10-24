@@ -1,6 +1,6 @@
 {
   "name": "@owine/unifi-protect-mcp",
-  "version": "3.0.0",
+  "version": "0.0.0-development",
   "description": "MCP server for UniFi Protect Integration API",
   "main": "dist/index.js",
   "bin": {
