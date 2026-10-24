@@ -1,70 +1,28 @@
 name: Release
 
-# Two triggers, two halves. CI passing on main runs release-please, which
-# opens the release PR and, once it is merged, tags the release and publishes
-# the GitHub Release. That Release event then builds and publishes the tagged
-# commit. Publishing runs under its own event because npm provenance records
-# the run's GITHUB_SHA: under workflow_run that is main's head when the event
-# fires, which a later push can move past the tagged commit, so the
-# attestation would name a commit other than the one built. Under a release
-# event it is the tagged commit itself.
-on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
+# Publishing a GitHub Release builds and publishes the tagged commit.
+# release-drafter (release-drafter.yml) keeps a draft Release up to date on
+# main, and a maintainer publishes it to release. Publishing runs under the
+# release event because npm provenance records the run's GITHUB_SHA, which
+# here is the tagged commit itself.
+"on":
   release:
     types: [published]
 
-# Nothing by default: release-please acts through the GitHub App token, and
-# publish asks for what it needs.
+# Nothing by default: each job asks for what it needs.
 permissions: {}
 
-# One release-please run at a time, and one publish per tag. Separate groups:
-# a group holds one pending run and a newer one replaces it, so a shared group
-# could drop a queued publish in favour of the next release-please run.
+# One publish per tag; a second run for the same tag queues behind the first.
 concurrency:
-  group: ${{ github.event_name == 'release' && format('publish-{0}', github.ref_name) || 'release-please' }}
+  group: publish-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
-  release-please:
-    permissions:
-      contents: read
-    # workflow_run's branch filter matches the head branch name, which a fork
-    # PR can also call main; release only after a push to this repo's main.
-    if: >-
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_repository.full_name == github.repository
-    runs-on: ubuntu-26.04
-    steps:
-      # Mint a GitHub App installation token so release-please's PRs/tags are
-      # authored by the App, not the default GITHUB_TOKEN. PRs created by the
-      # default token cannot trigger other workflows (GitHub's anti-recursion
-      # guard), which is why CI never ran on prior release PRs.
-      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        id: app-token
-        with:
-          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-
-      # The App token also matters for the GitHub Release this publishes: a
-      # release made with the default token would not trigger the publish
-      # half of this workflow.
-      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
-
   # Everything that runs code from the dependency tree happens here, in a job
   # that cannot mint an npm token: install, build, the tests, and the smoke
   # test, whose `npm install` of the tarball resolves the SDK's transitive
   # ranges fresh from the registry. It hands publish one tarball and its hash.
   build:
-    if: github.event_name == 'release'
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
@@ -76,25 +34,34 @@ jobs:
       node-version: ${{ steps.pack.outputs.node-version }}
     steps:
       # Build exactly the tagged commit (the release event's GITHUB_SHA), so
-      # the npm version matches its tag, changelog and provenance.
+      # the npm package matches its tag, release notes and provenance.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Node from .nvmrc; no dependency cache, since what is built here is
       # what gets published.
       - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           install: false
-      # No lifecycle scripts: the build needs none of them.
-      # A Release can also be published by hand; publish only the version its
-      # tag names (tags are bare versions, see release-please-config.json).
-      - name: Check the tag names this version
+      # A Release can also be published by hand; publish only a bare X.Y.Z
+      # tag, the shape .github/release-drafter.yml drafts (no v prefix, no
+      # pre-release suffix).
+      - name: Check the tag is a release version
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          version=$(node -p 'require("./package.json").version')
-          if [ "$TAG" != "$version" ]; then
-            echo "::error::Release tag $TAG does not match package.json version $version"
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tag $TAG is not a bare X.Y.Z version"
             exit 1
           fi
+      # The repo's package.json reads 0.0.0-development. Stamp the tag's
+      # version into it before anything is built, so the tarball's
+      # package.json, which src/version.ts reads at runtime, carries the
+      # release version. pnpm-lock.yaml does not record the root package's
+      # version, so the frozen install still passes.
+      - name: Set the version from the tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: npm version "$TAG" --no-git-tag-version
+      # No lifecycle scripts: the build needs none of them.
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm run build
       - run: pnpm test

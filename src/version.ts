@@ -3,8 +3,10 @@ import { join } from "node:path";
 
 /**
  * The published package version, reported to MCP clients during initialize.
- * Read at runtime so release-please's package.json bump is the only edit a
- * release needs. Resolves to the package root from both src/ and dist/.
+ * Read at runtime from package.json, which reads 0.0.0-development in the
+ * repo; the release workflow stamps the tag's version into it before packing,
+ * so a published tarball reports its own version. Resolves to the package
+ * root from both src/ and dist/.
  */
 export const SERVER_VERSION = (
   JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8")) as {
