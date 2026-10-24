@@ -12,7 +12,8 @@ permissions:
 
 # A push to main gets its own group per commit: GitHub keeps only one pending
 # run per group, so during a burst of merges a shared group would cancel the
-# CI run - and with it the release run - of a commit that should be released.
+# CI run of a commit, leaving it with no result to check before publishing a
+# release from it.
 concurrency:
   group: ci-${{ github.event_name == 'push' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
