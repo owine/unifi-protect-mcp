@@ -1,0 +1,4 @@
+_extends: owine/renovate-config:/release-drafter.yml
+tag-prefix: ''
+tag-template: '$RESOLVED_VERSION'
+name-template: '$RESOLVED_VERSION'
