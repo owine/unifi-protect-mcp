@@ -2,3 +2,23 @@ _extends: owine/renovate-config:/release-drafter.yml
 tag-prefix: ''
 tag-template: '$RESOLVED_VERSION'
 name-template: '$RESOLVED_VERSION'
+footer: |
+
+  ### Use this release
+
+  ```json
+  {
+    "mcpServers": {
+      "unifi-protect": {
+        "command": "npx",
+        "args": ["-y", "@owine/unifi-protect-mcp@$RESOLVED_VERSION"],
+        "env": {
+          "UNIFI_PROTECT_HOST": "192.168.1.1",
+          "UNIFI_PROTECT_API_KEY": "your-api-key"
+        }
+      }
+    }
+  }
+  ```
+
+  Optional settings (CA certificate, read-only mode, write tools) are in the [README](https://github.com/owine/unifi-protect-mcp#readme).
