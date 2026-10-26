@@ -21,4 +21,4 @@ footer: |
   }
   ```
 
-  Optional settings (CA certificate, read-only mode, write tools) are in the [README](https://github.com/owine/unifi-protect-mcp#readme).
+  Optional settings (CA certificate, read-only mode) are in the [README](https://github.com/owine/unifi-protect-mcp#readme).
