@@ -147,6 +147,12 @@ describe("documentation drift", () => {
       expect(CLAUDE).not.toMatch(/`\.nvmrc` \(\d/);
     });
 
+    // `engines.node` in package.json is the one statement of supported Node
+    // versions; a copy in prose misled a reviewer the day the range widened.
+    it.each([["README.md", README], ["CLAUDE.md", CLAUDE], ["SECURITY.md", SECURITY]])("keep the supported Node range out of %s", (_file, text) => {
+      expect(text).not.toMatch(/\^\d+\.\d+\.\d+|Node(?:\.js)? \d{2}\b|\b\d{2}\.x\b/);
+    });
+
     it.each([true, false])("state no numbers in the server instructions (readOnly=%s)", (readOnly) => {
       expect(serverInstructions(readOnly)).not.toMatch(/\d/);
     });
