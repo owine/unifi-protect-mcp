@@ -149,8 +149,22 @@ describe("documentation drift", () => {
 
     // `engines.node` in package.json is the one statement of supported Node
     // versions; a copy in prose misled a reviewer the day the range widened.
+    // Branches: caret/tilde ranges; comparators on a two-digit major (a bare
+    // `<`/`>` takes no space, so a blockquote like "> 10 s" is not a range);
+    // "Node 22"/"Node.js v24"; and 22.x or a full version, with lookarounds
+    // so an IP address such as 192.168.1.1 is not read as one.
+    const nodeRange = /[\^~]\s*v?\d+\.\d+|(?:[<>]=\s*|[<>])v?\d{2}\b|\bNode(?:\.js)?\s+v?\d{2}\b|(?<![\d.])v?\d{2}\.(?:x\b|\d+\.\d+(?![.\d]))/;
+
+    it.each(["^22.19.0", "~24.1", ">=22.19.0", ">= 22", ">=v22", "<25", "<=24.0", "Node.js 22", "Node 26", "Node v22", "Node.js v24.1", "22.x", "v22.19.0", "26.13.0", "(22.19.0)"])("recognise %j as a Node version or range", (sample) => {
+      expect(sample).toMatch(nodeRange);
+    });
+
+    it.each(["v3.0.0", "API 7.3.70", "pnpm 12", "HTTP 404", "TLS 1.3", "Node.js", "<7.x>", "https://192.168.1.1", "10.0.0.5", "lib 1.22.3", "> 10 s"])("do not mistake %j for a Node version", (sample) => {
+      expect(sample).not.toMatch(nodeRange);
+    });
+
     it.each([["README.md", README], ["CLAUDE.md", CLAUDE], ["SECURITY.md", SECURITY]])("keep the supported Node range out of %s", (_file, text) => {
-      expect(text).not.toMatch(/\^\d+\.\d+\.\d+|Node(?:\.js)? \d{2}\b|\b\d{2}\.x\b/);
+      expect(text).not.toMatch(nodeRange);
     });
 
     it.each([true, false])("state no numbers in the server instructions (readOnly=%s)", (readOnly) => {
