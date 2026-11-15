@@ -2,7 +2,7 @@
 
 ## Project overview
 
-MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.3.70**; one tool module per API domain under `src/tools/` (the README's tool tables list them all).
+MCP server exposing UniFi Protect's Integration API as tool calls. Built with the MCP SDK, TypeScript, and Zod for input validation. Runs on Node.js via stdio transport. Aligned with UniFi Protect API **7.4.99**; one tool module per API domain under `src/tools/` (the README's tool tables list them all).
 
 ## Local dev setup
 
@@ -57,20 +57,21 @@ src/
     registrar.ts      # instrumentTools() and the ToolRegistrar type modules receive: loose output schemas, dry-run preview fields, call signal, one catch, result-size guard, read-only fail-fast, titles, openWorldHint
     cameras.ts        # Camera reads and updates, snapshots, RTSPS, talkback, mic disable, PTZ
     devices.ts        # Config-driven list/get/update for lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs (confirmFields for field-level gates)
-    device-actions.ts # Action endpoints: siren play/stop/test, speaker test, relay output, alarm-hub output
-    arm-profiles.ts   # Arm profile CRUD, set-current, enable/disable arm alarm
+    device-actions.ts # Action endpoints: siren play/stop/test, speaker test/stop-siren, relay output, alarm-hub output
+    arm-profiles.ts   # Arm profile CRUD, set-current, enable/disable arm alarm (local alarm manager)
+    external-arm-profiles.ts # Global Alarm Manager arm profiles: CRUD, per-profile arm/disarm (snake_case, delays in seconds)
     users.ts          # Read-only Protect users + UniFi Identity (ULP) users
     pos.ts            # Point-of-sale transaction ingestion (overlays POS data on footage)
     liveviews.ts      # Live view CRUD
     files.ts          # Device asset file listing, multipart upload
     alarm-manager.ts  # Alarm manager webhook trigger
     system.ts         # NVR info, Protect application info
-    subscriptions.ts  # WebSocket subscriptions for devices and events (count and size budget, bounded close)
+    subscriptions.ts  # WebSocket subscriptions for devices, events and model-key updates (count and size budget, bounded close)
   schemas/            # Zod output schemas for tools/list metadata + runtime validation
     common.ts         # passthroughObject(), looseOutput(), dryRunPreviewFields, nullableString(), hardwareModelFields(), listResultSchema()
     cameras.ts        # cameraSchema, rtspStreamSchema, talkbackSessionOutputSchema
     devices.ts        # DEVICE_SCHEMAS map for the config-driven device types
-    misc.ts           # nvr, user, ulp-user, liveview, arm-profile, file, subscription schemas
+    misc.ts           # nvr, user, ulp-user, liveview, arm-profile, external-arm-profile, file, subscription schemas
     pos.ts            # posTransactionOutputSchema
   utils/
     limits.ts         # Payload ceilings and timeouts, derived from the SDK's stdio buffer size and request timeout

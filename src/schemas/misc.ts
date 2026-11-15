@@ -42,12 +42,19 @@ const doorbellSettingsSchema = passthroughObject({
   customImages: unknownField("Configured custom LCD images (array of objects: preview, sprite)"),
 });
 
+const nvrFeatureFlagsSchema = passthroughObject({
+  useExternalAlarmManager: unknownField(
+    "true when the global Alarm Manager owns arming: the external arm-profile tools apply and the local ones fail (boolean, added in 7.4.x, verified live 7.4.99)"
+  ),
+});
+
 export const nvrSchema = passthroughObject({
   id: idField("NVR ID"),
   modelKey: nullableString('Always "nvr"'),
   name: nullableString("NVR name"),
   ...hardwareModelFields(),
   mac: nullableString("MAC address, added in 7.3.x"),
+  featureFlags: nvrFeatureFlagsSchema.nullable().optional(),
   doorbellSettings: doorbellSettingsSchema.nullable().optional(),
   armMode: armModeSchema.nullable().optional(),
 });
@@ -78,7 +85,7 @@ export const ulpUserSchema = passthroughObject({
   fullName: nullableString("Full name"),
   email: nullableString(
     "Email address, added in 7.3.x. Empty string for service accounts " +
-      "(verified live 7.3.70)"
+      "(verified live 7.4.99)"
   ),
   status: nullableString("Account status, e.g. ACTIVE"),
 });
@@ -126,6 +133,36 @@ export const armProfileSchema = passthroughObject({
 
 export const armProfileListOutputSchema = listResultSchema(armProfileSchema);
 export const armProfileOutputSchema = { ...armProfileSchema.shape };
+
+// --- External arm profiles (global Alarm Manager) ---
+// Fields from the 7.4.99 docs: the API passes the alarm manager's own
+// snake_case records through. The live console has none to sample, so the
+// timestamps, documented as strings, stay unknownField in case they arrive as
+// epoch numbers. modelKey appears on /subscribe/updates items.
+
+export const externalArmProfileSchema = passthroughObject({
+  id: idField("External arm profile ID"),
+  modelKey: nullableString('"externalArmProfile" (on WebSocket update items)'),
+  title: nullableString("Profile title"),
+  alarm_ids: unknownField("Associated alarm IDs (array of strings)"),
+  state: nullableString('Arm state, e.g. "disarmed" or "breached"'),
+  state_set_at: unknownField("When the state was set (timestamp)"),
+  state_promotion_due_at: unknownField("When a pending state change is due (timestamp)"),
+  schedule: unknownField(
+    "Weekly schedule (object keyed sun..sat; each day {type, entries: [{start: {hour, minute}, end: {hour, minute}}]})"
+  ),
+  activation_delay: unknownField("Activation delay in seconds (number)"),
+  deactivation_delay: unknownField("Deactivation delay in seconds (number)"),
+  has_pin: unknownField("Whether a PIN is set; the PIN itself is not returned (boolean)"),
+  active_breach_id: unknownField("ID of the current breach, if any (number)"),
+  created_at: unknownField("Creation time (timestamp)"),
+  updated_at: unknownField("Last update time (timestamp)"),
+  created_by: nullableString("Creator"),
+  updated_by: nullableString("Last editor"),
+});
+
+export const externalArmProfileListOutputSchema = listResultSchema(externalArmProfileSchema);
+export const externalArmProfileOutputSchema = { ...externalArmProfileSchema.shape };
 
 // --- Files ---
 // Device asset files (only fileType=animations supported). The 7.3.70 docs show

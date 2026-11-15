@@ -110,6 +110,29 @@ export function registerDeviceActionTools(
     }
   );
 
+  server.registerTool(
+    "protect_stop_speaker_siren",
+    {
+      description: "Stop a siren playing on a speaker. Requires confirm: true: it silences an alarm siren. Returns HTTP 400 if the speaker is offline or its firmware is too old for sirens.",
+      inputSchema: {
+        id: resourceId().describe("Speaker ID"),
+        confirm: STOP_SIREN.input,
+        dryRun: dryRunInput(),
+      },
+      annotations: DESTRUCTIVE,
+    },
+    async ({ id, confirm, dryRun }) => {
+      const path = safePath`/speakers/${id}/stop-siren`;
+      if (dryRun) {
+        return formatDryRun("POST", path);
+      }
+      const denied = STOP_SIREN.check(confirm);
+      if (denied) return denied;
+      const data = await client.post(path);
+      return formatSuccess(data);
+    }
+  );
+
   // --- Relays ---
 
   server.registerTool(

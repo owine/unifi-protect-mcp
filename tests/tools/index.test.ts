@@ -3,7 +3,7 @@ import { createMockServer, createMockClient } from "./_helpers.js";
 import { registerAllTools } from "../../src/tools/index.js";
 
 const SYSTEM_TOOLS = ["protect_get_info", "protect_list_nvrs"];
-const SUBSCRIPTION_TOOLS = ["protect_subscribe_devices", "protect_subscribe_events"];
+const SUBSCRIPTION_TOOLS = ["protect_subscribe_devices", "protect_subscribe_events", "protect_subscribe_updates"];
 
 const CAMERA_TOOLS = [
   "protect_list_cameras",
@@ -52,6 +52,7 @@ const DEVICE_ACTION_TOOLS = [
   "protect_stop_siren",
   "protect_test_siren_sound",
   "protect_test_speaker_sound",
+  "protect_stop_speaker_siren",
   "protect_activate_relay_output",
   "protect_trigger_alarm_hub_output",
 ];
@@ -88,6 +89,16 @@ const ARM_PROFILE_TOOLS = [
   "protect_disable_arm_alarm",
 ];
 
+const EXTERNAL_ARM_PROFILE_TOOLS = [
+  "protect_list_external_arm_profiles",
+  "protect_get_external_arm_profile",
+  "protect_create_external_arm_profile",
+  "protect_update_external_arm_profile",
+  "protect_delete_external_arm_profile",
+  "protect_arm_external_arm_profile",
+  "protect_disarm_external_arm_profile",
+];
+
 const READ_ONLY_TOOLS = [
   ...SYSTEM_TOOLS,
   ...SUBSCRIPTION_TOOLS,
@@ -104,6 +115,8 @@ const READ_ONLY_TOOLS = [
   "protect_list_files",
   // arm profiles read-only
   "protect_list_arm_profiles",
+  "protect_list_external_arm_profiles",
+  "protect_get_external_arm_profile",
   ...USER_TOOLS,
 ];
 
@@ -116,6 +129,7 @@ const ALL_TOOLS_RW = [
   ...LIVEVIEW_TOOLS,
   ...FILE_TOOLS,
   ...ARM_PROFILE_TOOLS,
+  ...EXTERNAL_ARM_PROFILE_TOOLS,
   ...USER_TOOLS,
   ...POS_TOOLS,
 ];

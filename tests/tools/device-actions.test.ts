@@ -138,6 +138,37 @@ describe("device action tools", () => {
     });
   });
 
+  describe("protect_stop_speaker_siren", () => {
+    it("refuses without confirm and does not call the client", async () => {
+      mockFn(client, "post").mockClear();
+      const result = await handlers.get("protect_stop_speaker_siren")!({ id: "sp1" });
+      expectError(result);
+      expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+
+    it("stops the speaker siren with confirm", async () => {
+      // 204 No Content: the client resolves an empty string.
+      mockFn(client, "post").mockResolvedValue("");
+      const result = await handlers.get("protect_stop_speaker_siren")!({ id: "sp1", confirm: true });
+      expect(result.isError).toBeFalsy();
+      expect(mockFn(client, "post")).toHaveBeenCalledWith("/speakers/sp1/stop-siren");
+    });
+
+    it("returns error on failure (offline speaker or old firmware)", async () => {
+      mockFn(client, "post").mockRejectedValue(new Error("HTTP 400"));
+      const result = await handlers.get("protect_stop_speaker_siren")!({ id: "sp1", confirm: true });
+      expectError(result);
+    });
+
+    it("dry-run needs no confirm and does not call the client", async () => {
+      mockFn(client, "post").mockClear();
+      const result = await handlers.get("protect_stop_speaker_siren")!({ id: "sp1", dryRun: true });
+      const data = JSON.parse(result.content[0].text);
+      expect(data).toMatchObject({ dryRun: true, action: "POST", path: "/speakers/sp1/stop-siren" });
+      expect(mockFn(client, "post")).not.toHaveBeenCalled();
+    });
+  });
+
   describe("protect_activate_relay_output", () => {
     it("refuses without confirm and does not call the client", async () => {
       mockFn(client, "post").mockClear();
@@ -285,6 +316,7 @@ describe("device action tools - annotations", () => {
     "protect_stop_siren",
     "protect_test_siren_sound",
     "protect_test_speaker_sound",
+    "protect_stop_speaker_siren",
     "protect_activate_relay_output",
     "protect_trigger_alarm_hub_output",
   ];
@@ -299,6 +331,7 @@ describe("device action tools - annotations", () => {
     "protect_activate_relay_output",
     "protect_trigger_alarm_hub_output",
     "protect_stop_siren",
+    "protect_stop_speaker_siren",
   ]);
 
   // An explicit state is safe to repeat, but a pulse or duration is not: a

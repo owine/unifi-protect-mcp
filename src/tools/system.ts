@@ -26,7 +26,7 @@ export function registerSystemTools(
     "protect_list_nvrs",
     {
       description:
-        "Get the NVR (Network Video Recorder) console info. NOTE: despite the name, the Protect Integration API's /nvrs endpoint returns a SINGLE NVR object, not an array. Returns: id, modelKey, name, type (e.g. UNVR-PRO), guid, mac, doorbellSettings (defaultMessageText, defaultMessageResetTimeoutMs, customMessages[], customImages[] (preview, sprite)), armMode (status, armProfileId, armedAt, willBeArmedAt, breachDetectedAt, breachEventCount, breachTriggerEventId, breachEventId).",
+        "Get the NVR (Network Video Recorder) console info. NOTE: despite the name, the Protect Integration API's /nvrs endpoint returns a SINGLE NVR object, not an array. Returns: id, modelKey, name, type (e.g. UNVR-PRO), guid, mac, featureFlags (useExternalAlarmManager: true when the global Alarm Manager owns arming, so the external arm-profile tools apply), doorbellSettings (defaultMessageText, defaultMessageResetTimeoutMs, customMessages[], customImages[] (preview, sprite)), armMode (status, armProfileId, armedAt, willBeArmedAt, breachDetectedAt, breachEventCount, breachTriggerEventId, breachEventId).",
       outputSchema: nvrOutputSchema,
       annotations: READ_ONLY,
     },

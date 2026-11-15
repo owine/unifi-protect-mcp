@@ -18,6 +18,9 @@ import {
 } from "../../src/schemas/devices.js";
 import {
   armProfileSchema,
+  externalArmProfileListOutputSchema,
+  externalArmProfileOutputSchema,
+  externalArmProfileSchema,
   fileListOutputSchema,
   fileOutputSchema,
   fileSchema,
@@ -1043,5 +1046,94 @@ describe("looseOutput", () => {
 
   it("publishes an object schema without additionalProperties: false", () => {
     expect(z.toJSONSchema(looseOutput({ id: z.string() }))).not.toHaveProperty("additionalProperties", false);
+  });
+});
+
+describe("output schemas (7.4.99)", () => {
+  it("nvr schema accepts a real 7.4.99 /nvrs response with featureFlags (captured live 2026-11-15)", () => {
+    const sample = {
+      id: "67f5751003927603e40003ec",
+      modelKey: "nvr",
+      name: "Melrose NVR Pro",
+      type: "UNVR-PRO",
+      guid: "10b3fc63-28eb-4f7e-b8de-7579cd609cf5",
+      mac: "0CEA1447C0A4",
+      featureFlags: { useExternalAlarmManager: true },
+      doorbellSettings: {
+        defaultMessageText: "WELCOME",
+        defaultMessageResetTimeoutMs: 60000,
+        customMessages: ["Please Leave Delivery at Door"],
+        customImages: [],
+      },
+      armMode: {
+        status: "disabled",
+        armedAt: null,
+        willBeArmedAt: null,
+        breachDetectedAt: null,
+        breachEventCount: 0,
+        breachTriggerEventId: null,
+        breachEventId: null,
+      },
+    };
+    expect(nvrSchema.parse(sample)).toEqual(sample);
+  });
+
+  it("nvr schema accepts featureFlags explicitly null", () => {
+    expect(nvrSchema.safeParse({ id: "x", featureFlags: null }).success).toBe(true);
+  });
+
+  it("sensor schema accepts the 7.4.99 isMountedIncorrectly field", () => {
+    // The 7.4.99 sensor doc sample is the 7.3.70 one plus this field.
+    const sample = { ...SENSOR_DOC_7_3_70, isMountedIncorrectly: true };
+    expect(sensorSchema.parse(sample)).toEqual(sample);
+  });
+
+  /** GET /v1/external/arm-profiles/{id}: 7.4.99 docs response sample, verbatim, schedule days expanded. */
+  const DAY = { type: "intervals", entries: [{ start: { hour: 0, minute: 0 }, end: { hour: 0, minute: 0 } }] };
+  const EXTERNAL_ARM_PROFILE_DOC_7_4_99 = {
+    id: "string",
+    title: "string",
+    alarm_ids: ["string"],
+    created_at: "string",
+    state: "breached",
+    state_set_at: "string",
+    state_promotion_due_at: "string",
+    schedule: { sun: DAY, mon: DAY, tue: DAY, wed: DAY, thu: DAY, fri: DAY, sat: DAY },
+    updated_at: "string",
+    created_by: "string",
+    updated_by: "string",
+    active_breach_id: 0,
+    has_pin: true,
+    activation_delay: 3600,
+    deactivation_delay: 3600,
+  };
+
+  it("external arm profile schema accepts the verbatim 7.4.99 doc sample", () => {
+    expect(externalArmProfileSchema.parse(EXTERNAL_ARM_PROFILE_DOC_7_4_99)).toEqual(EXTERNAL_ARM_PROFILE_DOC_7_4_99);
+    expect(looseOutput(externalArmProfileOutputSchema).safeParse(EXTERNAL_ARM_PROFILE_DOC_7_4_99).success).toBe(true);
+  });
+
+  it("external arm profile list schema accepts the live 7.4.99 empty list and the doc sample", () => {
+    const list = looseOutput(externalArmProfileListOutputSchema);
+    expect(list.safeParse({ result: [] }).success).toBe(true);
+    expect(list.safeParse({ result: [EXTERNAL_ARM_PROFILE_DOC_7_4_99] }).success).toBe(true);
+  });
+
+  it("external arm profile schema tolerates epoch-number timestamps and nulls", () => {
+    // Documented as strings but unverified live: a number must not hard-fail.
+    expect(
+      externalArmProfileSchema.safeParse({
+        id: "p1",
+        created_at: 1763220000000,
+        state_set_at: null,
+        state_promotion_due_at: null,
+        schedule: null,
+        created_by: null,
+      }).success
+    ).toBe(true);
+  });
+
+  it("external arm profile schema still rejects a non-string id", () => {
+    expect(externalArmProfileSchema.safeParse({ id: 12345 }).success).toBe(false);
   });
 });

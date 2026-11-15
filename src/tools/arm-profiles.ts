@@ -46,7 +46,7 @@ export function registerArmProfileTools(
     "protect_list_arm_profiles",
     {
       description:
-        "List all arm profiles (only available when using the local alarm manager — the standalone NVR alarm system, not Protect cloud alerts). Returns array; each profile (7.3.70 docs): id, name, automations[], creator, schedules[], recordEverything, activationDelay (0 | 60000 | 300000 | 600000), createdAt, updatedAt." + PAGING_NOTE,
+        "List all arm profiles (only available when using the local alarm manager — the standalone NVR alarm system, not Protect cloud alerts). When the console uses the global Alarm Manager instead (protect_list_nvrs featureFlags.useExternalAlarmManager is true), every local arm-profile tool fails with HTTP 400; use the external arm-profile tools. Returns array; each profile (7.4.99 docs): id, name, automations[], creator, schedules[], recordEverything, activationDelay (0 | 60000 | 300000 | 600000), createdAt, updatedAt." + PAGING_NOTE,
       inputSchema: pagingInput,
       outputSchema: armProfileListOutputSchema,
       annotations: READ_ONLY,

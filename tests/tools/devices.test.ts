@@ -167,7 +167,7 @@ describe("device tools - read-only mode", () => {
   }
 });
 
-describe("device tools - descriptions (7.3.70)", () => {
+describe("device tools - descriptions (7.4.99)", () => {
   const { server, configs } = createMockServer();
   const client = createMockClient();
   registerDeviceTools(server, client, false);
@@ -183,11 +183,11 @@ describe("device tools - descriptions (7.3.70)", () => {
   });
 
   for (const cfg of _DEVICE_CONFIGS) {
-    it(`${cfg.singular} returns text references 7.3.70, not 7.3.47`, () => {
-      expect(cfg.returns).toContain("7.3.70");
+    it(`${cfg.singular} returns text references 7.4.99, not 7.3.47`, () => {
+      expect(cfg.returns).toContain("7.4.99");
       expect(cfg.returns).not.toContain("7.3.47");
-      expect(desc(`protect_list_${cfg.plural}`)).toContain("7.3.70");
-      expect(desc(`protect_get_${cfg.singular}`)).toContain("7.3.70");
+      expect(desc(`protect_list_${cfg.plural}`)).toContain("7.4.99");
+      expect(desc(`protect_get_${cfg.singular}`)).toContain("7.4.99");
     });
   }
 

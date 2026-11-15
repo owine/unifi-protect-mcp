@@ -1,6 +1,6 @@
 # UniFi Protect MCP Server
 
-An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.3.70**, with tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, point-of-sale events, NVR status, and WebSocket subscriptions.
+An MCP (Model Context Protocol) server that exposes UniFi Protect's Integration REST API as tools for Claude Code and other MCP clients. Aligned with UniFi Protect API **7.4.99**, with tools covering cameras, lights, sensors, chimes, viewers, sirens, fobs, relays, speakers, bridges, link stations, alarm hubs, arm profiles, live views, files, users, point-of-sale events, NVR status, and WebSocket subscriptions.
 
 ## Prerequisites
 
@@ -248,6 +248,7 @@ Read tools, and write tools that return the resource, declare an `outputSchema`,
 |---|---|
 | `protect_subscribe_devices` | Subscribe via WebSocket to device state updates for a short window (not over Cloud Connector) |
 | `protect_subscribe_events` | Subscribe via WebSocket to event notifications for a short window (not over Cloud Connector) |
+| `protect_subscribe_updates` | Subscribe via WebSocket to create/update messages for the model keys you choose, including events and external arm profiles, for a short window (not over Cloud Connector) |
 
 ### Cameras
 | Tool | Description |
@@ -325,6 +326,7 @@ Read tools, and write tools that return the resource, declare an `outputSchema`,
 | `protect_get_speaker` | Get speaker details by ID |
 | `protect_update_speaker` | **DESTRUCTIVE:** Update speaker settings (volume, mic) |
 | `protect_test_speaker_sound` | Test the speaker sound at a given volume |
+| `protect_stop_speaker_siren` | **DESTRUCTIVE:** Stop a siren playing on a speaker; it silences an alarm (requires `confirm: true`) |
 
 ### Bridges
 | Tool | Description |
@@ -358,6 +360,20 @@ Read tools, and write tools that return the resource, declare an `outputSchema`,
 | `protect_delete_arm_profile` | **DESTRUCTIVE:** Delete an arm profile by ID (requires `confirm: true`) |
 | `protect_enable_arm_alarm` | Arm the alarm using the current profile |
 | `protect_disable_arm_alarm` | **DESTRUCTIVE:** Disarm the alarm (requires `confirm: true`) |
+
+### Arm Profiles — global Alarm Manager
+
+These apply when `protect_list_nvrs` reports `featureFlags.useExternalAlarmManager: true`. The console then refuses the local arm-profile tools above with HTTP 400. Field names are the Alarm Manager's own snake_case, and delays are in seconds.
+
+| Tool | Description |
+|---|---|
+| `protect_list_external_arm_profiles` | List the Alarm Manager's arm profiles (pages with `limit`/`offset`) |
+| `protect_get_external_arm_profile` | Get one external arm profile by ID |
+| `protect_create_external_arm_profile` | Create an external arm profile |
+| `protect_update_external_arm_profile` | **DESTRUCTIVE:** Update an external arm profile (requires `confirm: true` to change its schedule, alarms, delays or PIN) |
+| `protect_delete_external_arm_profile` | **DESTRUCTIVE:** Delete an external arm profile (requires `confirm: true`) |
+| `protect_arm_external_arm_profile` | Arm one external arm profile |
+| `protect_disarm_external_arm_profile` | **DESTRUCTIVE:** Disarm one external arm profile (requires `confirm: true`) |
 
 ### Live Views
 | Tool | Description |

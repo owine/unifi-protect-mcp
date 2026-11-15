@@ -211,6 +211,9 @@ const CONFIRM_GATED: [string, Record<string, unknown>, "post" | "patch" | "delet
   ["protect_create_talkback", { id: "cam1" }, "post"],
   // Weaken alarm coverage.
   ["protect_stop_siren", { id: "s1" }, "post"],
+  ["protect_stop_speaker_siren", { id: "sp1" }, "post"],
+  ["protect_disarm_external_arm_profile", { id: "xp1" }, "post"],
+  ["protect_delete_external_arm_profile", { id: "xp1" }, "delete"],
   ["protect_delete_arm_profile", { id: "p1" }, "delete"],
   ["protect_set_current_arm_profile", { armProfileId: "p1" }, "patch"],
   // Field-level: only these settings need confirm (see below for the rest).
@@ -218,6 +221,7 @@ const CONFIRM_GATED: [string, Record<string, unknown>, "post" | "patch" | "delet
   ["protect_update_sensor", { id: "s1", settings: { armProfileIds: null } }, "patch"],
   ["protect_update_fob", { id: "f1", settings: { armControlSettings: { enabled: false } } }, "patch"],
   ["protect_update_arm_profile", { id: "p1", settings: { schedules: [] } }, "patch"],
+  ["protect_update_external_arm_profile", { id: "xp1", settings: { pin_code: null } }, "patch"],
   ["protect_update_siren", { id: "s1", settings: { volume: 1 } }, "patch"],
 ];
 
@@ -407,6 +411,11 @@ describe("every alarm-related field is gated", () => {
     ["protect_update_arm_profile", "automations", []],
     ["protect_update_arm_profile", "activationDelay", 600000],
     ["protect_update_arm_profile", "recordEverything", false],
+    ["protect_update_external_arm_profile", "schedule", null],
+    ["protect_update_external_arm_profile", "alarm_ids", []],
+    ["protect_update_external_arm_profile", "activation_delay", 3600],
+    ["protect_update_external_arm_profile", "deactivation_delay", 3600],
+    ["protect_update_external_arm_profile", "pin_code", null],
     ["protect_update_siren", "volume", 1],
   ];
   let mcpClient: Client;

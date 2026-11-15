@@ -6,6 +6,7 @@ import {
   mockFn,
   expectSuccess,
   expectError,
+  parseInputSchema,
 } from "./_helpers.js";
 import {
   registerSubscriptionTools,
@@ -187,6 +188,68 @@ describe("subscription tools", () => {
 
     it("has read-only annotations", () => {
       expect(configs.get("protect_subscribe_events")!.annotations).toMatchObject({
+        readOnlyHint: true,
+        destructiveHint: false,
+      });
+    });
+  });
+
+  describe("protect_subscribe_updates", () => {
+    // Captured live on 7.4.99 (modelKeys=camera,nvr,chime,event): an update
+    // carries only the changed fields beside id and modelKey.
+    const LIVE_UPDATE = {
+      item: { cameraIds: ["683f6e44001d1603e4320bd8"], id: "6816ad3b0164f003e42a7e44", modelKey: "chime" },
+      type: "update",
+    };
+
+    it("subscribes to the chosen model keys, once each, comma-separated", async () => {
+      const ws = createMockWebSocket();
+      mockFn(client, "connectWebSocket").mockReturnValue(ws);
+      const promise = handlers.get("protect_subscribe_updates")!({
+        modelKeys: ["camera", "externalArmProfile", "camera", "linkStation"],
+        duration: 1,
+      });
+      setTimeout(() => {
+        ws.emit("open");
+        ws.emit("message", JSON.stringify(LIVE_UPDATE));
+      }, 10);
+
+      const result = await promise;
+      expectSuccess(result, "6816ad3b0164f003e42a7e44");
+      expect(mockFn(client, "connectWebSocket")).toHaveBeenCalledWith(
+        "/subscribe/updates?modelKeys=camera,externalArmProfile,linkStation",
+        expect.objectContaining({ maxPayload: expect.any(Number) })
+      );
+    });
+
+    it.each([
+      ["no model keys", []],
+      // The console refuses the resources' own lower-case spelling (live 7.4.99).
+      ["the lower-case linkstation", ["linkstation"]],
+      ["an unknown key", ["bogus"]],
+    ])("rejects %s before connecting", (_label, modelKeys) => {
+      const schema = parseInputSchema(configs, "protect_subscribe_updates");
+      expect(schema.safeParse({ modelKeys }).success).toBe(false);
+    });
+
+    it("reports the console refusing the subscription", async () => {
+      // What 7.4.99 sends for a query it cannot parse: an error frame, then a
+      // 4500 close. The listen keeps the frame and reports the close.
+      const ws = createMockWebSocket();
+      mockFn(client, "connectWebSocket").mockReturnValue(ws);
+      const promise = handlers.get("protect_subscribe_updates")!({ modelKeys: ["camera"], duration: 1 });
+      setTimeout(() => {
+        ws.emit("open");
+        ws.emit("message", JSON.stringify({ error: "Failed to parse 'request-query'", name: "AJV_PARSE_ERROR" }));
+        ws.emit("close", 4500, Buffer.from("Failed to parse 'request-query'"));
+      }, 10);
+
+      const result = await promise;
+      expectSuccess(result, "code 4500");
+    });
+
+    it("has read-only annotations", () => {
+      expect(configs.get("protect_subscribe_updates")!.annotations).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
       });
