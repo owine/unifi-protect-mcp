@@ -4,11 +4,15 @@
 // - read-only mode serves only read-only tools, read-write mode adds writes;
 // - an upload too large for one MCP message is refused with an error, and the
 //   server is still there afterwards (its transport used to close, ending the
-//   process).
-// Only dry runs are called, so nothing contacts a console.
+//   process);
+// - it refuses to start when the console cannot be used, so an MCP host lists
+//   it as failed rather than connected.
+// The serving runs skip the startup check and call only dry runs, and the
+// failing run points at a local listener, so nothing contacts a console.
 //
 // Usage: node scripts/smoke-stdio.mjs <path to the unifi-protect-mcp binary>
 import { realpathSync } from "node:fs";
+import { createServer } from "node:net";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -39,6 +43,7 @@ async function connect(readOnly) {
       UNIFI_PROTECT_HOST: "127.0.0.1",
       UNIFI_PROTECT_API_KEY: "smoke-test",
       UNIFI_PROTECT_READ_ONLY: String(readOnly),
+      UNIFI_PROTECT_STARTUP_CHECK: "false",
     },
   }));
   const served = client.getServerVersion()?.version;
@@ -46,6 +51,43 @@ async function connect(readOnly) {
   if (!client.getInstructions()) throw new Error("server sent no instructions");
   return client;
 }
+
+// A local listener that drops every connection stands in for a console that
+// cannot be used: the startup check fails, and the server must exit with its
+// reason rather than complete the MCP handshake.
+async function expectStartupFailure() {
+  const dropper = createServer((socket) => socket.destroy());
+  await new Promise((resolve) => dropper.listen(0, "127.0.0.1", resolve));
+  const client = new Client({ name: "smoke", version: "0.0.0" });
+  const failing = new StdioClientTransport({
+    command: bin,
+    stderr: "pipe",
+    env: {
+      ...process.env,
+      UNIFI_PROTECT_HOST: `127.0.0.1:${dropper.address().port}`,
+      UNIFI_PROTECT_API_KEY: "smoke-test",
+      // Set on explicitly, so an opt-out inherited from the shell cannot
+      // make this pass for the wrong reason.
+      UNIFI_PROTECT_STARTUP_CHECK: "true",
+    },
+  });
+  let log = "";
+  failing.stderr?.on("data", (chunk) => { log += chunk; });
+  try {
+    await client.connect(failing);
+  } catch {
+    if (!log.includes("Cannot connect to UniFi Protect")) {
+      throw new Error(`server exited without the connection error; stderr was: ${log}`);
+    }
+    return;
+  } finally {
+    await client.close();
+    dropper.close();
+  }
+  throw new Error("server completed the MCP handshake although the console cannot be used");
+}
+
+await expectStartupFailure();
 
 const readOnlyClient = await connect(true);
 const readOnlyTools = (await readOnlyClient.listTools()).tools;
@@ -68,4 +110,4 @@ if (!oversized.isError) throw new Error("an upload over the message limit must b
 await client.listTools();
 await client.close();
 
-console.error(`smoke ok: ${version} serves ${readOnlyTools.length} read-only / ${allTools.length} tools over stdio, and refuses an oversized upload`);
+console.error(`smoke ok: ${version} refuses to start without a console, serves ${readOnlyTools.length} read-only / ${allTools.length} tools over stdio, and refuses an oversized upload`);

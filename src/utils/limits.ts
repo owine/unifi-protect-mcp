@@ -73,6 +73,13 @@ export const MAX_ERROR_BODY_BYTES = 64 * 1024;
 export const REQUEST_TIMEOUT_MS = 25_000;
 
 /**
+ * The startup console check. It runs before the stdio handshake, so it must
+ * fail well inside the time an MCP host waits for a server to come up;
+ * otherwise the host times the server out with no reason in its log.
+ */
+export const STARTUP_CHECK_TIMEOUT_MS = 10_000;
+
+/**
  * Time left for the MCP client between our timeout and its own, so the
  * server's error (which names the call, and says whether a write may have
  * landed) reaches the model instead of a bare client-side timeout.

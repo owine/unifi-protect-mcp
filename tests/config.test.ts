@@ -76,6 +76,25 @@ describe("loadConfig", () => {
     expect(config.readOnly).toBe(false);
   });
 
+  it("keeps the startup check on unless UNIFI_PROTECT_STARTUP_CHECK turns it off", () => {
+    process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    delete process.env.UNIFI_PROTECT_STARTUP_CHECK;
+    expect(loadConfig().skipStartupCheck).toBeUndefined();
+    // A typo keeps the check, like every other flag here.
+    for (const value of ["true", "1", "flase", ""]) {
+      process.env.UNIFI_PROTECT_STARTUP_CHECK = value;
+      expect(loadConfig().skipStartupCheck).toBeUndefined();
+    }
+  });
+
+  it.each(["false", "FALSE", "0", "no", "off"])("skips the startup check when UNIFI_PROTECT_STARTUP_CHECK is %s", (value) => {
+    process.env.UNIFI_PROTECT_HOST = "192.168.1.1";
+    process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
+    process.env.UNIFI_PROTECT_STARTUP_CHECK = value;
+    expect(loadConfig().skipStartupCheck).toBe(true);
+  });
+
   it("calls process.exit(1) when UNIFI_PROTECT_HOST is missing", () => {
     delete process.env.UNIFI_PROTECT_HOST;
     process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
