@@ -9,8 +9,11 @@ import { consoleDispatcher, consoleTlsOptions } from "./tls.js";
 import { SERVER_VERSION } from "./version.js";
 import {
   BINARY_TIMEOUT_MS,
+  DEFAULT_RETRY_AFTER_MS,
   MAX_ERROR_BODY_BYTES,
+  MAX_RATE_LIMIT_RETRIES,
   MAX_RESPONSE_BYTES,
+  MAX_RETRY_AFTER_MS,
   MAX_SNAPSHOT_BYTES,
   REQUEST_TIMEOUT_MS,
   STARTUP_CHECK_TIMEOUT_MS,
@@ -41,6 +44,43 @@ function requestSignal(timeoutMs: number): AbortSignal {
 }
 
 const MS_PER_SECOND = 1000;
+
+const TOO_MANY_REQUESTS = 429;
+
+/**
+ * The wait a 429's Retry-After asks for, in ms: delay-seconds or an HTTP
+ * date. Absent or unreadable, the console's limit window.
+ */
+export function retryAfterMs(header: string | null, now: number = Date.now()): number {
+  const value = header?.trim() ?? "";
+  if (/^\d+$/.test(value)) return Number(value) * MS_PER_SECOND;
+  // An HTTP date always names its day and month; Date.parse alone would read
+  // "-5" as the year 5 BC.
+  const date = /[A-Za-z]/.test(value) ? Date.parse(value) : NaN;
+  return Number.isNaN(date) ? DEFAULT_RETRY_AFTER_MS : Math.max(0, date - now);
+}
+
+/**
+ * Wait ms, unless signal aborts first: then reject with its reason, as fetch
+ * does, so a timeout during the wait still reads as the request's timeout.
+ */
+function wait(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(signal.reason as Error);
+      return;
+    }
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal.reason as Error);
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+}
 /** Error text is forwarded to the MCP client, so keep it context-sized. */
 const MAX_ERROR_BODY_CHARS = 2_000;
 
@@ -266,26 +306,42 @@ export class ProtectClient {
    * The one place a request is sent: every path builds its URL, applies
    * `redirect: "error"` (so X-API-KEY never follows a redirect) and its
    * timeout, and turns a non-2xx status into an error with a bounded body.
+   *
+   * A rate-limited request (429) is sent again after its Retry-After, a few
+   * times. The timeout covers the retries and their waits, so they never
+   * stretch a call past its budget. Bodies here are strings or FormData, which
+   * fetch can send again.
    */
   private async send(
     method: string,
     path: string,
     init: { body?: BodyInit; headers: Record<string, string>; timeoutMs: number }
   ): Promise<Response> {
-    const response = await fetchWithCause(this.resolve(path), {
-      method,
-      headers: init.headers,
-      ...(init.body !== undefined ? { body: init.body } : {}),
-      redirect: "error",
-      signal: requestSignal(init.timeoutMs),
-      dispatcher: this.dispatcher,
-    });
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status}: ${await readErrorBody(response)}`
-      );
+    const url = this.resolve(path);
+    const signal = requestSignal(init.timeoutMs);
+    for (let retries = 0; ; retries++) {
+      const response = await fetchWithCause(url, {
+        method,
+        headers: init.headers,
+        ...(init.body !== undefined ? { body: init.body } : {}),
+        redirect: "error",
+        signal,
+        dispatcher: this.dispatcher,
+      });
+      if (response.ok) return response;
+      if (response.status === TOO_MANY_REQUESTS && retries < MAX_RATE_LIMIT_RETRIES) {
+        const delay = retryAfterMs(response.headers.get("retry-after"));
+        if (delay <= MAX_RETRY_AFTER_MS) {
+          await response.body?.cancel();
+          await wait(delay, signal);
+          continue;
+        }
+      }
+      const retried = response.status === TOO_MANY_REQUESTS && retries > 0
+        ? ` (still rate-limited after ${retries.toString()} ${retries === 1 ? "retry" : "retries"}; wait before calling again)`
+        : "";
+      throw new Error(`HTTP ${response.status.toString()}: ${await readErrorBody(response)}${retried}`);
     }
-    return response;
   }
 
   private async request(
