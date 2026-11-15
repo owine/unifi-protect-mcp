@@ -92,3 +92,21 @@ const CLIENT_TIMEOUT_MARGIN_MS = 15_000;
  * slow snapshot always lost the race.
  */
 export const BINARY_TIMEOUT_MS = DEFAULT_REQUEST_TIMEOUT_MSEC - CLIENT_TIMEOUT_MARGIN_MS;
+
+/**
+ * Rate limiting. Verified live on 7.4.99: the console caps API calls per
+ * second and answers the excess with HTTP 429 and `Retry-After` (in seconds),
+ * which a host's burst of parallel tool calls easily reaches. The 429 body is
+ * the rate limiter's own ({error, windowMs, limit}), sent before the request
+ * reaches Protect, so a rate-limited write was not applied and is retried too.
+ */
+export const MAX_RATE_LIMIT_RETRIES = 3;
+
+/** The wait when a 429 names none: the console's limit window. */
+export const DEFAULT_RETRY_AFTER_MS = 1_000;
+
+/**
+ * The longest Retry-After waited out. Longer is a real throttle rather than a
+ * burst, so the 429 is returned instead of holding the tool call.
+ */
+export const MAX_RETRY_AFTER_MS = 5_000;

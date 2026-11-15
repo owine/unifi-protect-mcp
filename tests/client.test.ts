@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { File } from "node:buffer";
 import { FormData, type RequestInit } from "undici";
-import { ProtectClient } from "../src/client.js";
+import { ProtectClient, retryAfterMs, withCallSignal } from "../src/client.js";
 import type { Config } from "../src/config.js";
 import {
+  DEFAULT_RETRY_AFTER_MS,
   MAX_ERROR_BODY_BYTES,
+  MAX_RATE_LIMIT_RETRIES,
   MAX_RESPONSE_BYTES,
+  MAX_RETRY_AFTER_MS,
   REQUEST_TIMEOUT_MS,
   STARTUP_CHECK_TIMEOUT_MS,
 } from "../src/utils/limits.js";
@@ -289,6 +292,93 @@ describe("ProtectClient", () => {
       fetchMock.mockResolvedValue(body.response);
       await expect(client.get("/nvrs")).rejects.toThrow(/^HTTP 502: <html>gateway error<\/html>/);
       expect(body.pulled()).toBeLessThan(body.chunks);
+    });
+  });
+
+  describe("rate limiting", () => {
+    /** The console's 429 (live 7.4.99): the rate limiter's body and Retry-After. */
+    const limited = (retryAfter: string | null = "0") =>
+      new Response(JSON.stringify({ error: "Too many requests", name: "TOO_MANY_REQUESTS_ERROR", windowMs: 1000, limit: 10 }), {
+        status: 429,
+        headers: { "content-type": "application/json", ...(retryAfter === null ? {} : { "retry-after": retryAfter }) },
+      });
+    const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("retries a rate-limited read and returns its result", async () => {
+      fetchMock.mockResolvedValueOnce(limited()).mockResolvedValueOnce(limited()).mockResolvedValueOnce(ok({ applicationVersion: "7.4.99" }));
+      await expect(client.get("/meta/info")).resolves.toEqual({ applicationVersion: "7.4.99" });
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    // The limiter answers before the request reaches Protect, so a 429'd
+    // write was not applied and is sent again, with the same body.
+    it("retries a rate-limited write with the same body", async () => {
+      fetchMock.mockResolvedValueOnce(limited()).mockResolvedValueOnce(ok({ id: "c1" }));
+      await client.patch("/cameras/c1", { name: "x" });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const bodies = fetchMock.mock.calls.map((call) => (call[1] as RequestInit).body);
+      expect(bodies).toEqual([JSON.stringify({ name: "x" }), JSON.stringify({ name: "x" })]);
+    });
+
+    it("gives up after the retry budget and says so", async () => {
+      fetchMock.mockImplementation(() => Promise.resolve(limited()));
+      await expect(client.get("/nvrs")).rejects.toThrow(
+        new RegExp(`^HTTP 429: .*TOO_MANY_REQUESTS_ERROR.*still rate-limited after ${MAX_RATE_LIMIT_RETRIES.toString()} retries`)
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(MAX_RATE_LIMIT_RETRIES + 1);
+    });
+
+    it("returns a 429 whose Retry-After is too long to wait out at once", async () => {
+      fetchMock.mockResolvedValueOnce(limited(String(MAX_RETRY_AFTER_MS / 1000 + 1)));
+      await expect(client.get("/nvrs")).rejects.toThrow(/^HTTP 429: /);
+      expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it("waits the Retry-After before sending again", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      fetchMock.mockResolvedValueOnce(limited("1")).mockResolvedValueOnce(ok({}));
+      const pending = client.get("/nvrs");
+      await vi.advanceTimersByTimeAsync(999);
+      expect(fetchMock).toHaveBeenCalledOnce();
+      await vi.advanceTimersByTimeAsync(1);
+      await pending;
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("stops waiting when the call is cancelled", async () => {
+      fetchMock.mockResolvedValueOnce(limited("1"));
+      const controller = new AbortController();
+      const pending = withCallSignal(controller.signal, () => client.get("/nvrs"));
+      setTimeout(() => { controller.abort(new DOMException("This operation was aborted", "AbortError")); }, 10);
+      const started = Date.now();
+      await expect(pending).rejects.toThrow("This operation was aborted");
+      expect(Date.now() - started).toBeLessThan(DEFAULT_RETRY_AFTER_MS);
+      expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it("does not retry other errors", async () => {
+      mockFetch("Not Found", { status: 404, contentType: "text/plain" });
+      await expect(client.get("/nvrs")).rejects.toThrow("HTTP 404");
+      expect(fetchMock).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe("retryAfterMs", () => {
+    const now = Date.parse("Sun, 15 Nov 2026 16:21:13 GMT");
+    it.each([
+      ["delay-seconds", "1", 1000],
+      ["zero", "0", 0],
+      ["an HTTP date", "Sun, 15 Nov 2026 16:21:15 GMT", 2000],
+      ["a past HTTP date", "Sun, 15 Nov 2026 16:21:10 GMT", 0],
+      ["no header", null, DEFAULT_RETRY_AFTER_MS],
+      ["an unreadable header", "soon", DEFAULT_RETRY_AFTER_MS],
+      ["a negative number", "-5", DEFAULT_RETRY_AFTER_MS],
+    ])("reads %s", (_label, header, expected) => {
+      expect(retryAfterMs(header, now)).toBe(expected);
     });
   });
 
