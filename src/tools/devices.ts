@@ -43,7 +43,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Light",
     hint: "Known fields: name (string), isLightForceEnabled (boolean), lightModeSettings (object with mode, enableAt), lightDeviceSettings (object with isIndicatorEnabled, pirDuration, pirSensitivity, ledLevel)",
     returns:
-      "id, modelKey, name, mac, state, type, guid, lightModeSettings (mode, enableAt), lightDeviceSettings (isIndicatorEnabled, pirDuration, pirSensitivity, ledLevel), isDark, isLightOn, isLightForceEnabled, lastMotion, isPirMotionDetected, camera (7.3.70 docs)",
+      "id, modelKey, name, mac, state, type, guid, lightModeSettings (mode, enableAt), lightDeviceSettings (isIndicatorEnabled, pirDuration, pirSensitivity, ledLevel), isDark, isLightOn, isLightForceEnabled, lastMotion, isPirMotionDetected, camera (7.4.99 docs)",
   },
   {
     urlPath: "sensors",
@@ -53,7 +53,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Sensor",
     hint: "Known fields: name (string), lightSettings / humiditySettings / temperatureSettings (objects: isEnabled, margin, lowThreshold, highThreshold), motionSettings / glassBreakSettings (objects: isEnabled, sensitivity, sensitivityWhenArmed), alarmSettings (object: isEnabled), scheduleMode (\"always\" | \"when_armed\"), armProfileIds (array of up to 32 strings, or null), hasCustomSensitivityWhenArmed (boolean). leakSettings is read-only. Returns HTTP 409 if a setting is not supported by this sensor",
     returns:
-      "id, modelKey, name, mac, state, type, guid, mountType, featureFlags (temperature, humidity, light, motion, waterLeak, open, tamper, smoke — each {channelCount}), batteryStatus (percentage, isLow), stats (light, humidity, temperature — each {value, status}), lightSettings / humiditySettings / temperatureSettings (isEnabled, margin, lowThreshold, highThreshold), isOpened, openStatusChangedAt, isMotionDetected, motionDetectedAt, motionSettings / glassBreakSettings (isEnabled, sensitivity, sensitivityWhenArmed), scheduleMode, armProfileIds, hasCustomSensitivityWhenArmed, alarmTriggeredAt, alarmSettings, leakDetectedAt, externalLeakDetectedAt, leakSettings (isInternalEnabled, isExternalEnabled), tamperingDetectedAt, wirelessConnectionState (signalState: signalQuality, signalStrength; batteryStatus: percentage, isLow; bridge) (7.3.70 docs)",
+      "id, modelKey, name, mac, state, type, guid, mountType, featureFlags (temperature, humidity, light, motion, waterLeak, open, tamper, smoke — each {channelCount}), batteryStatus (percentage, isLow), stats (light, humidity, temperature — each {value, status}), lightSettings / humiditySettings / temperatureSettings (isEnabled, margin, lowThreshold, highThreshold), isOpened, openStatusChangedAt, isMotionDetected, motionDetectedAt, motionSettings / glassBreakSettings (isEnabled, sensitivity, sensitivityWhenArmed), scheduleMode, armProfileIds, hasCustomSensitivityWhenArmed, alarmTriggeredAt, alarmSettings, leakDetectedAt, externalLeakDetectedAt, leakSettings (isInternalEnabled, isExternalEnabled), tamperingDetectedAt, isMountedIncorrectly, wirelessConnectionState (signalState: signalQuality, signalStrength; batteryStatus: percentage, isLow; bridge) (7.4.99 docs)",
   },
   {
     urlPath: "chimes",
@@ -62,7 +62,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Chime",
     hint: "Known fields: name (string), cameraIds (array of doorbell camera IDs linked to the chime), ringSettings (array of objects: cameraId, volume, ringtoneId, repeatTimes)",
     returns:
-      "id, modelKey, name, mac, state, type, guid, cameraIds (array of camera IDs), ringSettings (array of objects: cameraId, volume, ringtoneId, repeatTimes) — verified live 7.3.70",
+      "id, modelKey, name, mac, state, type, guid, cameraIds (array of camera IDs), ringSettings (array of objects: cameraId, volume, ringtoneId, repeatTimes) — verified live 7.4.99",
   },
   {
     urlPath: "viewers",
@@ -70,7 +70,7 @@ const DEVICES: DeviceConfig[] = [
     plural: "viewers",
     label: "Viewer",
     hint: "Known fields: name (string), liveview (string, liveview ID to display, or null)",
-    returns: "id, modelKey, name, mac, state, type, guid, liveview, streamLimit (7.3.70 docs)",
+    returns: "id, modelKey, name, mac, state, type, guid, liveview, streamLimit (7.4.99 docs)",
   },
   {
     urlPath: "sirens",
@@ -81,7 +81,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Siren",
     hint: "Known fields: name (string), volume (integer 1-100), ledSettings (object with isEnabled boolean)",
     returns:
-      "id, modelKey, name, mac, state, type, guid, volume, ledSettings (isEnabled), sirenStatus (isActive, activatedAt, duration), connectionType, wirelessConnectionState (signalState: signalQuality, signalStrength; batteryStatus: percentage, isLow; bridge) (7.3.70 docs)",
+      "id, modelKey, name, mac, state, type, guid, volume, ledSettings (isEnabled), sirenStatus (isActive, activatedAt, duration), connectionType, wirelessConnectionState (signalState: signalQuality, signalStrength; batteryStatus: percentage, isLow; bridge) (7.4.99 docs)",
   },
   {
     urlPath: "fobs",
@@ -91,7 +91,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Fob",
     hint: "Known fields: name (string). armControlSettings is not documented as patchable; sending it requires confirm: true",
     returns:
-      "id, modelKey, name, mac, state, type, guid, awayState, buttonLabels, featureFlags (buttons[], hasKeypad), armControlSettings (enabled, armProfileId, nightProfileId), keypadSettings (beepEnabled, beepVolume), wirelessConnectionState (signalState: signalQuality, signalStrength; batteryStatus: percentage, isLow; bridge) (7.3.70 docs)",
+      "id, modelKey, name, mac, state, type, guid, awayState, buttonLabels, featureFlags (buttons[], hasKeypad), armControlSettings (enabled, armProfileId, nightProfileId), keypadSettings (beepEnabled, beepVolume), wirelessConnectionState (signalState: signalQuality, signalStrength; batteryStatus: percentage, isLow; bridge) (7.4.99 docs)",
   },
   {
     urlPath: "relays",
@@ -100,7 +100,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Relay",
     hint: "Known fields: name (string), ledSettings (object with isEnabled boolean)",
     returns:
-      "id, modelKey, name, mac, state, type, guid, ledSettings (isEnabled), outputs (array of objects: id, name, type, delay, pulseDuration, state, rebootState — id is the outputId for protect_activate_relay_output), inputs (array of objects: id, name, state, actionTrigger, actionType, actionOutputId), wirelessConnectionState (signalState: signalQuality, signalStrength; batteryStatus: percentage, isLow; bridge) (7.3.70 docs)",
+      "id, modelKey, name, mac, state, type, guid, ledSettings (isEnabled), outputs (array of objects: id, name, type, delay, pulseDuration, state, rebootState — id is the outputId for protect_activate_relay_output), inputs (array of objects: id, name, state, actionTrigger, actionType, actionOutputId), wirelessConnectionState (signalState: signalQuality, signalStrength; batteryStatus: percentage, isLow; bridge) (7.4.99 docs)",
   },
   {
     urlPath: "speakers",
@@ -109,7 +109,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Speaker",
     hint: "Known fields: name (string), volume (integer 0-100), micVolume (integer 0-100), isMicEnabled (boolean)",
     returns:
-      "id, modelKey, name, mac, state, type, guid, volume, micVolume, isMicEnabled, speakerState (status, mode), featureFlags (hasMic) (7.3.70 docs)",
+      "id, modelKey, name, mac, state, type, guid, volume, micVolume, isMicEnabled, speakerState (status, mode), featureFlags (hasMic) (7.4.99 docs)",
   },
   {
     urlPath: "bridges",
@@ -118,7 +118,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Bridge",
     hint: "Known fields: name (string)",
     returns:
-      "id, modelKey, name, mac, state, type, guid, platform, clients (array of MACs), maxClients (7.3.70 docs)",
+      "id, modelKey, name, mac, state, type, guid, platform, clients (array of MACs), maxClients (7.4.99 docs)",
   },
   {
     urlPath: "link-stations",
@@ -128,7 +128,7 @@ const DEVICES: DeviceConfig[] = [
     note: "Link stations are non-alarm-hub gateways (use protect_list_alarm_hubs for alarm hubs).",
     hint: "Known fields: name (string)",
     returns:
-      "id, modelKey (\"linkstation\"), name, mac, state, type, guid, isAlarmHub, ledSettings (isEnabled), lastEvent, alarmHub (armed, battery, buckboost, connector, cover, deviceTamperStatus (e.g. \"tampered\"), currentMeterChannelStatus, currentMeterStatus, inputPower, poeout, powerMeter, output and input (maps keyed by channel), inputTerminalStatus, outputTerminalStatus, emergencyTerminalStatus, auxiliaryPowerTerminalStatus), threadState (network: status, role, networkName, channel, panId, extendedPanId, joinedDeviceCount, errorReason, lastUpdatedAt) (7.3.70 docs)",
+      "id, modelKey (\"linkstation\"), name, mac, state, type, guid, isAlarmHub, ledSettings (isEnabled), lastEvent, alarmHub (armed, battery, buckboost, connector, cover, deviceTamperStatus (e.g. \"tampered\"), currentMeterChannelStatus, currentMeterStatus, inputPower, poeout, powerMeter, output and input (maps keyed by channel), inputTerminalStatus, outputTerminalStatus, emergencyTerminalStatus, auxiliaryPowerTerminalStatus), threadState (network: status, role, networkName, channel, panId, extendedPanId, joinedDeviceCount, errorReason, lastUpdatedAt) (7.4.99 docs)",
   },
   {
     urlPath: "alarm-hubs",
@@ -137,7 +137,7 @@ const DEVICES: DeviceConfig[] = [
     label: "Alarm hub",
     hint: "Known fields: name (string)",
     returns:
-      "id, modelKey (\"linkstation\"), name, mac, state, type, guid, isAlarmHub, ledSettings (isEnabled), lastEvent, alarmHub (armed, battery, buckboost, connector, cover, deviceTamperStatus (e.g. \"tampered\"), currentMeterChannelStatus, currentMeterStatus, inputPower, poeout, powerMeter, output and input (maps keyed by channel), inputTerminalStatus, outputTerminalStatus, emergencyTerminalStatus, auxiliaryPowerTerminalStatus), threadState (network: status, role, networkName, channel, panId, extendedPanId, joinedDeviceCount, errorReason, lastUpdatedAt) (7.3.70 docs)",
+      "id, modelKey (\"linkstation\"), name, mac, state, type, guid, isAlarmHub, ledSettings (isEnabled), lastEvent, alarmHub (armed, battery, buckboost, connector, cover, deviceTamperStatus (e.g. \"tampered\"), currentMeterChannelStatus, currentMeterStatus, inputPower, poeout, powerMeter, output and input (maps keyed by channel), inputTerminalStatus, outputTerminalStatus, emergencyTerminalStatus, auxiliaryPowerTerminalStatus), threadState (network: status, role, networkName, channel, panId, extendedPanId, joinedDeviceCount, errorReason, lastUpdatedAt) (7.4.99 docs)",
   },
 ];
 

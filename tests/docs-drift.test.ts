@@ -5,6 +5,7 @@ import { createMockServer, createMockClient } from "./tools/_helpers.js";
 import { registerAllTools } from "../src/tools/index.js";
 import { _DEVICE_CONFIGS } from "../src/tools/devices.js";
 import { ARM_PROFILE_CONFIRM_FIELDS } from "../src/tools/arm-profiles.js";
+import { EXTERNAL_ARM_PROFILE_CONFIRM_FIELDS } from "../src/tools/external-arm-profiles.js";
 import { serverInstructions } from "../src/instructions.js";
 
 /**
@@ -89,6 +90,7 @@ describe("documentation drift", () => {
           device.confirmFields ? [[`protect_update_${device.singular}`, device.confirmFields] as [string, readonly string[]]] : []
         ),
         ["protect_update_arm_profile", ARM_PROFILE_CONFIRM_FIELDS],
+        ["protect_update_external_arm_profile", EXTERNAL_ARM_PROFILE_CONFIRM_FIELDS],
       ];
       expect(gated.length).toBeGreaterThan(1);
       for (const [name, fields] of gated) {

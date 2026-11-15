@@ -88,6 +88,7 @@ export const sensorSchema = passthroughObject({
     "Leak detection settings, read-only (object: isInternalEnabled, isExternalEnabled)"
   ),
   tamperingDetectedAt: unknownField("Last tampering timestamp in epoch ms (number)"),
+  isMountedIncorrectly: unknownField("Whether the sensor reports it is mounted incorrectly (boolean, added in 7.4.x)"),
   wirelessConnectionState: unknownField(
     "Wireless link state (object: signalState { signalQuality, signalStrength }, " +
       "batteryStatus { percentage, isLow }, bridge)"

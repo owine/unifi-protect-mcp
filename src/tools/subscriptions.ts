@@ -13,6 +13,18 @@ const durationSchema = z
   .describe("Seconds to listen (1-30, default 5)");
 
 /**
+ * The model keys /subscribe/updates accepts. Verified live on 7.4.99: the
+ * console validates them against exactly this list, case-sensitively, so
+ * "linkStation" works where the resources' own modelKey "linkstation" is
+ * refused. An unknown key opens the socket, sends an error frame and closes it
+ * (code 4500), so they are checked here before connecting.
+ */
+export const UPDATE_MODEL_KEYS = [
+  "nvr", "camera", "chime", "light", "viewer", "speaker", "bridge", "sensor", "siren",
+  "fob", "relay", "aiProcessor", "aiPort", "linkStation", "event", "externalArmProfile",
+] as const;
+
+/**
  * Each device message carries a full device object, so a busy site can emit
  * enough in 30s to flood the MCP client's context. Stop listening at the cap.
  */
@@ -203,7 +215,7 @@ export function registerSubscriptionTools(
     "protect_subscribe_devices",
     {
       description:
-        `Connect to the device update WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?, truncated?}; stops early with truncated=true after ${MAX_SUBSCRIPTION_MESSAGES.toString()} messages or ${MAX_SUBSCRIPTION_TEXT_CHARS.toLocaleString("en-US")} characters of JSON, whichever comes first. A connection that fails before any message arrives returns an error. Each message is an envelope {type, item} where item is a device resource carrying id and modelKey (camera, light, sensor, nvr, …). The 7.3.70 docs show type 'add' with the full device object as item; other message types and whether updates carry only changed fields are not documented — inspect the captured messages. Use to detect device state changes or newly adopted devices. Not available over Cloud Connector (api.ui.com).`,
+        `Connect to the device update WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?, truncated?}; stops early with truncated=true after ${MAX_SUBSCRIPTION_MESSAGES.toString()} messages or ${MAX_SUBSCRIPTION_TEXT_CHARS.toLocaleString("en-US")} characters of JSON, whichever comes first. A connection that fails before any message arrives returns an error. Each message is an envelope {type, item} where item is a device resource carrying id and modelKey (camera, light, sensor, nvr, …). The 7.4.99 docs show type 'add' with the full device object as item; other message types and whether updates carry only changed fields are not documented — inspect the captured messages. Use to detect device state changes or newly adopted devices. Not available over Cloud Connector (api.ui.com).`,
       inputSchema: { duration: durationSchema },
       outputSchema: subscriptionOutputSchema,
       annotations: READ_ONLY,
@@ -222,7 +234,7 @@ export function registerSubscriptionTools(
     "protect_subscribe_events",
     {
       description:
-        `Connect to the Protect event WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?, truncated?}; stops early with truncated=true after ${MAX_SUBSCRIPTION_MESSAGES.toString()} messages or ${MAX_SUBSCRIPTION_TEXT_CHARS.toLocaleString("en-US")} characters of JSON, whichever comes first. A connection that fails before any message arrives returns an error. Each message is an envelope {type: 'add' | 'update', item: {id, modelKey: 'event', type (event kind, e.g. 'ring'), start, end (epoch ms), device (ID of the camera/sensor that raised it)}} (7.3.70 docs). The full set of event kinds and any further event fields are not documented — inspect the captured messages. Not available over Cloud Connector (api.ui.com).`,
+        `Connect to the Protect event WebSocket and collect messages for a specified duration (1-30s). Returns {messages, duration, error?, truncated?}; stops early with truncated=true after ${MAX_SUBSCRIPTION_MESSAGES.toString()} messages or ${MAX_SUBSCRIPTION_TEXT_CHARS.toLocaleString("en-US")} characters of JSON, whichever comes first. A connection that fails before any message arrives returns an error. Each message is an envelope {type: 'add' | 'update', item: {id, modelKey: 'event', type (event kind, e.g. 'ring'), start, end (epoch ms), device (ID of the camera/sensor that raised it)}} (7.4.99 docs). The full set of event kinds and any further event fields are not documented — inspect the captured messages. Not available over Cloud Connector (api.ui.com).`,
       inputSchema: { duration: durationSchema },
       outputSchema: subscriptionOutputSchema,
       annotations: READ_ONLY,
@@ -231,6 +243,34 @@ export function registerSubscriptionTools(
       const data = await collectMessages(
         client,
         "/subscribe/events",
+        duration
+      );
+      return listenResult(data);
+    }
+  );
+
+  server.registerTool(
+    "protect_subscribe_updates",
+    {
+      description:
+        `Connect to the model update WebSocket for the chosen model keys and collect messages for a specified duration (1-30s). Returns {messages, duration, error?, truncated?}; stops early with truncated=true after ${MAX_SUBSCRIPTION_MESSAGES.toString()} messages or ${MAX_SUBSCRIPTION_TEXT_CHARS.toLocaleString("en-US")} characters of JSON, whichever comes first. A connection that fails before any message arrives returns an error. Each message is an envelope {type, item} where item carries id and modelKey. The 7.4.99 docs show type 'add' with the full object; verified live on 7.4.99, type 'update' carries only the changed fields. The docs say removals are sent too (except for events) and that a message may cover several model IDs, but show neither — inspect the captured messages. Unlike protect_subscribe_devices, this also covers events, external arm profiles (global Alarm Manager) and AI processors/ports, filtered to the keys you pass. Not available over Cloud Connector (api.ui.com).`,
+      inputSchema: {
+        modelKeys: z
+          .array(z.enum(UPDATE_MODEL_KEYS))
+          .min(1)
+          .describe('Model keys to subscribe to. Note "linkStation" here, although link station resources report modelKey "linkstation".'),
+        duration: durationSchema,
+      },
+      outputSchema: subscriptionOutputSchema,
+      annotations: READ_ONLY,
+    },
+    async ({ modelKeys, duration }) => {
+      // The keys are enum values, so they need no encoding; the console
+      // accepts them comma-separated.
+      const keys = [...new Set(modelKeys)].join(",");
+      const data = await collectMessages(
+        client,
+        `/subscribe/updates?modelKeys=${keys}`,
         duration
       );
       return listenResult(data);

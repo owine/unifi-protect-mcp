@@ -17,7 +17,7 @@ export function registerUserTools(server: ToolRegistrar, client: ProtectClient) 
     "protect_list_users",
     {
       description:
-        "List all Protect users (filtered by the API key's access permissions). Returns array; each user includes (Integration API 7.3.70-verified): id, modelKey, name, firstName, lastName, email, ucoreUserId. The Integration API does NOT expose roles, permissions, login history, groups, or notification settings." + PAGING_NOTE,
+        "List all Protect users (filtered by the API key's access permissions). Returns array; each user includes (Integration API 7.4.99-verified): id, modelKey, name, firstName, lastName, email, ucoreUserId. The Integration API does NOT expose roles, permissions, login history, groups, or notification settings." + PAGING_NOTE,
       inputSchema: pagingInput,
       outputSchema: userListOutputSchema,
       annotations: READ_ONLY,
@@ -47,7 +47,7 @@ export function registerUserTools(server: ToolRegistrar, client: ProtectClient) 
     "protect_list_ulp_users",
     {
       description:
-        "List UniFi Identity (ULP) users — per the API docs, those with enrolled credentials (NFC cards, fingerprints). Returns array; each ULP user includes (Integration API 7.3.70-verified): id, modelKey, firstName, lastName, fullName, email (empty string for service accounts), status (e.g. ACTIVE). Enrolled-credential detail (NFC cards, fingerprints) is NOT exposed by this API surface." + PAGING_NOTE,
+        "List UniFi Identity (ULP) users — per the API docs, those with enrolled credentials (NFC cards, fingerprints). Returns array; each ULP user includes (Integration API 7.4.99-verified): id, modelKey, firstName, lastName, fullName, email (empty string for service accounts), status (e.g. ACTIVE). Enrolled-credential detail (NFC cards, fingerprints) is NOT exposed by this API surface." + PAGING_NOTE,
       inputSchema: pagingInput,
       outputSchema: ulpUserListOutputSchema,
       annotations: READ_ONLY,

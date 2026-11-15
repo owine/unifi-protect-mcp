@@ -29,7 +29,7 @@ export function registerCameraTools(
     "protect_list_cameras",
     {
       description:
-        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.3.70-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), type (hardware model name, e.g. UVC G6 Turret), guid (hardware MODEL GUID — every camera of the same model returns the same value, so it is NOT a per-camera identifier; use id), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage (type, resetAt, text), ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config." + PAGING_NOTE,
+        "List all cameras managed by UniFi Protect. Returns array; each camera includes (Integration API 7.4.99-verified fields): id, mac, name, modelKey, state (CONNECTED/DISCONNECTED), type (hardware model name, e.g. UVC G6 Turret), guid (hardware MODEL GUID — every camera of the same model returns the same value, so it is NOT a per-camera identifier; use id), activePatrolSlot, hasPackageCamera, hdrType, isMicEnabled, micVolume, videoMode, featureFlags (hasHdr, hasMic, hasSpeaker, hasLedStatus, smartDetectTypes[], smartDetectAudioTypes[], videoModes[], supportFullHdSnapshot), lcdMessage (type, resetAt, text), ledSettings (isEnabled, floodLed, welcomeLed), osdSettings (isNameEnabled, isDateEnabled, isLogoEnabled, isDebugEnabled, overlayLocation), smartDetectSettings (objectTypes[], audioTypes[]). The Integration API does NOT expose recording state, motion timestamps, connection/last-seen, firmware, host, or per-channel stream config." + PAGING_NOTE,
       inputSchema: pagingInput,
       outputSchema: cameraListOutputSchema,
       annotations: READ_ONLY,
@@ -137,7 +137,7 @@ export function registerCameraTools(
               .describe('Doorbell LCD message (type, resetAt, text), e.g. { type: "DO_NOT_DISTURB", resetAt: 0 }'),
             micVolume: z.number().min(0).max(100).optional().describe("Mic volume (0-100)"),
             videoMode: z
-              .enum(["default", "highFps", "sport", "slowShutter", "lprReflex", "lprNoneReflex"])
+              .enum(["default", "highFps", "sport", "slowShutter", "lprReflex", "lprNoneReflex", "antiFlicker"])
               .optional()
               .describe("Video mode"),
             hdrType: z.enum(["auto", "on", "off"]).optional().describe("HDR mode"),
@@ -229,7 +229,7 @@ export function registerCameraTools(
     "protect_create_talkback",
     {
       description:
-        "Create a talkback (two-way audio) session for a camera. Returns: url, codec, samplingRate, bitsPerSample (the audio config for encoding outbound audio). Requires confirm: true: the session opens two-way audio to the camera, and the returned url lets anyone holding it talk through the camera.",
+        "Create a talkback (two-way audio) session for a camera. Returns: url, codec, samplingRate, bitsPerSample (the audio config for encoding outbound audio). Requires confirm: true: the session opens two-way audio to the camera, and the returned url lets anyone holding it talk through the camera. Returns HTTP 409 if another talkback session is already in progress on the camera.",
       inputSchema: {
         id: resourceId().describe("Camera ID"),
         confirm: OPEN_TALKBACK.input,

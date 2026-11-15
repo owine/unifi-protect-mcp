@@ -10,6 +10,7 @@ import { registerFileTools } from "./files.js";
 import { registerAlarmManagerTools } from "./alarm-manager.js";
 import { registerSubscriptionTools } from "./subscriptions.js";
 import { registerArmProfileTools } from "./arm-profiles.js";
+import { registerExternalArmProfileTools } from "./external-arm-profiles.js";
 import { registerUserTools } from "./users.js";
 import { registerPosTools } from "./pos.js";
 
@@ -29,6 +30,7 @@ export function registerAllTools(
   registerFileTools(tools, client, readOnly);
   registerAlarmManagerTools(tools, client, readOnly);
   registerArmProfileTools(tools, client, readOnly);
+  registerExternalArmProfileTools(tools, client, readOnly);
   registerUserTools(tools, client);
   registerPosTools(tools, client, readOnly);
 }

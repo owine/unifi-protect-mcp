@@ -44,7 +44,7 @@ export function registerLiveviewTools(
     "protect_list_liveviews",
     {
       description:
-        "List all live views (camera grid layouts shown on viewers / in the Protect UI). Returns array; each liveview includes (Integration API 7.3.70-verified): id, modelKey, name, isDefault, isGlobal, layout (number, slot count), owner (user ID), slots (array of {cameras: string[], cycleMode, cycleInterval}). NOTE: slots use a `cameras` string-array, not a single `cameraId`." + PAGING_NOTE,
+        "List all live views (camera grid layouts shown on viewers / in the Protect UI). Returns array; each liveview includes (Integration API 7.4.99-verified): id, modelKey, name, isDefault, isGlobal, layout (number, slot count), owner (user ID), slots (array of {cameras: string[], cycleMode, cycleInterval}). NOTE: slots use a `cameras` string-array, not a single `cameraId`." + PAGING_NOTE,
       inputSchema: pagingInput,
       outputSchema: liveviewListOutputSchema,
       annotations: READ_ONLY,
