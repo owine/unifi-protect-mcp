@@ -46,8 +46,8 @@ pnpm run test:package  # Pack, install the tarball into an empty project, smoke-
 
 ```
 src/
-  index.ts            # Entry point: config, server instructions, tool registration, stdio transport with a larger read buffer, startup mode log
-  config.ts           # Env vars → Config (Zod): host normalisation, API key trim + control-character check, UNIFI_PROTECT_CA_CERT file, Cloud Connector TLS rules
+  index.ts            # Entry point: config, startup console check (exits before the handshake on failure), server instructions, tool registration, stdio transport with a larger read buffer, startup mode log
+  config.ts           # Env vars → Config (Zod): host normalisation, API key trim + control-character check, UNIFI_PROTECT_CA_CERT file, Cloud Connector TLS rules, UNIFI_PROTECT_STARTUP_CHECK opt-out
   client.ts           # ProtectClient: one send() core (path guard, redirect: "error", timeout combined with the call's abort signal, bounded body reads); JSON, binary, multipart, WebSocket
   tls.ts              # Scoped TLS: undici dispatcher (keep-alive) and WebSocket options; pinning for UNIFI_PROTECT_CA_CERT
   instructions.ts     # serverInstructions(readOnly): cross-tool guidance sent once per session

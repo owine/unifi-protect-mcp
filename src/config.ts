@@ -68,6 +68,9 @@ const ConfigSchema = z.object({
     .optional(),
   verifySsl: z.boolean(),
   readOnly: z.boolean(),
+  // Present only when the operator turned the startup console check off, so
+  // a Config built elsewhere (tests, a library caller) keeps the check.
+  skipStartupCheck: z.literal(true).optional(),
   // PEM certificate(s) to trust for the console, e.g. its own self-signed one.
   caCert: z
     .string()
@@ -137,6 +140,7 @@ export function loadConfig(): Config {
       : {}),
     verifySsl: envFlag(process.env.UNIFI_PROTECT_VERIFY_SSL, true),
     readOnly: envFlag(process.env.UNIFI_PROTECT_READ_ONLY, true),
+    ...(envFlag(process.env.UNIFI_PROTECT_STARTUP_CHECK, true) ? {} : { skipStartupCheck: true as const }),
     ...(caCert !== undefined ? { caCert } : {}),
   });
 

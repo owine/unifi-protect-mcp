@@ -20,7 +20,7 @@ claude mcp add-json unifi-protect '{"command":"npx","args":["-y","@owine/unifi-p
 
 Use `-s user` for global availability across all projects, or `-s project` for the current project only.
 
-A local console usually has a self-signed certificate, so the first call fails with a certificate error until you trust it: see [Self-signed console certificates](#self-signed-console-certificates).
+A local console usually has a self-signed certificate, so the server fails to start with a certificate error until you trust it: see [Self-signed console certificates](#self-signed-console-certificates).
 
 `@latest` runs the newest release every time the server starts, including a new major version. To take fixes but choose when to make breaking upgrades, pin the major version you have tested instead (`@owine/unifi-protect-mcp@<major>`).
 
@@ -54,12 +54,13 @@ claude mcp add-json unifi-protect '{"command":"node","args":["/path/to/unifi-pro
 | `UNIFI_PROTECT_VERIFY_SSL` | No | `true` | Set to `false` (or `0`/`no`/`off`, any case) to skip certificate verification for this server's connections to the console. Prefer `UNIFI_PROTECT_CA_CERT`. Not allowed with `api.ui.com`. Unrecognized values keep the default |
 | `UNIFI_PROTECT_READ_ONLY` | No | `true` | Set to `false` (or `0`/`no`/`off`, any case) to enable write tools (default is monitoring-only mode). Unrecognized values keep the default |
 | `UNIFI_PROTECT_CONSOLE_ID` | No | — | Cloud Connector console ID. Only used when `UNIFI_PROTECT_HOST` is `api.ui.com`; ignored (with a warning on stderr) otherwise |
+| `UNIFI_PROTECT_STARTUP_CHECK` | No | `true` | At startup the server reads Protect's application info and exits if that fails, so the MCP host lists it as failed rather than connected. Set to `false` (or `0`/`no`/`off`, any case) to start without the check, for example while the console is down. Unrecognized values keep the default |
 
 The startup line in the MCP host's server log says whether the server is read-only or read-write. A configuration error names the variable at fault, and the server exits.
 
 ### Self-signed console certificates
 
-UniFi consoles ship with a self-signed certificate, so the first call to a local console usually fails with a certificate error. The safe fix is to trust that one certificate. Save it:
+UniFi consoles ship with a self-signed certificate, so against a local console the server usually fails to start with a certificate error. The safe fix is to trust that one certificate. Save it:
 
 ```bash
 openssl s_client -connect 192.168.1.1:443 </dev/null 2>/dev/null | openssl x509 > ~/.config/unifi-protect-console.pem
@@ -388,7 +389,7 @@ Read tools, and write tools that return the resource, declare an `outputSchema`,
 
 ## Troubleshooting
 
-Configuration errors go to the MCP host's server log and the server exits. Tool errors reach the agent as results starting with `Error:`.
+Configuration errors, and a console the server cannot use at startup, go to the MCP host's server log and the server exits; the host lists it as failed (in Claude Code, `/mcp`). Tool errors reach the agent as results starting with `Error:`.
 
 | Message | Cause and fix |
 |---|---|
@@ -399,12 +400,14 @@ Configuration errors go to the MCP host's server log and the server exits. Tool 
 | `UNIFI_PROTECT_CA_CERT must name a PEM file containing a certificate` | No `BEGIN CERTIFICATE` block; run the `openssl` command again. |
 | `…cannot be combined with UNIFI_PROTECT_VERIFY_SSL=false` / `TLS verification cannot be disabled for api.ui.com` / `UNIFI_PROTECT_CA_CERT is for local consoles` | Unset `UNIFI_PROTECT_VERIFY_SSL` (or `UNIFI_PROTECT_CA_CERT` for `api.ui.com`). |
 | `Ignoring UNIFI_PROTECT_CONSOLE_ID` (log line) | The console ID only applies with `UNIFI_PROTECT_HOST=api.ui.com`. |
+| `Cannot connect to UniFi Protect at …` (log line) | The startup check could not read the console; the rest of the line is one of the errors below. Fix it and restart the server, or set `UNIFI_PROTECT_STARTUP_CHECK=false` to start anyway. |
+| `… did not answer as UniFi Protect` | Something other than Protect's Integration API answered at `UNIFI_PROTECT_HOST`: another web server, or a console without Protect. |
 | `… (read-only: write tools are not registered)` (log line) and no write tools | Read-only is the default. Set `UNIFI_PROTECT_READ_ONLY=false` and restart the host. |
 | `fetch failed: … The console's TLS certificate could not be verified …` | Save the console's certificate to `UNIFI_PROTECT_CA_CERT`. If you already did, the console has a new certificate: save it again. |
 | `fetch failed: … The certificate for api.ui.com could not be verified …` | Something between you and Ubiquiti's cloud is presenting another certificate, such as a TLS-inspecting proxy or firewall. |
 | `fetch failed: connect ECONNREFUSED …`, `ENOTFOUND` | Wrong or unreachable host. |
 | `HTTP 401` / `HTTP 403` | Wrong or revoked key, or its admin lacks the rights. |
-| `… Protect did not respond within … s` | The console is slow. For a write, check whether it was applied before retrying. |
+| `… Protect did not respond within … s` | The console is slow, or something drops traffic to it (at startup, often a wrong IP). For a write, check whether it was applied before retrying. |
 | `… exceeds the …-byte limit` / `Result too large to send in one MCP message …` | The response is too large for one MCP message. Page a list with `limit` and `offset`; for a snapshot, drop `highQuality`. |
 | `File too large to send in one MCP message` | Upload a smaller file. |
 | `This action requires confirmation: …` | Expected: the action needs `confirm: true`, and the agent should ask you first. |

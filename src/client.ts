@@ -13,6 +13,7 @@ import {
   MAX_RESPONSE_BYTES,
   MAX_SNAPSHOT_BYTES,
   REQUEST_TIMEOUT_MS,
+  STARTUP_CHECK_TIMEOUT_MS,
 } from "./utils/limits.js";
 
 /**
@@ -290,16 +291,17 @@ export class ProtectClient {
   private async request(
     method: string,
     path: string,
-    body?: unknown
+    body?: unknown,
+    timeoutMs: number = REQUEST_TIMEOUT_MS
   ): Promise<unknown> {
-    return explainTimeout(method, path, REQUEST_TIMEOUT_MS, () => this.sendJson(method, path, body));
+    return explainTimeout(method, path, timeoutMs, () => this.sendJson(method, path, body, timeoutMs));
   }
 
-  private async sendJson(method: string, path: string, body?: unknown): Promise<unknown> {
+  private async sendJson(method: string, path: string, body: unknown, timeoutMs: number): Promise<unknown> {
     const response = await this.send(method, path, {
       headers: this.headers,
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-      timeoutMs: REQUEST_TIMEOUT_MS,
+      timeoutMs,
     });
 
     // 204 No Content (action endpoints: siren/relay/speaker triggers, arm
@@ -314,6 +316,21 @@ export class ProtectClient {
 
   async get(path: string): Promise<unknown> {
     return this.request("GET", path);
+  }
+
+  /**
+   * Read /meta/info once, so a console that cannot be reached, fails TLS
+   * verification or rejects the key stops the server at startup, where the
+   * MCP host reports it, instead of the server looking connected and every
+   * tool call failing. A 200 that is not a JSON object means something other
+   * than Protect's Integration API answered.
+   */
+  async checkConnection(): Promise<void> {
+    const path = "/meta/info";
+    const info = await this.request("GET", path, undefined, STARTUP_CHECK_TIMEOUT_MS);
+    if (typeof info !== "object" || info === null || Array.isArray(info)) {
+      throw new Error(`GET ${path} did not answer as UniFi Protect (expected a JSON object); check UNIFI_PROTECT_HOST`);
+    }
   }
 
   async post(path: string, body?: unknown): Promise<unknown> {

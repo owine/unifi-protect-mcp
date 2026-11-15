@@ -3,7 +3,12 @@ import type { File } from "node:buffer";
 import { FormData, type RequestInit } from "undici";
 import { ProtectClient } from "../src/client.js";
 import type { Config } from "../src/config.js";
-import { MAX_ERROR_BODY_BYTES, MAX_RESPONSE_BYTES } from "../src/utils/limits.js";
+import {
+  MAX_ERROR_BODY_BYTES,
+  MAX_RESPONSE_BYTES,
+  REQUEST_TIMEOUT_MS,
+  STARTUP_CHECK_TIMEOUT_MS,
+} from "../src/utils/limits.js";
 
 // The client calls undici's fetch rather than the global one, so mock that;
 // the real Agent and FormData stay, since the client still builds them.
@@ -312,6 +317,52 @@ describe("ProtectClient", () => {
     it("names the call when Protect returns malformed JSON", async () => {
       mockFetch("{not json", { contentType: "application/json" });
       await expect(client.get("/nvrs")).rejects.toThrow(/^Protect returned malformed JSON for GET \/nvrs/);
+    });
+  });
+
+  describe("checkConnection", () => {
+    it("reads /meta/info and resolves when Protect answers", async () => {
+      mockFetch({ applicationVersion: "7.3.70" });
+      await client.checkConnection();
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://192.168.1.1/proxy/protect/integration/v1/meta/info",
+        expect.objectContaining({ method: "GET" })
+      );
+    });
+
+    it("rejects with the HTTP status when the console refuses the key", async () => {
+      mockFetch({ error: "Unauthorized" }, { status: 401 });
+      await expect(client.checkConnection()).rejects.toThrow(/^HTTP 401: .*Unauthorized/);
+    });
+
+    it("rejects with the network failure and its reason", async () => {
+      fetchMock.mockRejectedValue(new TypeError("fetch failed", {
+        cause: Object.assign(new Error("getaddrinfo ENOTFOUND nvr.invalid"), { code: "ENOTFOUND" }),
+      }));
+      await expect(client.checkConnection()).rejects.toThrow("fetch failed: getaddrinfo ENOTFOUND nvr.invalid");
+    });
+
+    // Something other than Protect answered: a different web server on that
+    // address, or a page that is not the Integration API.
+    it("rejects a 200 that is not a Protect JSON object", async () => {
+      mockFetch("<html>login</html>", { contentType: "text/html" });
+      await expect(client.checkConnection()).rejects.toThrow(/did not answer as UniFi Protect/);
+    });
+
+    it("waits only the startup budget, not a tool call's", async () => {
+      const timeout = vi.spyOn(AbortSignal, "timeout");
+      mockFetch({ applicationVersion: "7.3.70" });
+      await client.checkConnection();
+      expect(timeout).toHaveBeenCalledWith(STARTUP_CHECK_TIMEOUT_MS);
+      expect(timeout).not.toHaveBeenCalledWith(REQUEST_TIMEOUT_MS);
+      timeout.mockRestore();
+    });
+
+    it("says how long it waited when Protect never answers", async () => {
+      fetchMock.mockRejectedValue(new DOMException("The operation was aborted due to timeout", "TimeoutError"));
+      await expect(client.checkConnection()).rejects.toThrow(
+        `GET /meta/info: Protect did not respond within ${(STARTUP_CHECK_TIMEOUT_MS / 1000).toString()} s`
+      );
     });
   });
 
