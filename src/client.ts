@@ -322,14 +322,19 @@ export class ProtectClient {
    * Read /meta/info once, so a console that cannot be reached, fails TLS
    * verification or rejects the key stops the server at startup, where the
    * MCP host reports it, instead of the server looking connected and every
-   * tool call failing. A 200 that is not a JSON object means something other
-   * than Protect's Integration API answered.
+   * tool call failing.
    */
   async checkConnection(): Promise<void> {
     const path = "/meta/info";
     const info = await this.request("GET", path, undefined, STARTUP_CHECK_TIMEOUT_MS);
-    if (typeof info !== "object" || info === null || Array.isArray(info)) {
-      throw new Error(`GET ${path} did not answer as UniFi Protect (expected a JSON object); check UNIFI_PROTECT_HOST`);
+    // Any 2xx passes send(), so a proxy or another web server at the host
+    // (an HTML page, or JSON such as {} or {"status":"ok"}) would pass too.
+    // applicationVersion is the one field this endpoint exists to return.
+    if (
+      typeof info !== "object" || info === null ||
+      !("applicationVersion" in info) || typeof info.applicationVersion !== "string"
+    ) {
+      throw new Error(`GET ${path} did not answer as UniFi Protect (expected its application info); check UNIFI_PROTECT_HOST names the console`);
     }
   }
 

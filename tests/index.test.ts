@@ -15,22 +15,22 @@ describe("startup", () => {
   let connect: MockInstance;
   let checkConnection: MockInstance;
   let exit: MockInstance;
-  let stderr: string[];
+  let written: { message: string; done: (() => void) | undefined }[];
 
   beforeEach(async () => {
     saved = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));
     process.env.UNIFI_PROTECT_HOST = "192.0.2.1";
     process.env.UNIFI_PROTECT_API_KEY = "test-api-key";
     delete process.env.UNIFI_PROTECT_READ_ONLY;
+    // An opt-out inherited from the shell would skip the check under test.
     delete process.env.UNIFI_PROTECT_STARTUP_CHECK;
-    stderr = [];
-    vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => { stderr.push(args.join(" ")); });
-    // The failure line is written straight to stderr, exiting once it is out.
-    vi.spyOn(process.stderr, "write").mockImplementation((chunk: unknown, done?: unknown) => {
-      stderr.push(String(chunk));
-      if (typeof done === "function") (done as () => void)();
+    written = [];
+    vi.spyOn(console, "error").mockImplementation(vi.fn());
+    // Held, not completed: a test drains a write by calling its done().
+    vi.spyOn(process.stderr, "write").mockImplementation(((chunk: string, done?: () => void) => {
+      written.push({ message: chunk, done });
       return true;
-    });
+    }) as typeof process.stderr.write);
     exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
     connect = vi.spyOn(McpServer.prototype, "connect").mockResolvedValue(undefined);
     vi.resetModules();
@@ -49,7 +49,7 @@ describe("startup", () => {
 
   async function start() {
     await import("../src/index.js");
-    await vi.waitFor(() => { expect(connect.mock.calls.length + exit.mock.calls.length).toBeGreaterThan(0); });
+    await vi.waitFor(() => { expect(connect.mock.calls.length + written.length).toBeGreaterThan(0); });
   }
 
   it("checks the console before the transport connects", async () => {
@@ -60,20 +60,25 @@ describe("startup", () => {
     expect(exit).not.toHaveBeenCalled();
   });
 
-  it("exits with the reason, never connecting, when the console cannot be used", async () => {
+  it("exits with the reason once it is written, never connecting, when the console cannot be used", async () => {
     checkConnection.mockRejectedValue(new Error(
       "fetch failed: self-signed certificate. The console's TLS certificate could not be verified; save the certificate and point UNIFI_PROTECT_CA_CERT at it."
     ));
     await start();
+    expect(written).toHaveLength(1);
+    const [{ message, done }] = written as [{ message: string; done: (() => void) | undefined }];
+    expect(message).toContain("Cannot connect to UniFi Protect at 192.0.2.1: fetch failed: self-signed certificate.");
+    expect(message).toContain("UNIFI_PROTECT_CA_CERT");
+    expect(message).toContain("UNIFI_PROTECT_STARTUP_CHECK=false");
+    // One sentence break, not the error's own full stop doubled.
+    expect(message).not.toContain("..");
+    expect(message.endsWith("\n")).toBe(true);
+    // Not before the line has drained: on macOS a pipe is written
+    // asynchronously, and exiting first could drop the host's only reason.
+    expect(exit).not.toHaveBeenCalled();
+    done?.();
     expect(exit).toHaveBeenCalledWith(1);
     expect(connect).not.toHaveBeenCalled();
-    const line = stderr.find((text) => text.startsWith("Cannot connect"));
-    expect(line).toContain("Cannot connect to UniFi Protect at 192.0.2.1: fetch failed: self-signed certificate.");
-    expect(line).toContain("UNIFI_PROTECT_CA_CERT");
-    expect(line).toContain("UNIFI_PROTECT_STARTUP_CHECK=false");
-    // One sentence break, not the error's own full stop doubled.
-    expect(line).not.toContain("..");
-    expect(line?.endsWith("\n")).toBe(true);
   });
 
   it("skips the check when UNIFI_PROTECT_STARTUP_CHECK is false", async () => {

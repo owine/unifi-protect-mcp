@@ -66,6 +66,9 @@ async function expectStartupFailure() {
       ...process.env,
       UNIFI_PROTECT_HOST: `127.0.0.1:${dropper.address().port}`,
       UNIFI_PROTECT_API_KEY: "smoke-test",
+      // Set on explicitly, so an opt-out inherited from the shell cannot
+      // make this pass for the wrong reason.
+      UNIFI_PROTECT_STARTUP_CHECK: "true",
     },
   });
   let log = "";

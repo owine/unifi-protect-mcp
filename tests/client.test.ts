@@ -343,9 +343,14 @@ describe("ProtectClient", () => {
     });
 
     // Something other than Protect answered: a different web server on that
-    // address, or a page that is not the Integration API.
-    it("rejects a 200 that is not a Protect JSON object", async () => {
-      mockFetch("<html>login</html>", { contentType: "text/html" });
+    // address, or a proxy that answers every path.
+    it.each([
+      ["an HTML page", "<html>login</html>", "text/html"],
+      ["a JSON array", "[]", "application/json"],
+      ["JSON without applicationVersion", '{"status":"ok"}', "application/json"],
+      ["a non-string applicationVersion", '{"applicationVersion":7}', "application/json"],
+    ])("rejects a 200 that is %s", async (_label, body, contentType) => {
+      mockFetch(body, { contentType });
       await expect(client.checkConnection()).rejects.toThrow(/did not answer as UniFi Protect/);
     });
 

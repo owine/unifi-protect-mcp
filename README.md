@@ -401,7 +401,7 @@ Configuration errors, and a console the server cannot use at startup, go to the 
 | `…cannot be combined with UNIFI_PROTECT_VERIFY_SSL=false` / `TLS verification cannot be disabled for api.ui.com` / `UNIFI_PROTECT_CA_CERT is for local consoles` | Unset `UNIFI_PROTECT_VERIFY_SSL` (or `UNIFI_PROTECT_CA_CERT` for `api.ui.com`). |
 | `Ignoring UNIFI_PROTECT_CONSOLE_ID` (log line) | The console ID only applies with `UNIFI_PROTECT_HOST=api.ui.com`. |
 | `Cannot connect to UniFi Protect at …` (log line) | The startup check could not read the console; the rest of the line is one of the errors below. Fix it and restart the server, or set `UNIFI_PROTECT_STARTUP_CHECK=false` to start anyway. |
-| `… did not answer as UniFi Protect` | Something other than Protect's Integration API answered at `UNIFI_PROTECT_HOST`: another web server, or a console without Protect. |
+| `… did not answer as UniFi Protect` | Something other than Protect's Integration API answered at `UNIFI_PROTECT_HOST`: another web server, a proxy that answers every path, or a console without Protect. |
 | `… (read-only: write tools are not registered)` (log line) and no write tools | Read-only is the default. Set `UNIFI_PROTECT_READ_ONLY=false` and restart the host. |
 | `fetch failed: … The console's TLS certificate could not be verified …` | Save the console's certificate to `UNIFI_PROTECT_CA_CERT`. If you already did, the console has a new certificate: save it again. |
 | `fetch failed: … The certificate for api.ui.com could not be verified …` | Something between you and Ubiquiti's cloud is presenting another certificate, such as a TLS-inspecting proxy or firewall. |
