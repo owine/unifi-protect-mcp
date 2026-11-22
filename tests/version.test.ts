@@ -19,9 +19,14 @@ describe("isOlderVersion", () => {
     ["7.4.99", "7.4.99", false],
     ["7.5.0", "7.4.99", false],
     ["8.0.0", "7.4.99", false],
-    // Only the leading triple counts, so a build suffix changes nothing.
-    ["7.4.99-beta.2", "7.4.99", false],
+    // A prerelease comes before its release; build metadata changes nothing.
+    ["7.4.99-beta.2", "7.4.99", true],
+    ["7.4.99-beta.2+build.7", "7.4.99", true],
+    ["7.4.99+build.7", "7.4.99", false],
+    ["7.5.0-beta.1", "7.4.99", false],
     ["7.3.70-rc.1", "7.4.99", true],
+    ["7.4.99", "7.4.99-beta.2", false],
+    ["7.4.99-beta.1", "7.4.99-beta.2", false],
     // Unreadable versions never raise a warning.
     ["unknown", "7.4.99", false],
     ["7.4", "7.4.99", false],

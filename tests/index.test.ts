@@ -117,7 +117,10 @@ describe("startup", () => {
   it("logs the console's version as one printable line", async () => {
     checkConnection.mockResolvedValue("7.4.99\n\u001b[31mfake log line");
     const lines = await logged();
-    expect(lines[0]).toContain("console on Protect 7.4.99??[31mfake log line (read-only");
+    expect(lines).toEqual([
+      "UniFi Protect MCP server running on stdio, console on Protect 7.4.99??[31mfake log line (read-only: write tools are not registered)",
+    ]);
+    for (const line of lines) expect(line).toMatch(/^[\x20-\x7e]*$/);
   });
 
   it("names no version when the check was skipped", async () => {
