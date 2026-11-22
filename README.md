@@ -424,6 +424,7 @@ Configuration errors, and a console the server cannot use at startup, go to the 
 | `fetch failed: connect ECONNREFUSED …`, `ENOTFOUND` | Wrong or unreachable host. |
 | `HTTP 401` / `HTTP 403` | Wrong or revoked key, or its admin lacks the rights. |
 | `HTTP 429: … still rate-limited after … retries` | The console limits API calls per second, and the server already waited out its `Retry-After` and retried. Too many calls are running at once: make fewer in parallel. |
+| `HTTP 429: … (rate-limited; wait … s before calling again)` | The wait asked for is longer than the server holds a call; usually Cloud Connector's per-minute limit. Wait that long, then make fewer calls. |
 | `… Protect did not respond within … s` | The console is slow, or something drops traffic to it (at startup, often a wrong IP). For a write, check whether it was applied before retrying. |
 | `… exceeds the …-byte limit` / `Result too large to send in one MCP message …` | The response is too large for one MCP message. Page a list with `limit` and `offset`; for a snapshot, drop `highQuality`. |
 | `File too large to send in one MCP message` | Upload a smaller file. |

@@ -332,10 +332,29 @@ describe("ProtectClient", () => {
       expect(fetchMock).toHaveBeenCalledTimes(MAX_RATE_LIMIT_RETRIES + 1);
     });
 
-    it("returns a 429 whose Retry-After is too long to wait out at once", async () => {
-      fetchMock.mockResolvedValueOnce(limited(String(MAX_RETRY_AFTER_MS / 1000 + 1)));
-      await expect(client.get("/nvrs")).rejects.toThrow(/^HTTP 429: /);
+    // Cloud Connector's per-minute limit asks for longer waits than this
+    // server holds a call for; the model must learn how long to wait.
+    it("returns a 429 whose Retry-After is too long to wait out at once, saying how long to wait", async () => {
+      const seconds = MAX_RETRY_AFTER_MS / 1000 + 1;
+      fetchMock.mockResolvedValueOnce(limited(String(seconds)));
+      await expect(client.get("/nvrs")).rejects.toThrow(
+        new RegExp(`^HTTP 429: .*\\(rate-limited; wait ${seconds.toString()} s before calling again\\)$`)
+      );
       expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it("rounds a fractional long wait up to whole seconds", async () => {
+      fetchMock.mockResolvedValueOnce(limited(`${(MAX_RETRY_AFTER_MS / 1000).toString()}.37`));
+      await expect(client.get("/nvrs")).rejects.toThrow(
+        `wait ${(MAX_RETRY_AFTER_MS / 1000 + 1).toString()} s before calling again`
+      );
+    });
+
+    // After a retry, a long wait keeps the retry-count wording.
+    it("reports the retries when a later 429 asks for a long wait", async () => {
+      fetchMock.mockResolvedValueOnce(limited()).mockResolvedValueOnce(limited(String(MAX_RETRY_AFTER_MS / 1000 + 1)));
+      await expect(client.get("/nvrs")).rejects.toThrow(/still rate-limited after 1 retry; wait before calling again\)$/);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
     it("waits the Retry-After before sending again", async () => {
@@ -371,6 +390,7 @@ describe("ProtectClient", () => {
     const now = Date.parse("Sun, 15 Nov 2026 16:21:13 GMT");
     it.each([
       ["delay-seconds", "1", 1000],
+      ["fractional delay-seconds", "5.37", 5370],
       ["zero", "0", 0],
       ["an HTTP date", "Sun, 15 Nov 2026 16:21:15 GMT", 2000],
       ["a past HTTP date", "Sun, 15 Nov 2026 16:21:10 GMT", 0],

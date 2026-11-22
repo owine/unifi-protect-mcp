@@ -53,7 +53,9 @@ const TOO_MANY_REQUESTS = 429;
  */
 export function retryAfterMs(header: string | null, now: number = Date.now()): number {
   const value = header?.trim() ?? "";
-  if (/^\d+$/.test(value)) return Number(value) * MS_PER_SECOND;
+  // RFC 9110 delay-seconds is a whole number; a fraction ("5.37", as Cloud
+  // Connector's 429 body words its wait) is read too rather than cut short.
+  if (/^\d+(?:\.\d+)?$/.test(value)) return Math.round(Number(value) * MS_PER_SECOND);
   // An HTTP date always names its day and month; Date.parse alone would read
   // "-5" as the year 5 BC.
   const date = /[A-Za-z]/.test(value) ? Date.parse(value) : NaN;
@@ -335,6 +337,14 @@ export class ProtectClient {
           await response.body?.cancel();
           await wait(delay, signal);
           continue;
+        }
+        // A wait longer than this server holds a call for is a real throttle
+        // (Cloud Connector limits each console per minute): name it, so the
+        // model waits instead of calling again at once.
+        if (retries === 0) {
+          throw new Error(
+            `HTTP ${response.status.toString()}: ${await readErrorBody(response)} (rate-limited; wait ${Math.ceil(delay / MS_PER_SECOND).toString()} s before calling again)`
+          );
         }
       }
       const retried = response.status === TOO_MANY_REQUESTS && retries > 0
