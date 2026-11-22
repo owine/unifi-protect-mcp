@@ -332,6 +332,17 @@ describe("ProtectClient", () => {
       expect(fetchMock).toHaveBeenCalledTimes(MAX_RATE_LIMIT_RETRIES + 1);
     });
 
+    // The last 429 of an exhausted budget still says how long to wait.
+    it("names the last Retry-After once the retry budget is spent", async () => {
+      const seconds = MAX_RETRY_AFTER_MS / 1000 + 1;
+      for (let i = 0; i < MAX_RATE_LIMIT_RETRIES; i++) fetchMock.mockResolvedValueOnce(limited());
+      fetchMock.mockResolvedValueOnce(limited(String(seconds)));
+      await expect(client.get("/nvrs")).rejects.toThrow(
+        new RegExp(`still rate-limited after ${MAX_RATE_LIMIT_RETRIES.toString()} retries; wait ${seconds.toString()} s before calling again\\)$`)
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(MAX_RATE_LIMIT_RETRIES + 1);
+    });
+
     // Cloud Connector's per-minute limit asks for longer waits than this
     // server holds a call for; the model must learn how long to wait.
     it("returns a 429 whose Retry-After is too long to wait out at once, saying how long to wait", async () => {
@@ -401,6 +412,8 @@ describe("ProtectClient", () => {
     it.each([
       ["delay-seconds", "1", 1000],
       ["fractional delay-seconds", "5.37", 5370],
+      // Rounded up, so a wait just over a threshold never reads as under it.
+      ["a fraction of a millisecond over", "5.0001", 5001],
       ["zero", "0", 0],
       ["an HTTP date", "Sun, 15 Nov 2026 16:21:15 GMT", 2000],
       ["a past HTTP date", "Sun, 15 Nov 2026 16:21:10 GMT", 0],

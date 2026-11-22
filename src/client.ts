@@ -54,12 +54,28 @@ const TOO_MANY_REQUESTS = 429;
 export function retryAfterMs(header: string | null, now: number = Date.now()): number {
   const value = header?.trim() ?? "";
   // RFC 9110 delay-seconds is a whole number; a fraction ("5.37", as Cloud
-  // Connector's 429 body words its wait) is read too rather than cut short.
-  if (/^\d+(?:\.\d+)?$/.test(value)) return Math.round(Number(value) * MS_PER_SECOND);
+  // Connector's 429 body words its wait) is read too, rounded up, so neither
+  // the cap check nor the wait comes in under what was asked.
+  if (/^\d+(?:\.\d+)?$/.test(value)) return Math.ceil(Number(value) * MS_PER_SECOND);
   // An HTTP date always names its day and month; Date.parse alone would read
   // "-5" as the year 5 BC.
   const date = /[A-Za-z]/.test(value) ? Date.parse(value) : NaN;
   return Number.isNaN(date) ? DEFAULT_RETRY_AFTER_MS : Math.max(0, date - now);
+}
+
+/**
+ * The note on a 429 the client gives up on: how many retries it made, and how
+ * long the last Retry-After asked to wait, so the model waits that long
+ * instead of calling again at once. A wait too large to be a number (a
+ * digit-only header past Number's range) has no useful figure to repeat.
+ */
+function rateLimitNote(retries: number, delay: number): string {
+  const state = retries > 0
+    ? `still rate-limited after ${retries.toString()} ${retries === 1 ? "retry" : "retries"}`
+    : "rate-limited";
+  const seconds = Math.ceil(delay / MS_PER_SECOND);
+  const advice = Number.isFinite(seconds) ? `wait ${seconds.toString()} s before calling again` : "wait before calling again";
+  return ` (${state}; ${advice})`;
 }
 
 /**
@@ -339,18 +355,11 @@ export class ProtectClient {
           continue;
         }
         // A wait longer than this server holds a call for is a real throttle
-        // (Cloud Connector limits each console per minute): name it, so the
-        // model waits instead of calling again at once. A Retry-After too
-        // large for a number has no useful figure to repeat.
-        const state = retries > 0
-          ? `still rate-limited after ${retries.toString()} ${retries === 1 ? "retry" : "retries"}`
-          : "rate-limited";
-        const seconds = Math.ceil(delay / MS_PER_SECOND);
-        const advice = Number.isFinite(seconds) ? `wait ${seconds.toString()} s before calling again` : "wait before calling again";
-        throw new Error(`HTTP ${response.status.toString()}: ${await readErrorBody(response)} (${state}; ${advice})`);
+        // (Cloud Connector limits each console per minute).
+        throw new Error(`HTTP ${response.status.toString()}: ${await readErrorBody(response)}${rateLimitNote(retries, delay)}`);
       }
       const retried = response.status === TOO_MANY_REQUESTS && retries > 0
-        ? ` (still rate-limited after ${retries.toString()} ${retries === 1 ? "retry" : "retries"}; wait before calling again)`
+        ? rateLimitNote(retries, retryAfterMs(response.headers.get("retry-after")))
         : "";
       throw new Error(`HTTP ${response.status.toString()}: ${await readErrorBody(response)}${retried}`);
     }
