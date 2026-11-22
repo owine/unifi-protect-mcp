@@ -425,12 +425,15 @@ Configuration errors, and a console the server cannot use at startup, go to the 
 | `HTTP 401` / `HTTP 403` | Wrong or revoked key, or its admin lacks the rights. |
 | `HTTP 429: … still rate-limited after … retries` | The console limits API calls per second, and the server already waited out its `Retry-After` and retried. Too many calls are running at once: make fewer in parallel. |
 | `… Protect did not respond within … s` | The console is slow, or something drops traffic to it (at startup, often a wrong IP). For a write, check whether it was applied before retrying. |
+| `HTTP 408` / `HTTP 504: … the request timed out before Protect answered` | Cloud Connector, or a proxy in front of the console, gave up waiting. For a write, check whether it was applied before retrying. |
 | `… exceeds the …-byte limit` / `Result too large to send in one MCP message …` | The response is too large for one MCP message. Page a list with `limit` and `offset`; for a snapshot, drop `highQuality`. |
 | `File too large to send in one MCP message` | Upload a smaller file. |
 | `This action requires confirmation: …` | Expected: the action needs `confirm: true`, and the agent should ask you first. |
 | `Use an ID returned by a list or get tool` | The agent passed a name or a malformed ID. |
 | `Subscription failed: …` | The WebSocket was refused or unauthorized; this is not "no activity". |
 | `WebSocket subscriptions are not available over Cloud Connector …` | Connect to the console directly for subscriptions. |
+| `HTTP 403: … a personal Site Manager key reaches only the consoles its owner owns` | Through Cloud Connector, the key may not reach this console: a personal key reaches only its owner's consoles. Use an organization key or the owner's. |
+| `HTTP 502: … Cloud Connector could not reach the console` | The console is offline or has lost its connection to Ubiquiti's cloud. |
 | `MCP error -32602 … Input validation error` | The call broke the tool's input schema (for example a missing `state`); the message names the field. |
 
 ## Development
