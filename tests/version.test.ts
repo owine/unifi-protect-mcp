@@ -27,6 +27,14 @@ describe("isOlderVersion", () => {
     ["7.3.70-rc.1", "7.4.99", true],
     ["7.4.99", "7.4.99-beta.2", false],
     ["7.4.99-beta.1", "7.4.99-beta.2", false],
+    // Only a whole semver string is compared, so a current- or old-looking
+    // prefix on malformed text decides nothing.
+    ["7.3.70abc", "7.4.99", false],
+    ["7.3.70 beta", "7.4.99", false],
+    ["7.3.70-", "7.4.99", false],
+    ["7.3.70-beta..1", "7.4.99", false],
+    ["7.3.70.1", "7.4.99", false],
+    ["  7.3.70  ", "7.4.99", true],
     // Unreadable versions never raise a warning.
     ["unknown", "7.4.99", false],
     ["7.4", "7.4.99", false],

@@ -25,12 +25,13 @@ export const PROTECT_API_VERSION = "7.4.99";
  * precedence: major.minor.patch compared numerically, then a prerelease
  * (`7.4.99-beta.2`) before its release, since it may lack endpoints the
  * release has. Build metadata (`+…`) is ignored, and two prereleases of one
- * release are not ranked. A version that does not start with major.minor.patch
- * is never called older, so an odd string never raises a false warning.
+ * release are not ranked. Anything that is not a whole semver string
+ * (`7.3.70abc`, `7.4.99 beta`) is never called older, so an odd string never
+ * raises a false warning, nor hides behind a prefix that looks current.
  */
 export function isOlderVersion(version: string, than: string): boolean {
   const parse = (v: string) => {
-    const match = /^(\d+)\.(\d+)\.(\d+)(-[^+]*)?/.exec(v.trim());
+    const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(v.trim());
     // The core is digits and dots, so a "-" in the match is the prerelease.
     return match ? { core: match.slice(1, 4).map(Number), prerelease: match[0].includes("-") } : undefined;
   };

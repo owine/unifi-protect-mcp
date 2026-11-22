@@ -115,12 +115,26 @@ describe("startup", () => {
   // The version string comes from the console: it must not break the
   // host's log into extra lines or carry terminal escapes.
   it("logs the console's version as one printable line", async () => {
-    checkConnection.mockResolvedValue("7.4.99\n\u001b[31mfake log line");
+    // Older-looking, so a warning that used the raw value would show here.
+    checkConnection.mockResolvedValue("7.0.0\n\u001b[31mfake log line");
     const lines = await logged();
     expect(lines).toEqual([
-      "UniFi Protect MCP server running on stdio, console on Protect 7.4.99??[31mfake log line (read-only: write tools are not registered)",
+      "UniFi Protect MCP server running on stdio, console on Protect 7.0.0??[31mfake log line (read-only: write tools are not registered)",
     ]);
     for (const line of lines) expect(line).toMatch(/^[\x20-\x7e]*$/);
+  });
+
+  // A valid but over-long prerelease of an older version: the warning fires,
+  // and it must show the same bounded value as the startup line.
+  it("bounds the version in the warning line too", async () => {
+    const reported = `7.0.0-${"a".repeat(200)}`;
+    const shown = reported.slice(0, 64);
+    checkConnection.mockResolvedValue(reported);
+    const lines = await logged();
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain(`console on Protect ${shown} (read-only`);
+    expect(lines[1]).toMatch(new RegExp(`^Protect ${shown} is older than `));
+    for (const line of lines) expect(line).not.toContain(reported.slice(0, 65));
   });
 
   it("names no version when the check was skipped", async () => {
