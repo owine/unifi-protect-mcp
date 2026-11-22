@@ -124,6 +124,23 @@ describe("startup", () => {
     for (const line of lines) expect(line).toMatch(/^[\x20-\x7e]*$/);
   });
 
+  // The comparison sees the whole version, not the copy bounded for the log.
+  it("warns for a valid older version whose logged copy is cut mid-identifier", async () => {
+    // Cut at 64 characters, this ends in "." and would not parse.
+    const reported = `7.0.0-${"a".repeat(57)}.bbbb`;
+    checkConnection.mockResolvedValue(reported);
+    const lines = await logged();
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toMatch(new RegExp(`^Protect ${reported.slice(0, 64).replace(/\./g, "\\.")} is older than `));
+  });
+
+  it("does not warn for a malformed version whose logged copy would parse", async () => {
+    // Cut at 64 characters, this is a valid older prerelease.
+    checkConnection.mockResolvedValue(`7.0.0-${"a".repeat(58)}!!`);
+    const lines = await logged();
+    expect(lines).toHaveLength(1);
+  });
+
   // A valid but over-long prerelease of an older version: the warning fires,
   // and it must show the same bounded value as the startup line.
   it("bounds the version in the warning line too", async () => {

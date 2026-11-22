@@ -23,6 +23,9 @@ describe("isOlderVersion", () => {
     ["7.4.99-beta.2", "7.4.99", true],
     ["7.4.99-beta.2+build.7", "7.4.99", true],
     ["7.4.99+build.7", "7.4.99", false],
+    // A hyphen inside build metadata is not a prerelease.
+    ["7.4.99+build-5", "7.4.99", false],
+    ["7.4.99-rc.1+build-5", "7.4.99", true],
     ["7.5.0-beta.1", "7.4.99", false],
     ["7.3.70-rc.1", "7.4.99", true],
     ["7.4.99", "7.4.99-beta.2", false],
@@ -34,6 +37,10 @@ describe("isOlderVersion", () => {
     ["7.3.70-", "7.4.99", false],
     ["7.3.70-beta..1", "7.4.99", false],
     ["7.3.70.1", "7.4.99", false],
+    // Semver forbids leading zeros.
+    ["07.3.70", "7.4.99", false],
+    ["7.03.70", "7.4.99", false],
+    ["7.0.0", "7.4.99", true],
     ["  7.3.70  ", "7.4.99", true],
     // Unreadable versions never raise a warning.
     ["unknown", "7.4.99", false],

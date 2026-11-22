@@ -31,9 +31,11 @@ export const PROTECT_API_VERSION = "7.4.99";
  */
 export function isOlderVersion(version: string, than: string): boolean {
   const parse = (v: string) => {
-    const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(v.trim());
-    // The core is digits and dots, so a "-" in the match is the prerelease.
-    return match ? { core: match.slice(1, 4).map(Number), prerelease: match[0].includes("-") } : undefined;
+    // Semver numbers have no leading zeros.
+    const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(v.trim());
+    // The core is digits and dots, so a "-" before any "+" starts the
+    // prerelease; one inside build metadata (+build-5) does not.
+    return match ? { core: match.slice(1, 4).map(Number), prerelease: (match[0].split("+", 1)[0] ?? "").includes("-") } : undefined;
   };
   const a = parse(version);
   const b = parse(than);

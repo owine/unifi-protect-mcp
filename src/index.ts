@@ -26,12 +26,16 @@ async function main() {
   // Before the transport connects: an MCP host only sees the stdio
   // handshake, so exiting now makes it report the server as failed, with
   // this line in its log, rather than connected with every call failing.
+  // The version as reported, compared whole; protectVersion is its bounded,
+  // printable copy for the log.
+  let reportedVersion: string | undefined;
   let protectVersion: string | undefined;
   if (config.skipStartupCheck !== true) {
     try {
       // The console sends this string; keep it to one printable line in the
       // host's log.
-      protectVersion = (await client.checkConnection()).replace(/[^\x20-\x7e]/g, "?").slice(0, MAX_VERSION_CHARS);
+      reportedVersion = await client.checkConnection();
+      protectVersion = reportedVersion.replace(/[^\x20-\x7e]/g, "?").slice(0, MAX_VERSION_CHARS);
     } catch (err) {
       const reason = (err instanceof Error ? err.message : String(err)).replace(/\.$/, "");
       exitWithError(
@@ -65,7 +69,7 @@ async function main() {
       ? `UniFi Protect MCP server running on stdio${consoleNote} (read-only: write tools are not registered)`
       : `UniFi Protect MCP server running on stdio${consoleNote} (read-write: write tools are registered)`
   );
-  if (protectVersion !== undefined && isOlderVersion(protectVersion, PROTECT_API_VERSION)) {
+  if (reportedVersion !== undefined && isOlderVersion(reportedVersion, PROTECT_API_VERSION)) {
     console.error(
       `Protect ${protectVersion} is older than ${PROTECT_API_VERSION}, the API version these tools follow; a tool for a newer endpoint may fail with HTTP 404. Update Protect on the console to use every tool.`
     );
