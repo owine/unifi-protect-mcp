@@ -45,7 +45,11 @@ function requestSignal(timeoutMs: number): AbortSignal {
 
 const MS_PER_SECOND = 1000;
 
+const FORBIDDEN = 403;
+const REQUEST_TIMEOUT = 408;
 const TOO_MANY_REQUESTS = 429;
+const BAD_GATEWAY = 502;
+const GATEWAY_TIMEOUT = 504;
 
 /**
  * The wait a 429's Retry-After asks for, in ms: delay-seconds or an HTTP
@@ -340,8 +344,31 @@ export class ProtectClient {
       const retried = response.status === TOO_MANY_REQUESTS && retries > 0
         ? ` (still rate-limited after ${retries.toString()} ${retries === 1 ? "retry" : "retries"}; wait before calling again)`
         : "";
-      throw new Error(`HTTP ${response.status.toString()}: ${await readErrorBody(response)}${retried}`);
+      throw new Error(`HTTP ${response.status.toString()}: ${await readErrorBody(response)}${retried}${this.statusNote(method, response.status)}`);
     }
+  }
+
+  /**
+   * What a failure status means when the body alone would not say. A 408 or
+   * 504 is a timeout on the way to Protect (Cloud Connector answers 408 once a
+   * console takes too long), so a write may have landed, exactly as when this
+   * server's own timeout fires. Cloud Connector's 403 and 502 are about the
+   * route to the console, not the request.
+   */
+  private statusNote(method: string, status: number): string {
+    if (status === REQUEST_TIMEOUT || status === GATEWAY_TIMEOUT) {
+      return method === "GET"
+        ? " (the request timed out before Protect answered; retry when the console responds)"
+        : " (the request timed out before Protect answered; the change may still have been applied, so check before retrying)";
+    }
+    if (!this.usingConnector) return "";
+    if (status === FORBIDDEN) {
+      return " (through Cloud Connector this can also mean the key cannot reach this console: a personal Site Manager key reaches only the consoles its owner owns)";
+    }
+    if (status === BAD_GATEWAY) {
+      return " (Cloud Connector could not reach the console; check that it is online)";
+    }
+    return "";
   }
 
   private async request(

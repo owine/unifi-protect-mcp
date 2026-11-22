@@ -696,6 +696,30 @@ describe("ProtectClient", () => {
     });
   });
 
+  // A 408 or 504 is a timeout on the way to Protect (Cloud Connector sends
+  // 408 when a console is slow), so a write may still have landed.
+  describe("gateway timeouts", () => {
+    it.each([408, 504])("say a timed-out read (HTTP %i) can be retried", async (status) => {
+      mockFetch({ code: "timeout" }, { status });
+      await expect(client.get("/nvrs")).rejects.toThrow(
+        new RegExp(`^HTTP ${status.toString()}: .*timed out before Protect answered; retry when the console responds\\)$`)
+      );
+    });
+
+    it.each([408, 504])("say a timed-out write (HTTP %i) may still have been applied", async (status) => {
+      mockFetch({ code: "timeout" }, { status });
+      await expect(client.post("/sirens/s1/play", {})).rejects.toThrow(
+        /timed out before Protect answered; the change may still have been applied, so check before retrying\)$/
+      );
+    });
+
+    it("are not retried", async () => {
+      mockFetch({ code: "timeout" }, { status: 408 });
+      await expect(client.patch("/cameras/c1", { name: "x" })).rejects.toThrow("HTTP 408");
+      expect(fetchMock).toHaveBeenCalledOnce();
+    });
+  });
+
   describe("Cloud Connector", () => {
     const connectorConfig: Config = {
       ...baseConfig,
@@ -734,6 +758,29 @@ describe("ProtectClient", () => {
       expect(wsUrls.at(-1)).toBe(
         "wss://192.168.1.1/proxy/protect/integration/v1/subscribe/events"
       );
+    });
+
+    // The route to the console, not the request, is what failed; the
+    // Site Manager error body alone does not say so.
+    it("explains a 403 as a key that may not reach this console", async () => {
+      mockFetch({ code: "forbidden", httpStatusCode: 403, message: "forbidden", traceId: "t1" }, { status: 403 });
+      await expect(new ProtectClient(connectorConfig).get("/nvrs")).rejects.toThrow(
+        /^HTTP 403: .*traceId.*a personal Site Manager key reaches only the consoles its owner owns\)$/
+      );
+    });
+
+    it("explains a 502 as a console the connector cannot reach", async () => {
+      mockFetch({ code: "bad_gateway", httpStatusCode: 502, message: "bad gateway", traceId: "t1" }, { status: 502 });
+      await expect(new ProtectClient(connectorConfig).get("/nvrs")).rejects.toThrow(
+        /Cloud Connector could not reach the console; check that it is online\)$/
+      );
+    });
+
+    it("adds no connector hint to a local console's 403 or 502", async () => {
+      mockFetch("Forbidden", { status: 403, contentType: "text/plain" });
+      await expect(client.get("/nvrs")).rejects.toThrow(/^HTTP 403: Forbidden$/);
+      mockFetch("Bad Gateway", { status: 502, contentType: "text/plain" });
+      await expect(client.get("/nvrs")).rejects.toThrow(/^HTTP 502: Bad Gateway$/);
     });
 
     it("ignores the console ID when the host is not api.ui.com", async () => {
