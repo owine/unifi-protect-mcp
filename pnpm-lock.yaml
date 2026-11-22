@@ -1064,8 +1064,8 @@ packages:
   jose@6.2.18:
     resolution: {integrity: sha512-doV4thUwgkrycJH4yLeqwTGIIZphHl+pk7CPReuMIhYhncmgzdko85MaCG4YQFTxqMFr1/oEH32tZuKKovcDEg==}
 
-  js-tokens@10.0.0:
-    resolution: {integrity: sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q==}
+  js-tokens@10.0.1:
+    resolution: {integrity: sha512-XMt+uh+yEs6srFvEb/pEe4IMvbtoXVdNxF7lZFU+I9sdWI641L97L+gXQMTGm1x3RjPUVizNVjHueclXr0U7sw==}
 
   json-schema-traverse@0.4.1:
     resolution: {integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==}
@@ -2073,7 +2073,7 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       estree-walker: 3.0.3
-      js-tokens: 10.0.0
+      js-tokens: 10.0.1
 
   balanced-match@4.0.4: {}
 
@@ -2416,7 +2416,7 @@ snapshots:
 
   jose@6.2.18: {}
 
-  js-tokens@10.0.0: {}
+  js-tokens@10.0.1: {}
 
   json-schema-traverse@0.4.1: {}
 
