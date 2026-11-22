@@ -340,12 +340,14 @@ export class ProtectClient {
         }
         // A wait longer than this server holds a call for is a real throttle
         // (Cloud Connector limits each console per minute): name it, so the
-        // model waits instead of calling again at once.
-        if (retries === 0) {
-          throw new Error(
-            `HTTP ${response.status.toString()}: ${await readErrorBody(response)} (rate-limited; wait ${Math.ceil(delay / MS_PER_SECOND).toString()} s before calling again)`
-          );
-        }
+        // model waits instead of calling again at once. A Retry-After too
+        // large for a number has no useful figure to repeat.
+        const state = retries > 0
+          ? `still rate-limited after ${retries.toString()} ${retries === 1 ? "retry" : "retries"}`
+          : "rate-limited";
+        const seconds = Math.ceil(delay / MS_PER_SECOND);
+        const advice = Number.isFinite(seconds) ? `wait ${seconds.toString()} s before calling again` : "wait before calling again";
+        throw new Error(`HTTP ${response.status.toString()}: ${await readErrorBody(response)} (${state}; ${advice})`);
       }
       const retried = response.status === TOO_MANY_REQUESTS && retries > 0
         ? ` (still rate-limited after ${retries.toString()} ${retries === 1 ? "retry" : "retries"}; wait before calling again)`

@@ -350,11 +350,21 @@ describe("ProtectClient", () => {
       );
     });
 
-    // After a retry, a long wait keeps the retry-count wording.
-    it("reports the retries when a later 429 asks for a long wait", async () => {
-      fetchMock.mockResolvedValueOnce(limited()).mockResolvedValueOnce(limited(String(MAX_RETRY_AFTER_MS / 1000 + 1)));
-      await expect(client.get("/nvrs")).rejects.toThrow(/still rate-limited after 1 retry; wait before calling again\)$/);
+    // After a retry, a long wait keeps both the retry count and the wait.
+    it("reports the retries and the wait when a later 429 asks for a long wait", async () => {
+      const seconds = MAX_RETRY_AFTER_MS / 1000 + 1;
+      fetchMock.mockResolvedValueOnce(limited()).mockResolvedValueOnce(limited(String(seconds)));
+      await expect(client.get("/nvrs")).rejects.toThrow(
+        new RegExp(`still rate-limited after 1 retry; wait ${seconds.toString()} s before calling again\\)$`)
+      );
       expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    // A digit-only Retry-After past Number's range parses as Infinity.
+    it("names no figure for a Retry-After too large to be a number", async () => {
+      fetchMock.mockResolvedValueOnce(limited("9".repeat(400)));
+      await expect(client.get("/nvrs")).rejects.toThrow(/^HTTP 429: .*\(rate-limited; wait before calling again\)$/);
+      expect(fetchMock).toHaveBeenCalledOnce();
     });
 
     it("waits the Retry-After before sending again", async () => {
