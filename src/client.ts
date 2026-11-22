@@ -378,9 +378,9 @@ export class ProtectClient {
    * Read /meta/info once, so a console that cannot be reached, fails TLS
    * verification or rejects the key stops the server at startup, where the
    * MCP host reports it, instead of the server looking connected and every
-   * tool call failing.
+   * tool call failing. Resolves to the console's Protect version.
    */
-  async checkConnection(): Promise<void> {
+  async checkConnection(): Promise<string> {
     const path = "/meta/info";
     const info = await this.request("GET", path, undefined, STARTUP_CHECK_TIMEOUT_MS);
     // Any 2xx passes send(), so a proxy or another web server at the host
@@ -392,6 +392,7 @@ export class ProtectClient {
     ) {
       throw new Error(`GET ${path} did not answer as UniFi Protect (expected its application info); check UNIFI_PROTECT_HOST names the console`);
     }
+    return info.applicationVersion;
   }
 
   async post(path: string, body?: unknown): Promise<unknown> {

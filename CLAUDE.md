@@ -46,12 +46,12 @@ pnpm run test:package  # Pack, install the tarball into an empty project, smoke-
 
 ```
 src/
-  index.ts            # Entry point: config, startup console check (exits before the handshake on failure), server instructions, tool registration, stdio transport with a larger read buffer, startup mode log
+  index.ts            # Entry point: config, startup console check (exits before the handshake on failure), server instructions, tool registration, stdio transport with a larger read buffer, startup log (mode, console's Protect version, warning when it is older than the tools)
   config.ts           # Env vars → Config (Zod): host normalisation, API key trim + control-character check, UNIFI_PROTECT_CA_CERT file, Cloud Connector TLS rules, UNIFI_PROTECT_STARTUP_CHECK opt-out
   client.ts           # ProtectClient: one send() core (path guard, redirect: "error", timeout combined with the call's abort signal, bounded body reads); JSON, binary, multipart, WebSocket
   tls.ts              # Scoped TLS: undici dispatcher (keep-alive) and WebSocket options; pinning for UNIFI_PROTECT_CA_CERT
   instructions.ts     # serverInstructions(readOnly): cross-tool guidance sent once per session
-  version.ts          # SERVER_VERSION, read from package.json at runtime for serverInfo
+  version.ts          # SERVER_VERSION (package.json, for serverInfo); PROTECT_API_VERSION, the API version the tools follow (docs-drift keeps the README and this file equal to it)
   tools/
     index.ts          # registerAllTools(): wires every tool module through instrumentTools()
     registrar.ts      # instrumentTools() and the ToolRegistrar type modules receive: loose output schemas, dry-run preview fields, call signal, one catch, result-size guard, read-only fail-fast, titles, openWorldHint
@@ -134,7 +134,7 @@ Conventions:
 
 ## API version bumps
 
-For updating tools to match a new UniFi Protect API version, follow the skill at `~/.claude/skills/unifi-api-update/SKILL.md`.
+For updating tools to match a new UniFi Protect API version, follow the skill at `~/.claude/skills/unifi-api-update/SKILL.md`. Bump `PROTECT_API_VERSION` in `src/version.ts` with the README and the overview above; `tests/docs-drift.test.ts` fails until all three agree.
 
 ## Releases
 

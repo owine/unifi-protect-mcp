@@ -411,9 +411,9 @@ describe("ProtectClient", () => {
   });
 
   describe("checkConnection", () => {
-    it("reads /meta/info and resolves when Protect answers", async () => {
+    it("reads /meta/info and resolves to the console's Protect version", async () => {
       mockFetch({ applicationVersion: "7.3.70" });
-      await client.checkConnection();
+      await expect(client.checkConnection()).resolves.toBe("7.3.70");
       expect(fetchMock).toHaveBeenCalledWith(
         "https://192.168.1.1/proxy/protect/integration/v1/meta/info",
         expect.objectContaining({ method: "GET" })
