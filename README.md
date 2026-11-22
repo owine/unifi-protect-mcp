@@ -115,6 +115,18 @@ Find your console ID with:
 curl -s https://api.ui.com/v1/hosts -H "X-API-KEY: $KEY" | jq -r '.data[].id'
 ```
 
+**Ubiquiti's limits apply.** The connector needs UniFi OS 5.0.3 or later on the
+console, allows 100 requests a minute per console, gives each request 25
+seconds, and caps the size of a response. This server waits out a short
+`Retry-After`, but past the per-minute limit a call fails with `HTTP 429`. A
+slow snapshot or upload ends with `HTTP 408` from the connector rather than
+this server's own timeout. List tools page after the whole list has arrived, so
+`limit` and `offset` do not shrink what the connector carries; on a site too
+large for its cap, connect to the console directly.
+
+A personal Site Manager key reaches only the consoles its owner owns; an
+organization key reaches every console in the organization.
+
 **WebSocket subscriptions do not work over Cloud Connector.** The connector
 proxies REST calls but returns HTTP 404 on a WebSocket upgrade, so
 `protect_subscribe_devices` and `protect_subscribe_events` fail fast with an
@@ -422,7 +434,7 @@ Configuration errors, and a console the server cannot use at startup, go to the 
 | `fetch failed: … The console's TLS certificate could not be verified …` | Save the console's certificate to `UNIFI_PROTECT_CA_CERT`. If you already did, the console has a new certificate: save it again. |
 | `fetch failed: … The certificate for api.ui.com could not be verified …` | Something between you and Ubiquiti's cloud is presenting another certificate, such as a TLS-inspecting proxy or firewall. |
 | `fetch failed: connect ECONNREFUSED …`, `ENOTFOUND` | Wrong or unreachable host. |
-| `HTTP 401` / `HTTP 403` | Wrong or revoked key, or its admin lacks the rights. |
+| `HTTP 401` / `HTTP 403` | Wrong or revoked key, or its admin lacks the rights. A local console key does not work through Cloud Connector, and a Site Manager key does not work on the console directly. |
 | `HTTP 429: … still rate-limited after … retries` | The console limits API calls per second, and the server already waited out its `Retry-After` and retried. Too many calls are running at once: make fewer in parallel. |
 | `… Protect did not respond within … s` | The console is slow, or something drops traffic to it (at startup, often a wrong IP). For a write, check whether it was applied before retrying. |
 | `… exceeds the …-byte limit` / `Result too large to send in one MCP message …` | The response is too large for one MCP message. Page a list with `limit` and `offset`; for a snapshot, drop `highQuality`. |
