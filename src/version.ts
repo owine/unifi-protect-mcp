@@ -13,3 +13,35 @@ export const SERVER_VERSION = (
     version: string;
   }
 ).version;
+
+/**
+ * The UniFi Protect API version the tools follow. The README and CLAUDE.md
+ * state it too; tests/docs-drift.test.ts keeps them equal to this.
+ */
+export const PROTECT_API_VERSION = "7.4.99";
+
+/**
+ * Whether Protect version `version` is older than `than`, by semver
+ * precedence: major.minor.patch compared numerically, then a prerelease
+ * (`7.4.99-beta.2`) before its release, since it may lack endpoints the
+ * release has. Build metadata (`+…`) is ignored, and two prereleases of one
+ * release are not ranked. Anything that is not a whole semver string
+ * (`7.3.70abc`, `7.4.99 beta`) is never called older, so an odd string never
+ * raises a false warning, nor hides behind a prefix that looks current.
+ */
+export function isOlderVersion(version: string, than: string): boolean {
+  const parse = (v: string) => {
+    // Semver numbers have no leading zeros.
+    const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(v.trim());
+    // The core is digits and dots, so a "-" before any "+" starts the
+    // prerelease; one inside build metadata (+build-5) does not.
+    return match ? { core: match.slice(1, 4).map(Number), prerelease: (match[0].split("+", 1)[0] ?? "").includes("-") } : undefined;
+  };
+  const a = parse(version);
+  const b = parse(than);
+  if (a === undefined || b === undefined) return false;
+  for (let i = 0; i < a.core.length; i++) {
+    if (a.core[i] !== b.core[i]) return (a.core[i] ?? 0) < (b.core[i] ?? 0);
+  }
+  return a.prerelease && !b.prerelease;
+}

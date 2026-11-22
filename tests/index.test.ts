@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { PROTECT_API_VERSION } from "../src/version.js";
 
 /**
  * Startup as an MCP host sees it. A host only learns whether a server works
@@ -36,7 +37,7 @@ describe("startup", () => {
     vi.resetModules();
     // Spied on the module instance index.js is about to import, after the reset.
     const { ProtectClient } = await import("../src/client.js");
-    checkConnection = vi.spyOn(ProtectClient.prototype, "checkConnection").mockResolvedValue(undefined);
+    checkConnection = vi.spyOn(ProtectClient.prototype, "checkConnection").mockResolvedValue(PROTECT_API_VERSION);
   });
 
   afterEach(() => {
@@ -86,5 +87,76 @@ describe("startup", () => {
     await start();
     expect(checkConnection).not.toHaveBeenCalled();
     expect(connect).toHaveBeenCalledOnce();
+  });
+
+  /** The lines startup logged through console.error, once it has connected. */
+  async function logged(): Promise<string[]> {
+    await start();
+    await vi.waitFor(() => { expect(vi.mocked(console.error).mock.calls.length).toBeGreaterThan(0); });
+    return vi.mocked(console.error).mock.calls.map((call) => String(call[0]));
+  }
+
+  it("names the console's Protect version beside the mode, with no warning when it is current", async () => {
+    const lines = await logged();
+    expect(lines).toEqual([
+      `UniFi Protect MCP server running on stdio, console on Protect ${PROTECT_API_VERSION} (read-only: write tools are not registered)`,
+    ]);
+  });
+
+  it("warns when the console's Protect is older than the tools", async () => {
+    checkConnection.mockResolvedValue("7.0.0");
+    const lines = await logged();
+    expect(lines[0]).toContain("console on Protect 7.0.0 (read-only");
+    expect(lines[1]).toBe(
+      `Protect 7.0.0 is older than ${PROTECT_API_VERSION}, the API version these tools follow; a tool for a newer endpoint may fail with HTTP 404. Update Protect on the console to use every tool.`
+    );
+  });
+
+  // The version string comes from the console: it must not break the
+  // host's log into extra lines or carry terminal escapes.
+  it("logs the console's version as one printable line", async () => {
+    // Older-looking, so a warning that used the raw value would show here.
+    checkConnection.mockResolvedValue("7.0.0\n\u001b[31mfake log line");
+    const lines = await logged();
+    expect(lines).toEqual([
+      "UniFi Protect MCP server running on stdio, console on Protect 7.0.0??[31mfake log line (read-only: write tools are not registered)",
+    ]);
+    for (const line of lines) expect(line).toMatch(/^[\x20-\x7e]*$/);
+  });
+
+  // The comparison sees the whole version, not the copy bounded for the log.
+  it("warns for a valid older version whose logged copy is cut mid-identifier", async () => {
+    // Cut at 64 characters, this ends in "." and would not parse.
+    const reported = `7.0.0-${"a".repeat(57)}.bbbb`;
+    checkConnection.mockResolvedValue(reported);
+    const lines = await logged();
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toMatch(new RegExp(`^Protect ${reported.slice(0, 64).replace(/\./g, "\\.")} is older than `));
+  });
+
+  it("does not warn for a malformed version whose logged copy would parse", async () => {
+    // Cut at 64 characters, this is a valid older prerelease.
+    checkConnection.mockResolvedValue(`7.0.0-${"a".repeat(58)}!!`);
+    const lines = await logged();
+    expect(lines).toHaveLength(1);
+  });
+
+  // A valid but over-long prerelease of an older version: the warning fires,
+  // and it must show the same bounded value as the startup line.
+  it("bounds the version in the warning line too", async () => {
+    const reported = `7.0.0-${"a".repeat(200)}`;
+    const shown = reported.slice(0, 64);
+    checkConnection.mockResolvedValue(reported);
+    const lines = await logged();
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain(`console on Protect ${shown} (read-only`);
+    expect(lines[1]).toMatch(new RegExp(`^Protect ${shown} is older than `));
+    for (const line of lines) expect(line).not.toContain(reported.slice(0, 65));
+  });
+
+  it("names no version when the check was skipped", async () => {
+    process.env.UNIFI_PROTECT_STARTUP_CHECK = "false";
+    const lines = await logged();
+    expect(lines).toEqual(["UniFi Protect MCP server running on stdio (read-only: write tools are not registered)"]);
   });
 });

@@ -7,6 +7,7 @@ import { _DEVICE_CONFIGS } from "../src/tools/devices.js";
 import { ARM_PROFILE_CONFIRM_FIELDS } from "../src/tools/arm-profiles.js";
 import { EXTERNAL_ARM_PROFILE_CONFIRM_FIELDS } from "../src/tools/external-arm-profiles.js";
 import { serverInstructions } from "../src/instructions.js";
+import { PROTECT_API_VERSION } from "../src/version.js";
 
 /**
  * Documentation drift: every fact the docs state about the tools, the
@@ -128,6 +129,13 @@ describe("documentation drift", () => {
         ...readdirSync(join(root, "scripts")),
       ].map((file) => basename(file));
       expect(files.filter((file) => !CLAUDE.includes(file))).toEqual([]);
+    });
+
+    // The startup warning compares the console against PROTECT_API_VERSION,
+    // so the version the docs claim must be the one the code checks.
+    it.each([["README.md", README], ["CLAUDE.md", CLAUDE]])("state the API version PROTECT_API_VERSION names in %s", (_file, text) => {
+      const stated = [...text.matchAll(/Aligned with UniFi Protect API \*\*([\d.]+)\*\*/g)].map((m) => m[1]);
+      expect(stated).toEqual([PROTECT_API_VERSION]);
     });
 
     it("link SECURITY.md from the README", () => {

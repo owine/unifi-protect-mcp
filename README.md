@@ -418,6 +418,7 @@ Configuration errors, and a console the server cannot use at startup, go to the 
 | `Ignoring UNIFI_PROTECT_CONSOLE_ID` (log line) | The console ID only applies with `UNIFI_PROTECT_HOST=api.ui.com`. |
 | `Cannot connect to UniFi Protect at …` (log line) | The startup check could not read the console; the rest of the line is one of the errors below. Fix it and restart the server, or set `UNIFI_PROTECT_STARTUP_CHECK=false` to start anyway. |
 | `… did not answer as UniFi Protect` | Something other than Protect's Integration API answered at `UNIFI_PROTECT_HOST`: another web server, a proxy that answers every path, or a console without Protect. |
+| `Protect … is older than …, the API version these tools follow` (log line) | The console runs an older Protect than the tools follow. Most tools work; one for a newer endpoint fails with `HTTP 404`. Update Protect on the console. |
 | `… (read-only: write tools are not registered)` (log line) and no write tools | Read-only is the default. Set `UNIFI_PROTECT_READ_ONLY=false` and restart the host. |
 | `fetch failed: … The console's TLS certificate could not be verified …` | Save the console's certificate to `UNIFI_PROTECT_CA_CERT`. If you already did, the console has a new certificate: save it again. |
 | `fetch failed: … The certificate for api.ui.com could not be verified …` | Something between you and Ubiquiti's cloud is presenting another certificate, such as a TLS-inspecting proxy or firewall. |
@@ -431,6 +432,7 @@ Configuration errors, and a console the server cannot use at startup, go to the 
 | `File too large to send in one MCP message` | Upload a smaller file. |
 | `This action requires confirmation: …` | Expected: the action needs `confirm: true`, and the agent should ask you first. |
 | `Use an ID returned by a list or get tool` | The agent passed a name or a malformed ID. |
+| `HTTP 404` from a tool that exists | The ID is wrong, or the console's Protect is older than the endpoint. The startup log line names the console's version. |
 | `Subscription failed: …` | The WebSocket was refused or unauthorized; this is not "no activity". |
 | `WebSocket subscriptions are not available over Cloud Connector …` | Connect to the console directly for subscriptions. |
 | `HTTP 403: … a personal Site Manager key reaches only the consoles its owner owns` | Through Cloud Connector, the key may not reach this console: a personal key reaches only its owner's consoles. Use an organization key or the owner's. |
